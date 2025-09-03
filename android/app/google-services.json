@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "571168137463",
+    "project_id": "jaytap-61a1b",
+    "storage_bucket": "jaytap-61a1b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:571168137463:android:e83a191c928ce6ff4df3f2",
+        "android_client_info": {
+          "package_name": "com.gurbanov.jaytap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0nzeluCvx4i1OX2AMWbfYKai8Zio_hRs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
