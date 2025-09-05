@@ -6,6 +6,7 @@ extension ThemeColors on BuildContext {
   Color get secondaryColor => Theme.of(this).colorScheme.secondary;
   Color get redColor => Theme.of(this).colorScheme.error;
   Color get whiteColor => Theme.of(this).colorScheme.onPrimary;
+  Color get background => ColorConstants.background;
   Color get blackColor => Theme.of(this).colorScheme.onSecondaryContainer;
   Color get greyColor => ColorConstants.greyColor;
   Color get surfaceColor => Theme.of(this).colorScheme.surface;

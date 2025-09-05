@@ -12,17 +12,25 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? actionButton;
   final Widget? leadingButton;
 
-  CustomAppBar({required this.title, required this.showBackButton, this.centerTitle, this.showElevation, this.leadingButton, this.actionButton});
+  CustomAppBar(
+      {required this.title,
+      required this.showBackButton,
+      this.centerTitle,
+      this.showElevation,
+      this.leadingButton,
+      this.actionButton});
   @override
   Widget build(BuildContext context) {
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return AppBar(
+      //  backgroundColor: ColorConstants.background,
       automaticallyImplyLeading: false,
       scrolledUnderElevation: 0.0,
       elevation: showElevation == true ? 1.0 : 0.0,
-      shadowColor: isDarkMode ? context.blackColor : context.greyColor.withOpacity(.3),
-      centerTitle: centerTitle ?? true,
-      backgroundColor: isDarkMode ? context.blackColor : context.whiteColor,
+      shadowColor:
+          isDarkMode ? context.blackColor : context.greyColor.withOpacity(.3),
+      centerTitle: true,
+      backgroundColor: isDarkMode ? context.blackColor : context.background,
       leadingWidth: centerTitle == false ? 10.0 : 80,
       leading: showBackButton
           ? IconButton(
@@ -37,7 +45,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           : leadingButton ?? const SizedBox.shrink(),
       title: Text(
         title.tr,
-        style: context.general.textTheme.headlineMedium!.copyWith(fontSize: 20, fontWeight: FontWeight.w500),
+        style: context.general.textTheme.headlineMedium!
+            .copyWith(fontSize: 20, fontWeight: FontWeight.w500),
       ),
       actions: [
         actionButton ?? const SizedBox.shrink(),

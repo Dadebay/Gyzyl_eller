@@ -18,10 +18,12 @@ pluginManagement {
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    id "com.android.application" version "8.2.2" apply false
-    id "com.google.gms.google-services" version "4.4.1" apply false
+    id "com.android.application" version "8.1.0" apply false
+    // Make sure the Google Services version is up-to-date if you use Firebase
+    id "com.google.gms.google-services" version "4.4.1" apply false 
+    // This is the single, correct definition for the Kotlin plugin version
     id "org.jetbrains.kotlin.android" version "2.0.20" apply false
-}
 
+}
 
 include ":app"

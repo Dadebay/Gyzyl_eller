@@ -5,11 +5,10 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 final class CustomDarkTheme {
   final ThemeData themeData = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     brightness: Brightness.dark,
     colorScheme: CustomColorScheme.darkColorScheme,
-
-    scaffoldBackgroundColor: const Color(0xff121212), // koyu gri arka plan
+    scaffoldBackgroundColor: const Color(0xff121212),
     appBarTheme: const AppBarTheme(
       backgroundColor: Color(0xff121212),
       elevation: 0,
@@ -24,7 +23,6 @@ final class CustomDarkTheme {
       ),
       iconTheme: IconThemeData(color: Colors.white),
     ),
-
     cardTheme: CardTheme(
       color: const Color(0xff1E1E1E),
       elevation: 3,
@@ -33,18 +31,17 @@ final class CustomDarkTheme {
         borderRadius: BorderRadius.circular(16),
       ),
     ),
-
     snackBarTheme: const SnackBarThemeData(
       backgroundColor: Color(0xff2C2C2C),
       contentTextStyle: TextStyle(color: Colors.white),
       behavior: SnackBarBehavior.floating,
     ),
-
     textTheme: const TextTheme(
       displayLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
       displayMedium: TextStyle(color: Colors.white),
       displaySmall: TextStyle(color: Colors.white),
-      headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      headlineLarge:
+          TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       headlineMedium: TextStyle(color: Colors.white),
       headlineSmall: TextStyle(color: Colors.white),
       titleLarge: TextStyle(color: Colors.white),

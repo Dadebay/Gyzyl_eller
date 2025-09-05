@@ -5,9 +5,11 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 final class CustomLightTheme {
   ThemeData get themeData => ThemeData(
         useMaterial3: true,
-        fontFamily: 'Roboto',
+        fontFamily: 'Inter',
         appBarTheme: AppBarTheme(
-          systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: ColorConstants.whiteColor, statusBarIconBrightness: Brightness.dark),
+          systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: ColorConstants.background,
+              statusBarIconBrightness: Brightness.dark),
         ),
         colorScheme: CustomColorScheme.lightColorScheme,
       );
