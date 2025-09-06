@@ -1,9 +1,12 @@
+import 'package:gyzyleller/shared/constants/icon_constants.dart';
 
 import '../extensions/packages.dart';
 
 class CustomWidgets {
   static Center loader() {
-    return Center(child: Lottie.asset(IconConstants.noImage, width: 150, height: 150, animate: true));
+    return Center(
+        child: Lottie.asset(IconConstants.person,
+            width: 150, height: 150, animate: true));
   }
 
   static Center errorFetchData() {
@@ -14,7 +17,12 @@ class CustomWidgets {
     return Center(child: Text("emptyData"));
   }
 
-  static Center emptyDataWithLottie({required String title, required String subtitle, required String lottiePath, bool? makeBigger, bool? showGif}) {
+  static Center emptyDataWithLottie(
+      {required String title,
+      required String subtitle,
+      required String lottiePath,
+      bool? makeBigger,
+      bool? showGif}) {
     return Center(
       child: SingleChildScrollView(
         child: Padding(
@@ -23,12 +31,21 @@ class CustomWidgets {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               showGif == true
-                  ? Image.asset(lottiePath, width: makeBigger == true ? 300 : 150, height: makeBigger == true ? 300 : 150)
-                  : Lottie.asset(lottiePath, width: makeBigger == true ? 300 : 150, height: makeBigger == true ? 300 : 150, animate: true),
+                  ? Image.asset(lottiePath,
+                      width: makeBigger == true ? 300 : 150,
+                      height: makeBigger == true ? 300 : 150)
+                  : Lottie.asset(lottiePath,
+                      width: makeBigger == true ? 300 : 150,
+                      height: makeBigger == true ? 300 : 150,
+                      animate: true),
               SizedBox(height: 16),
-              Text(title.tr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(title.tr,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text(subtitle.tr, textAlign: TextAlign.center, style: TextStyle(fontSize: 17, color: ColorConstants.greyColor)),
+              Text(subtitle.tr,
+                  textAlign: TextAlign.center,
+                  style:
+                      TextStyle(fontSize: 17, color: ColorConstants.greyColor)),
             ],
           ),
         ),
@@ -56,8 +73,11 @@ class CustomWidgets {
     );
   }
 
-  static ClipRRect imagePlaceHolder() => ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset(IconConstants.noImage, fit: BoxFit.cover));
-  static Expanded miniCard(BuildContext context, String text1, String text2, bool premium) {
+  static ClipRRect imagePlaceHolder() => ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.asset(IconConstants.person, fit: BoxFit.cover));
+  static Expanded miniCard(
+      BuildContext context, String text1, String text2, bool premium) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Expanded(
@@ -65,12 +85,20 @@ class CustomWidgets {
           margin: EdgeInsets.only(left: 5, right: 5, top: 5),
           decoration: BoxDecoration(
             color: isDarkMode ? context.blackColor : context.whiteColor,
-            gradient: premium ? LinearGradient(colors: [Colors.yellow, Colors.white], begin: Alignment.bottomCenter, end: Alignment.topCenter) : null,
+            gradient: premium
+                ? LinearGradient(
+                    colors: [Colors.yellow, Colors.white],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter)
+                : null,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: ColorConstants.kPrimaryColor.withOpacity(.3)),
+            border:
+                Border.all(color: ColorConstants.kPrimaryColor.withOpacity(.3)),
             boxShadow: [
               BoxShadow(
-                color: isDarkMode ? context.whiteColor.withOpacity(.5) : ColorConstants.blackColor.withOpacity(.1),
+                color: isDarkMode
+                    ? context.whiteColor.withOpacity(.5)
+                    : ColorConstants.blackColor.withOpacity(.1),
                 blurRadius: 10,
                 spreadRadius: 1,
               )
@@ -84,7 +112,8 @@ class CustomWidgets {
               Expanded(
                 child: Text(
                   text1,
-                  style: context.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: context.textTheme.bodyMedium!
+                      .copyWith(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
               Expanded(
@@ -93,7 +122,10 @@ class CustomWidgets {
                   maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: context.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500, color: context.greyColor, fontSize: 13),
+                  style: context.textTheme.bodyMedium!.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: context.greyColor,
+                      fontSize: 13),
                 ),
               ),
             ],

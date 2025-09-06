@@ -5,11 +5,9 @@ export 'package:gyzyleller/shared/extensions/extensions.dart';
 export 'package:gyzyleller/shared/widgets/widgets.dart';
 export 'package:dotted_border/dotted_border.dart';
 export 'package:image_picker/image_picker.dart';
-export 'package:gyzyleller/core/constants/icon_constants.dart';
 export 'package:gyzyleller/shared/widgets/agree_button.dart';
 export 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 export 'package:gyzyleller/shared/sizes/image_sizes.dart';
-
 export 'package:lottie/lottie.dart';
 export 'dart:async';
 export 'package:firebase_core/firebase_core.dart';

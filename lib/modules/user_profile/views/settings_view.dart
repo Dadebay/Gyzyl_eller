@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:gyzyleller/core/constants/icon_constants.dart';
+
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:gyzyleller/modules/login/views/login_view.dart';
@@ -10,6 +10,7 @@ import 'package:gyzyleller/modules/user_profile/controllers/user_profile_control
 import 'package:gyzyleller/modules/user_profile/views/about_view.dart';
 import 'package:gyzyleller/modules/user_profile/views/language_page.dart';
 import 'package:gyzyleller/modules/user_profile/views/profile_edit_view.dart';
+import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 
 class SettingsView extends GetView<SettingsController> {
@@ -226,7 +227,7 @@ class SettingsView extends GetView<SettingsController> {
                 ),
               ),
               SvgPicture.asset(
-                IconConstants.expand_more,
+                IconConstants.expandMore,
                 width: 24,
                 height: 24,
               ),

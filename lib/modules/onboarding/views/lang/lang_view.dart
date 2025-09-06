@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get.dart'; // Added Get import
+import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/modules/home/views/bottomnavbar/custom_bottom_nav_extension.dart';
-import 'package:gyzyleller/modules/user_profile/controllers/language_controller.dart';
-
 import 'package:gyzyleller/modules/home/controllers/home_controller.dart';
-import 'package:gyzyleller/core/constants/list_constants.dart';
+import 'package:gyzyleller/modules/onboarding/views/onboarding_type/onboarding_type_view.dart';
+import 'package:gyzyleller/modules/user_profile/controllers/language_controller.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
-class LanguagePage extends StatelessWidget {
-  LanguagePage({super.key});
+class LanguagePageFirst extends StatelessWidget {
+  LanguagePageFirst({super.key});
   final LanguageController languageController = Get.put(LanguageController());
   final HomeController homeController = Get.find<HomeController>();
   @override
@@ -19,18 +17,39 @@ class LanguagePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: ColorConstants.background,
       appBar: CustomAppBar(
-        title: 'language',
-        showBackButton: true,
+        title: ''.tr,
+        showBackButton: false,
         centerTitle: true,
         showElevation: false,
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 12),
+          Text(
+            'language_selection_title'.tr,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: ColorConstants.fonts,
+            ),
+          ),
+          const SizedBox(height: 25),
+          Text(
+            'language_selection_instruction'.tr,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: ColorConstants.fonts,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 40),
           _buildLanguageItem(
             context,
             'Türkmençe',
-            IconConstants.tmflag,
+            IconConstants.tmmflag,
             'tk',
             languageController,
           ),
@@ -38,51 +57,52 @@ class LanguagePage extends StatelessWidget {
           _buildLanguageItem(
             context,
             'Русский',
-            IconConstants.ruflag,
+            IconConstants.ruuflag,
             'ru',
             languageController,
           ),
           const Spacer(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstants.kPrimaryColor2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                width: 175,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Get.to(OnboardingTypeView());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ColorConstants.kPrimaryColor2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                ),
-                child: Text(
-                  "save".tr,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: ColorConstants.whiteColor,
+                  child: Text(
+                    "continue_button".tr,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: ColorConstants.whiteColor,
+                    ),
                   ),
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
-      bottomNavigationBar: null,
     );
   }
 
   Widget _buildLanguageItem(BuildContext context, String title, String iconPath,
       String code, LanguageController languageController) {
     return Obx(
-      // Use Obx for reactivity
       () {
         bool isSelected = languageController.selectedLanguage.value == code;
         return InkWell(
           onTap: () {
-            languageController.changeLanguage(code); // Call changeLanguage
+            languageController.changeLanguage(code);
           },
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -93,7 +113,7 @@ class LanguagePage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                SvgPicture.asset(iconPath, width: 28, height: 28),
+                SvgPicture.asset(iconPath, width: 34, height: 34),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(

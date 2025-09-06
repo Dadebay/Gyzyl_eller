@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:gyzyleller/core/constants/icon_constants.dart';
+
+import 'package:gyzyleller/shared/constants/icon_constants.dart';
 
 @immutable
 class ListConstants {

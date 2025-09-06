@@ -5,8 +5,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:gyzyleller/core/constants/icon_constants.dart';
+
 import 'package:gyzyleller/modules/home/views/bottomnavbar/bottom_nav_bar_view.dart';
+import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 import 'package:gyzyleller/shared/extensions/extensions.dart';
 import 'package:gyzyleller/shared/sizes/image_sizes.dart';
