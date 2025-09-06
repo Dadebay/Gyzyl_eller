@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/controllers/login_controller.dart';
+import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
 class LoginView extends GetView<LoginController> {
   const LoginView({Key? key}) : super(key: key);
@@ -9,24 +10,11 @@ class LoginView extends GetView<LoginController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: ColorConstants.kPrimaryColor2,
-            ),
-            onPressed: () => Get.back(),
-          ),
-          title: Text(
-            'Içeri gir',
-            style: TextStyle(
-              color: ColorConstants.fonts,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        appBar: CustomAppBar(
+          title: 'login_title'.tr,
+          showBackButton: true,
           centerTitle: true,
-          backgroundColor: ColorConstants.background,
-          elevation: 0,
+          showElevation: false,
         ),
         backgroundColor: ColorConstants.background,
         body: SingleChildScrollView(
@@ -35,10 +23,10 @@ class LoginView extends GetView<LoginController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 30.0),
                   child: Text(
-                    'Ulgama girmek we kod almak üçin telefon belginizi giriziň',
+                    'login_instruction'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -55,8 +43,8 @@ class LoginView extends GetView<LoginController> {
                   child: TextField(
                     controller: controller.phoneNumberController,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefon belgiňiz',
+                    decoration: InputDecoration(
+                      labelText: 'phone_number_label'.tr,
                       prefixText: '+993 ',
                       prefixStyle: TextStyle(fontSize: 16, color: Colors.black),
                       border: InputBorder.none,
@@ -77,7 +65,7 @@ class LoginView extends GetView<LoginController> {
                         controller: controller.passwordController,
                         obscureText: controller.obscureText.value,
                         decoration: InputDecoration(
-                          labelText: 'Açar söz',
+                          labelText: 'password_input_label'.tr,
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                               vertical: 15.0, horizontal: 10.0),
@@ -103,7 +91,7 @@ class LoginView extends GetView<LoginController> {
                       activeColor: ColorConstants.kPrimaryColor2,
                     ),
                     Text(
-                      'Ähli şertleri bilen ',
+                      'with_all_terms'.tr,
                       style: TextStyle(color: Colors.grey[700]),
                     ),
                     GestureDetector(
@@ -111,7 +99,7 @@ class LoginView extends GetView<LoginController> {
                         print('Yalasygyny tıklandı!');
                       },
                       child: Text(
-                        'yalasygyny',
+                        'agreement_text'.tr,
                         style: TextStyle(
                           color: ColorConstants.kPrimaryColor2,
                           decoration: TextDecoration.underline,
@@ -137,8 +125,8 @@ class LoginView extends GetView<LoginController> {
                               valueColor:
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             )
-                          : const Text(
-                              'Dowam et',
+                          : Text(
+                              'continue_button'.tr,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,

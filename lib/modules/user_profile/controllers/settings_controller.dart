@@ -19,7 +19,7 @@ class SettingsController extends GetxController {
     user.value = _authStorage.getUser();
   }
 
-  String get username => user.value?['username'] ?? 'adyňyz';
+  String get username => user.value?['username'] ?? 'your_name'.tr;
   String get phone => user.value?['phone'] ?? '';
   String? get imageUrl {
     if (user.value != null && user.value!['image'] != null) {

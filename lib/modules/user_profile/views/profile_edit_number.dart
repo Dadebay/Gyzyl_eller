@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/profile_edit_number_controller.dart';
+import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
 class PhoneNumberInputScreen extends GetView<ProfileEditNumberController> {
   const PhoneNumberInputScreen({super.key});
@@ -9,27 +10,14 @@ class PhoneNumberInputScreen extends GetView<ProfileEditNumberController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorConstants.background,
-      appBar: AppBar(
-        backgroundColor: ColorConstants.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.red),
-          onPressed: () {
-            Get.back();
-          },
-        ),
-        title: Text(
-          'Belgini çalyşmak',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        centerTitle: false,
+      appBar: CustomAppBar(
+        title: 'Belgini çalyşmak',
+        showBackButton: true,
+        centerTitle: true,
+        showElevation: false,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[

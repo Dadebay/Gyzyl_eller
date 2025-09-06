@@ -1,4 +1,3 @@
-import 'package:kartal/kartal.dart';
 
 import '../extensions/packages.dart';
 

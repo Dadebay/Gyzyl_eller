@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/shared/extensions/extensions.dart';
 import 'package:kartal/kartal.dart';
 
@@ -38,8 +38,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 Navigator.of(context).pop();
               },
               icon: Icon(
-                CupertinoIcons.arrow_left_circle,
-                size: 22,
+                Icons.arrow_back_ios,
+                size: 20,
+                color: ColorConstants.kPrimaryColor2,
               ),
             )
           : leadingButton ?? const SizedBox.shrink(),

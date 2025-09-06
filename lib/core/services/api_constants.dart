@@ -5,4 +5,5 @@ class ApiConstants {
   // static const String websocketURL = 'ws://jaytap.com.tm/ws/chat';
 
   static const String loginApi = 'api/user/ru/login';
+  static const String about = 'functions/about/';
 }

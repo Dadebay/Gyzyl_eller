@@ -1,10 +1,7 @@
 // ignore_for_file: file_names, must_be_immutable
 
 import 'package:kartal/kartal.dart';
-import 'package:flutter/material.dart';
-
 import '../extensions/packages.dart';
-import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 
 class AgreeButton extends StatelessWidget {
   final Function() onTap;
@@ -114,7 +111,8 @@ class GradientButton extends StatelessWidget {
 }
 
 class TransparentColorButton extends StatelessWidget {
-  const TransparentColorButton({super.key, required this.onTap, required this.icon, required this.text});
+  const TransparentColorButton(
+      {super.key, required this.onTap, required this.icon, required this.text});
   final Function() onTap;
   final String text;
   final IconData icon;
@@ -125,12 +123,15 @@ class TransparentColorButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: context.padding.normal.copyWith(top: 13, bottom: 13, right: 20),
+        padding:
+            context.padding.normal.copyWith(top: 13, bottom: 13, right: 20),
         width: Get.size.width,
         margin: EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isDarkMode ? context.blackColor : ColorConstants.kPrimaryColor.withOpacity(.05),
+          color: isDarkMode
+              ? context.blackColor
+              : ColorConstants.kPrimaryColor.withOpacity(.05),
           border: Border.all(color: context.primaryColor.withOpacity(.6)),
           boxShadow: isDarkMode
               ? [
@@ -145,13 +146,18 @@ class TransparentColorButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(padding: EdgeInsets.only(right: 10), child: Icon(icon, size: 18, color: context.primaryColor)),
+            Padding(
+                padding: EdgeInsets.only(right: 10),
+                child: Icon(icon, size: 18, color: context.primaryColor)),
             Text(
               text.tr,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
-              style: context.general.textTheme.titleLarge!.copyWith(fontSize: 16, fontWeight: FontWeight.w400, color: context.primaryColor),
+              style: context.general.textTheme.titleLarge!.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: context.primaryColor),
             ),
           ],
         ),

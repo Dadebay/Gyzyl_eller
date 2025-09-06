@@ -20,18 +20,15 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  // final SearchControllerMine searchController = Get.put(SearchControllerMine());
   final HomeController homeController = Get.put(HomeController());
 
   @override
   Widget build(BuildContext context) {
-    // final bool isLoggedIN = AuthStorage().isLoggedIn;
     List<Widget> pages = [
       HomeView(),
       AllView(),
       TaskView(),
       SettingsView(),
-      // isLoggedIN ? SettingsView() : LoginView()
     ];
 
     return UpgradeAlert(

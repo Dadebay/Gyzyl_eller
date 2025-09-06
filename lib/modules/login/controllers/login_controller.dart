@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/modules/login/controllers/auth_service.dart';
-import 'package:gyzyleller/modules/user_profile/views/settings_view.dart';
-import 'package:gyzyleller/modules/user_profile/controllers/settings_controller.dart';
 
 class LoginController extends GetxController {
   final AuthService _authService = AuthService();
@@ -48,8 +46,6 @@ class LoginController extends GetxController {
         phone: phoneNumberController.text,
         password: passwordController.text,
       );
-
-      // Get.offAll(() => SettingsView());
     } finally {
       isLoading.value = false;
     }

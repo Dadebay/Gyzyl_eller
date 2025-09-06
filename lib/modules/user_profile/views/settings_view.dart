@@ -6,6 +6,7 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:gyzyleller/modules/login/views/login_view.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/settings_controller.dart';
+import 'package:gyzyleller/modules/user_profile/controllers/user_profile_controller.dart';
 import 'package:gyzyleller/modules/user_profile/views/about_view.dart';
 import 'package:gyzyleller/modules/user_profile/views/language_page.dart';
 import 'package:gyzyleller/modules/user_profile/views/profile_edit_view.dart';
@@ -14,6 +15,7 @@ import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 class SettingsView extends GetView<SettingsController> {
   SettingsView({super.key});
   final SettingsController controller = Get.put(SettingsController());
+  final UserProfilController profilController = Get.put(UserProfilController());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +29,7 @@ class SettingsView extends GetView<SettingsController> {
             if (controller.isLoggedIn)
               _buildMenuItem(
                 context,
-                'Hünärmen profili döretmek'.tr,
+                'create_professional_profile'.tr,
                 IconConstants.new_releases,
                 () {},
               ),
@@ -147,7 +149,7 @@ class SettingsView extends GetView<SettingsController> {
         width: 16,
         IconConstants.login,
       ),
-      label: Text('girmek'.tr),
+      label: Text('login_button'.tr),
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.black,
         backgroundColor: ColorConstants.background,
@@ -177,6 +179,7 @@ class SettingsView extends GetView<SettingsController> {
           IconConstants.edit,
           height: 20,
           width: 20,
+          // ignore: deprecated_member_use
           color: Colors.black,
         ),
       ),

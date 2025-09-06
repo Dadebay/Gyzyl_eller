@@ -6,7 +6,12 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/home/controllers/home_controller.dart';
 import 'package:gyzyleller/modules/home/views/bottomnavbar/custom_bottom_nav_extension.dart';
 import 'package:gyzyleller/modules/user_profile/bindings/profile_edit_number_binding.dart';
+import 'package:gyzyleller/modules/user_profile/controllers/settings_controller.dart';
+import 'package:gyzyleller/modules/user_profile/controllers/user_profile_controller.dart';
 import 'package:gyzyleller/modules/user_profile/views/profile_edit_number.dart';
+import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
+import 'package:gyzyleller/shared/extensions/packages.dart';
+import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
 class ProfileEditView extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -17,16 +22,21 @@ class ProfileEditView extends StatefulWidget {
 }
 
 class _ProfileEditViewState extends State<ProfileEditView> {
+  final ImagePicker _picker = ImagePicker();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController =
       TextEditingController(text: '***********');
   final HomeController homeController = Get.find<HomeController>();
+  final SettingsController settingsController = Get.find<SettingsController>();
+  final UserProfilController userProfilController =
+      Get.find<UserProfilController>();
   @override
   void initState() {
     super.initState();
     _nameController.text = widget.userData['username'] ?? '';
     _phoneController.text = widget.userData['phone'] ?? '';
+    userProfilController.selectedImageFile.value = null;
   }
 
   @override
@@ -37,25 +47,53 @@ class _ProfileEditViewState extends State<ProfileEditView> {
     super.dispose();
   }
 
+  void _showImagePickerOptions() {
+    Get.bottomSheet(
+      Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        padding: EdgeInsets.symmetric(vertical: 10),
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: Icon(Icons.camera, size: 35),
+              title:
+                  Text('select_by_camera'.tr, style: TextStyle(fontSize: 18)),
+              onTap: () async {
+                Get.back();
+                final XFile? pickedFile =
+                    await _picker.pickImage(source: ImageSource.camera);
+                userProfilController.onImageSelected(pickedFile);
+              },
+            ),
+            ListTile(
+              leading: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(Icons.image, size: 30),
+              ),
+              title:
+                  Text('select_by_gallery'.tr, style: TextStyle(fontSize: 18)),
+              onTap: () async {
+                Get.back();
+                final XFile? pickedFile =
+                    await _picker.pickImage(source: ImageSource.gallery);
+                userProfilController.onImageSelected(pickedFile);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorConstants.background,
-      appBar: AppBar(
-        backgroundColor: ColorConstants.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios,
-              color: ColorConstants.kPrimaryColor2),
-          onPressed: () {
-            Get.back();
-          },
-        ),
-        title: const Text(
-          'Meniň profilim',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+      appBar: CustomAppBar(
+        title: 'my_profile'.tr,
+        showBackButton: true,
         centerTitle: true,
+        showElevation: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -88,10 +126,14 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                         color: ColorConstants.whiteColor,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: ColorConstants.kPrimaryColor2,
-                        size: 20,
+                      child: GestureDetector(
+                        onTap: () {
+                          _showImagePickerOptions();
+                        },
+                        child: Icon(
+                          color: ColorConstants.kPrimaryColor2,
+                          Icons.camera_alt,
+                        ),
                       ),
                     ),
                   ),
@@ -103,7 +145,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
             // Adınız Girişi
             _buildInputField(
               controller: _nameController,
-              label: 'Adyňyz',
+              label: 'your_name_label'.tr,
               readOnly: false,
             ),
             const SizedBox(height: 15),
@@ -111,18 +153,20 @@ class _ProfileEditViewState extends State<ProfileEditView> {
             // Telefon Bilginiz Girişi
             _buildInputField(
               controller: _phoneController,
-              label: 'Telefon belgiňiz',
+              label: 'your_phone_number_label'.tr,
               readOnly: true,
               trailingIcon: Icons.arrow_forward_ios,
               onTap: () {
-                Get.to(() => const PhoneNumberInputScreen(), binding: ProfileEditNumberBinding(), arguments: _phoneController.text);
+                Get.to(() => const PhoneNumberInputScreen(),
+                    binding: ProfileEditNumberBinding(),
+                    arguments: _phoneController.text);
               },
             ),
             const SizedBox(height: 15),
 
             _buildInputField(
               controller: _passwordController,
-              label: 'Açar sözi',
+              label: 'password_label'.tr,
               obscureText: true,
               readOnly: true,
               trailingIcon: Icons.arrow_forward_ios,
@@ -134,7 +178,14 @@ class _ProfileEditViewState extends State<ProfileEditView> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () async {
+                  final bool? confirmLogout =
+                      await DialogUtils().showDeleteProfileDialog(context);
+                  if (confirmLogout == true) {
+                    await settingsController.logout();
+                  }
+                  ;
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFC7D3E8),
                   shape: RoundedRectangleBorder(
@@ -142,8 +193,8 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Profilimi pozmak',
+                child:  Text(
+                  'delete_my_profile'.tr,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -154,7 +205,6 @@ class _ProfileEditViewState extends State<ProfileEditView> {
             ),
             const SizedBox(height: 15),
 
-            // Yatda sakla Butonu
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -169,8 +219,8 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Ýatda sakla',
+                child:  Text(
+                  'save_changes'.tr,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -189,7 +239,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
         },
         selectedIcons: ListConstants.selectedIcons,
         unselectedIcons: ListConstants.mainIcons,
-        labels: ["Meniňki", "Hemmesi", "Yumuşlar", "Menýu"],
+        labels: ["my_tab".tr, "all_tab".tr, "tasks_tab".tr, "menu_tab".tr],
       ),
     );
   }

@@ -8,9 +8,9 @@ import 'package:gyzyleller/modules/user_profile/controllers/language_controller.
 
 import 'package:gyzyleller/modules/home/controllers/home_controller.dart';
 import 'package:gyzyleller/core/constants/list_constants.dart';
+import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
 class LanguagePage extends StatelessWidget {
-  // Changed to StatelessWidget
   LanguagePage({super.key});
   final LanguageController languageController = Get.put(LanguageController());
   final HomeController homeController = Get.find<HomeController>();
@@ -18,25 +18,11 @@ class LanguagePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorConstants.background,
-      appBar: AppBar(
-        backgroundColor: ColorConstants.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: ColorConstants.kPrimaryColor2,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'language'.tr,
-          style: const TextStyle(
-            color: ColorConstants.fonts,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      appBar: CustomAppBar(
+        title: 'language',
+        showBackButton: true,
         centerTitle: true,
+        showElevation: false,
       ),
       body: Column(
         children: [
