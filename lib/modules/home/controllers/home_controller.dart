@@ -18,4 +18,9 @@ class HomeController extends GetxController {
   var isLoadingMoreNotifications = false.obs;
 
   var displaySubCategories = <DisplaySubCategory>[].obs;
+
+  void refreshData() {
+    print("HomeView data refreshed!");
+    // Add actual data fetching logic here if needed
+  }
 }

@@ -27,6 +27,10 @@ class IconConstants {
   static const String support = 'assets/icons/support.svg';
   static const String tmflag = 'assets/icons/tmmflag.svg';
   static const String ruflag = 'assets/icons/ruuflag.svg';
+  static const String logout = 'assets/icons/logout.svg';
+  static const String new_releases = 'assets/icons/new_releases.svg';
+  static const String edit = 'assets/icons/edit.svg';
+  static const String pupup = 'assets/icons/Popup.svg';
 
   // ----- LOTTIE ICONS ----- //
   // static const String chatJson = "assets/lottie/Chat.json";
