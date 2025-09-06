@@ -19,7 +19,9 @@ class OnboardingController extends GetxController {
   final PageController pageController = PageController();
   var currentIndex = 0.obs;
 
-  final List<OnboardingPage> pages = [
+  late final List<OnboardingPage> pages;
+
+  final List<OnboardingPage> _taskOnboardingPages = [
     OnboardingPage(
       image: ImageConstants.onboarding1,
       title: 'onboarding_publish_task_title'.tr,
@@ -46,23 +48,38 @@ class OnboardingController extends GetxController {
       description: 'onboarding_complete_task_description'.tr,
     ),
   ];
-  final List<OnboardingPage> pages2 = [
+
+  final List<OnboardingPage> _executorOnboardingPages = [
     OnboardingPage(
-      image: ImageConstants.onboarding3,
+      image: ImageConstants.onboarding11,
       title: 'onboarding_publish_task_title'.tr,
       description: 'onboarding_publish_task_description'.tr,
     ),
     OnboardingPage(
-      image: ImageConstants.onboarding4,
+      image: ImageConstants.onboarding22,
       title: 'onboarding_find_specialist_title'.tr,
       description: 'onboarding_find_specialist_description'.tr,
     ),
     OnboardingPage(
-      image: ImageConstants.onboarding5,
+      image: ImageConstants.onboarding33,
       title: 'onboarding_complete_task_title'.tr,
       description: 'onboarding_complete_task_description'.tr,
     ),
+    OnboardingPage(
+      image: ImageConstants.onboarding44,
+      title: 'onboarding_publish_task_title'.tr,
+      description: 'onboarding_publish_task_description'.tr,
+    ),
+    OnboardingPage(
+      image: ImageConstants.onboarding55,
+      title: 'onboarding_find_specialist_title'.tr,
+      description: 'onboarding_find_specialist_description'.tr,
+    ),
   ];
+
+  OnboardingController({required bool isTaskOnboarding}) {
+    pages = isTaskOnboarding ? _taskOnboardingPages : _executorOnboardingPages;
+  }
 
   void onPageChanged(int index) {
     currentIndex.value = index;

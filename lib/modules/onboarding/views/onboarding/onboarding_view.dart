@@ -5,11 +5,13 @@ import 'package:gyzyleller/modules/onboarding/controllers/onboarding_controller.
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
 class OnboardingScreen extends StatelessWidget {
-  const OnboardingScreen({super.key});
+  final bool isTaskOnboarding;
+  const OnboardingScreen({super.key, required this.isTaskOnboarding});
 
   @override
   Widget build(BuildContext context) {
-    final OnboardingController controller = Get.put(OnboardingController());
+    final OnboardingController controller =
+        Get.put(OnboardingController(isTaskOnboarding: isTaskOnboarding));
 
     return Scaffold(
       appBar: CustomAppBar(

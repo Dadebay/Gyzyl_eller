@@ -9,6 +9,7 @@ class IntroController extends GetxController {
   }
 
   void navigateToOnboarding() {
-    Get.to(() => OnboardingScreen());
+    Get.to(
+        () => OnboardingScreen(isTaskOnboarding: isCreateTaskSelected.value));
   }
 }

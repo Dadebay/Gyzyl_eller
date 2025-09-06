@@ -10,19 +10,24 @@ class ImageConstants {
   static const String onboarding3 = 'assets/images/onboarding3.png';
   static const String onboarding4 = 'assets/images/onboarding4.png';
   static const String onboarding5 = 'assets/images/onboarding5.png';
-  static const String onboardingWorkerFifth =
-      'assets/images/onboarding_worker_fifth.png';
-  static const String onboardingWorkerFirst =
-      'assets/images/onboarding_worker_first.png';
-  static const String onboardingWorkerFourth =
-      'assets/images/onboarding_worker_fourth.png';
-  static const String onboardingWorkerSecond =
-      'assets/images/onboarding_worker_second.png';
-  static const String onboardingWorkerSeventh =
-      'assets/images/onboarding_worker_seventh.png';
-  static const String onboardingWorkerSixth =
-      'assets/images/onboarding_worker_sixth.png';
-  static const String onboardingWorkerThird =
-      'assets/images/onboarding_worker_third.png';
+  static const String onboarding11 = 'assets/images/onboarding11.png';
+  static const String onboarding22 = 'assets/images/onboarding22.png';
+  static const String onboarding33 = 'assets/images/onboarding33.png';
+  static const String onboarding44 = 'assets/images/onboarding44.png';
+  static const String onboarding55 = 'assets/images/onboarding55.png';
+  // static const String onboardingWorkerFifth =
+  //     'assets/images/onboarding_worker_fifth.png';
+  // static const String onboardingWorkerFirst =
+  //     'assets/images/onboarding_worker_first.png';
+  // static const String onboardingWorkerFourth =
+  //     'assets/images/onboarding_worker_fourth.png';
+  // static const String onboardingWorkerSecond =
+  //     'assets/images/onboarding_worker_second.png';
+  // static const String onboardingWorkerSeventh =
+  //     'assets/images/onboarding_worker_seventh.png';
+  // static const String onboardingWorkerSixth =
+  //     'assets/images/onboarding_worker_sixth.png';
+  // static const String onboardingWorkerThird =
+  //     'assets/images/onboarding_worker_third.png';
   static const String profileAvatar = 'assets/images/profile_avatar.png';
 }
