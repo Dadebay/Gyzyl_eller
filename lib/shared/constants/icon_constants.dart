@@ -96,4 +96,6 @@ class IconConstants {
   static const String personwork = 'assets/icons/personwork.svg';
   static const String personwork2 = 'assets/icons/personwork2.svg';
   static const String uploadfoto = 'assets/icons/uploadfoto.svg';
+  static const String Isolation_Mode = 'assets/icons/Isolation_Mode.svg';
+  static const String Isolation_Mode2 = 'assets/icons/Isolation_Mode2.svg';
 }

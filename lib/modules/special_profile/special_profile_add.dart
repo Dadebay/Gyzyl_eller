@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:dotted_border/dotted_border.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
+
+import 'special_profile.dart';
 
 class SpecialProfileAdd extends StatefulWidget {
   final String name;
@@ -168,7 +168,16 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
             _buildSelectedImages(),
             const SizedBox(height: 25),
             CustomElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Get.to(() => SpecialProfile(
+                      name: widget.name,
+                      imageUrl: widget.imageUrl,
+                      shortBio: _shortBioController.text,
+                      longBio: _longBioController.text,
+                      province: _selectedProvince ?? '',
+                      images: _selectedImages,
+                    ));
+              },
               text: 'create_account_button'.tr,
               backgroundColor: ColorConstants.kPrimaryColor2,
               textColor: Colors.white,

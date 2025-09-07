@@ -1,364 +1,288 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:gyzyleller/shared/extensions/packages.dart';
-import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
+import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:gyzyleller/shared/constants/icon_constants.dart';
 
 class SpecialProfile extends StatelessWidget {
-  const SpecialProfile({super.key});
+  final String name;
+  final String? imageUrl;
+  final String shortBio;
+  final String longBio;
+  final String province;
+  final List<File> images;
+
+  const SpecialProfile({
+    super.key,
+    required this.name,
+    this.imageUrl,
+    required this.shortBio,
+    required this.longBio,
+    required this.province,
+    required this.images,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorConstants.background,
-      appBar: CustomAppBar(
-        title: 'Hünärmen profilim'.tr,
-        showBackButton: true,
+      appBar: AppBar(
+        title: Text(
+          "Hünärmen profilim".tr,
+          style: TextStyle(color: ColorConstants.fonts),
+        ),
         centerTitle: true,
-        showElevation: false,
+        elevation: 0,
+        leading: IconButton(
+            onPressed: () {
+              Get.back();
+            },
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: ColorConstants.kPrimaryColor2,
+            )),
+        backgroundColor: ColorConstants.background,
+        foregroundColor: Colors.black,
+        actions: [
+          IconButton(
+            onPressed: () {},
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            icon: SvgPicture.asset(
+              IconConstants.edit,
+              width: 24,
+              height: 24,
+            ),
+          )
+        ],
       ),
       body: ListView(
-        children: <Widget>[
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            child: Column(
-              children: <Widget>[
-                Stack(
-                  children: [
-                    const CircleAvatar(
-                      radius: 40,
-                      backgroundImage: AssetImage('assets/profile_pic.png'),
-                      backgroundColor: Colors.transparent,
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.camera_alt,
-                            color: Colors.blue, size: 20),
+        padding: const EdgeInsets.all(16),
+        children: [
+          Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _StatBox(
+                      icon: SvgPicture.asset(
+                        IconConstants.Isolation_Mode,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Kerwen Myradow',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                      label: "Döredilen ýumuşlar",
+                      value: "12"),
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: imageUrl != null
+                        ? NetworkImage(imageUrl!)
+                        : const AssetImage("assets/images/profile.png")
+                            as ImageProvider,
                   ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Men uly tejribeli santehnik',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
+                  _StatBox(
+                      icon: SvgPicture.asset(
+                        IconConstants.Isolation_Mode2,
+                      ),
+                      label: "Ýerine ýetiren işler",
+                      value: "28"),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                name,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                shortBio,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+              const SizedBox(height: 5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    IconConstants.calendar,
                   ),
+                  SizedBox(width: 5),
+                  Text("24.07.2023",
+                      style: TextStyle(color: ColorConstants.fonts)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  5,
+                  (i) => Icon(Icons.star,
+                      color: i < 3 ? Colors.amber : Colors.grey, size: 20),
                 ),
-                const SizedBox(height: 15),
+              ),
+              const Text("(281)", style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Bio:", style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(longBio,
+                    style: const TextStyle(color: ColorConstants.fonts)),
+                const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    5,
-                    (index) => Icon(
-                      index < 3 ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  '3 (281)',
-                  style: TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    _buildStatCard(Icons.folder, 'Döredilen ýyldyzy', '12',
-                        Colors.red.shade100, Colors.red),
-                    _buildStatCard(Icons.star, 'Ýerine ýetirilen', '28',
-                        Colors.red.shade100, Colors.red),
+                  children: const [
+                    Icon(Icons.location_on,
+                        size: 16, color: ColorConstants.fonts),
+                    SizedBox(width: 4),
+                    Text("Ashgabat",
+                        style: TextStyle(color: ColorConstants.fonts)),
                   ],
-                ),
+                )
               ],
             ),
           ),
-          const SizedBox(height: 10),
-
-          // Bio Bölümü
-          _buildSection(
-            title: 'Bio:',
-            content:
-                'Lorem Ipsum is simply dummy text the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard.',
-            footer: 'Location: Aşgabat',
-            footerIcon: Icons.location_on,
-          ),
-
-          _buildHorizontalScrollSection(
-            title: 'Işler, diplomlar, sertifikatlar 15',
-            items: [
-              'assets/work_1.png',
-              'assets/work_2.png',
-              'assets/work_3.png',
-              'assets/work_4.png',
-            ],
-          ),
-
-          _buildTeswirlerSection(
-            title: 'Teswirler 15',
-            comments: [
-              {
-                'name': 'Merdan_97',
-                'comment':
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod',
-                'date': '22.05.2023',
-                'stars': 4,
-                'avatar': 'assets/avatar_1.png',
-              },
-              {
-                'name': 'Merdan_97',
-                'comment': 'Lorem ipsum dolor sit amet',
-                'date': '22.05.2023',
-                'stars': 4,
-                'avatar': 'assets/avatar_2.png',
-              },
-            ],
-          ),
+          const SizedBox(height: 16),
+          _buildWorksSection(),
+          const SizedBox(height: 16),
+          _buildReviewsSection(),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(IconData icon, String title, String count,
-      Color bgColor, Color iconColor) {
+  Widget _buildWorksSection() {
     return Container(
-      width: 150,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
+          color: ColorConstants.background,
+          borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.all(12),
+      child: Column(
         children: [
-          CircleAvatar(
-            backgroundColor: iconColor.withOpacity(0.2),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-              Text(
-                count,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text("Işler, diplomlar, sertifikatlar 15",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: ColorConstants.fonts)),
+              Text("Girişleýin", style: TextStyle(color: ColorConstants.blue)),
             ],
+          ),
+          const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: images.length > 4 ? 4 : images.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10),
+            itemBuilder: (context, index) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Image.file(images[index], fit: BoxFit.cover),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSection(
-      {required String title,
-      String? content,
-      String? footer,
-      IconData? footerIcon}) {
+  Widget _buildReviewsSection() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
+      decoration: BoxDecoration(
+          color: ColorConstants.background,
+          borderRadius: BorderRadius.circular(15)),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text("Teswirler 15",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Text("Girişleýin", style: TextStyle(color: Colors.blue)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _ReviewTile(),
+          const SizedBox(height: 8),
+          _ReviewTile(),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  final Widget icon;
+  final String label;
+  final String value;
+  const _StatBox(
+      {required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        icon,
+        Text(label,
+            style: const TextStyle(color: ColorConstants.fonts, fontSize: 10)),
+        Text(value,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: ColorConstants.fonts,
+            )),
+      ],
+    );
+  }
+}
+
+class _ReviewTile extends StatelessWidget {
+  const _ReviewTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: ColorConstants.whiteColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              const CircleAvatar(
+                  radius: 16,
+                  backgroundImage: AssetImage("assets/images/profile.png")),
+              const SizedBox(width: 8),
+              const Text("Merdan_97",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Row(
+                children: List.generate(
+                  5,
+                  (i) => Icon(Icons.star,
+                      color: i < 4 ? Colors.amber : Colors.grey, size: 16),
+                ),
+              )
+            ],
           ),
           const SizedBox(height: 8),
-          if (content != null)
-            Text(
-              content,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          if (footer != null) const SizedBox(height: 10),
-          if (footer != null)
-            Row(
-              children: [
-                if (footerIcon != null)
-                  Icon(footerIcon, size: 16, color: Colors.grey),
-                if (footerIcon != null) const SizedBox(width: 5),
-                Text(
-                  footer,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHorizontalScrollSection(
-      {required String title, required List<String> items}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: const [
-                    Text(
-                      'Girişin',
-                      style: TextStyle(color: Colors.blue),
-                    ),
-                    Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 100, // Resimlerin yüksekliği
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.only(left: index == 0 ? 16 : 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      items[index],
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTeswirlerSection(
-      {required String title, required List<Map<String, dynamic>> comments}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: const [
-                    Text(
-                      'Girişin',
-                      style: TextStyle(color: Colors.blue),
-                    ),
-                    Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Column(
-            children: comments.map((comment) {
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: AssetImage(comment['avatar']),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                comment['name'],
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              Row(
-                                children: List.generate(
-                                  5,
-                                  (index) => Icon(
-                                    index < comment['stars']
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: Colors.amber,
-                                    size: 16,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            comment['comment'],
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            comment['date'],
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
+          const Text(
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod"),
+          const SizedBox(height: 4),
+          const Text("22.05.2023",
+              style: TextStyle(color: Colors.grey, fontSize: 12)),
         ],
       ),
     );
