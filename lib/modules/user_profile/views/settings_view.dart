@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:gyzyleller/modules/login/views/login_view.dart';
+import 'package:gyzyleller/modules/special_profile/special_profile.dart';
+import 'package:gyzyleller/modules/special_profile/special_profile_add.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/user_profile_controller.dart';
 import 'package:gyzyleller/modules/user_profile/views/about_view.dart';
@@ -32,7 +34,9 @@ class SettingsView extends GetView<SettingsController> {
                 context,
                 'create_professional_profile'.tr,
                 IconConstants.new_releases,
-                () {},
+                () {
+                  Get.to(SpecialProfileAdd());
+                },
               ),
             const SizedBox(height: 10.0),
             _buildMenuItem(

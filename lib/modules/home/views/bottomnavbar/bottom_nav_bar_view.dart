@@ -57,7 +57,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
               },
               selectedIcons: ListConstants.selectedIcons,
               unselectedIcons: ListConstants.mainIcons,
-              labels: ["Meniňki", "Hemmesi", "Yumuşlar", "Menýu"],
+              labels: [
+                'bottom_nav_my'.tr,
+                'bottom_nav_all'.tr,
+                'bottom_nav_tasks_tab'.tr,
+                'bottom_nav_menu'.tr
+              ],
             ),
           )),
     );

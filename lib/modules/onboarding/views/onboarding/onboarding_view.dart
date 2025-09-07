@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/onboarding/controllers/onboarding_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
+import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 
 class OnboardingScreen extends StatelessWidget {
   final bool isTaskOnboarding;
@@ -92,21 +93,12 @@ class OnboardingScreen extends StatelessWidget {
                   flex: 4,
                   child: SizedBox(
                     height: 48,
-                    child: ElevatedButton(
+                    child: CustomElevatedButton(
                       onPressed: controller.skipOnboarding,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ColorConstants.secondary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'onboarding_skip_button'.tr,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
+                      text: 'onboarding_skip_button'.tr,
+                      backgroundColor: ColorConstants.secondary,
+                      textColor: ColorConstants.fonts,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -115,21 +107,12 @@ class OnboardingScreen extends StatelessWidget {
                   flex: 5,
                   child: SizedBox(
                     height: 48,
-                    child: ElevatedButton(
+                    child: CustomElevatedButton(
                       onPressed: controller.nextPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ColorConstants.kPrimaryColor2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'continue_button'.tr,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
+                      text: 'continue_button'.tr,
+                      backgroundColor: ColorConstants.kPrimaryColor2,
+                      textColor: Colors.white,
+                      fontSize: 16,
                     ),
                   ),
                 ),

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
+import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart'; // New import
 import 'package:gyzyleller/modules/onboarding/controllers/onboarding_type_controller.dart';
 
 class OnboardingTypeView extends StatelessWidget {
@@ -82,21 +83,13 @@ class OnboardingTypeView extends StatelessWidget {
                 child: SizedBox(
                   width: 175,
                   height: 48,
-                  child: ElevatedButton(
+                  child: CustomElevatedButton(
                     onPressed: controller.navigateToOnboarding,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ColorConstants.kPrimaryColor2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      "continue_button".tr,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: ColorConstants.whiteColor,
-                      ),
-                    ),
+                    text: "continue_button".tr,
+                    backgroundColor: ColorConstants.kPrimaryColor2,
+                    textColor: ColorConstants.whiteColor,
+                    borderRadius: 12,
+                    fontSize: 16,
                   ),
                 ),
               ),

@@ -1,15 +1,8 @@
-import 'package:gyzyleller/core/services/api_constants.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:gyzyleller/core/constants/list_constants.dart';
-import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/home/controllers/home_controller.dart';
 import 'package:gyzyleller/modules/home/views/bottomnavbar/custom_bottom_nav_extension.dart';
-import 'package:gyzyleller/modules/user_profile/bindings/profile_edit_number_binding.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/user_profile_controller.dart';
-import 'package:gyzyleller/modules/user_profile/views/profile_edit_number.dart';
-import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
@@ -141,77 +134,17 @@ class _ProfileEditViewState extends State<ProfileEditView> {
               ),
             ),
             const SizedBox(height: 30),
-
-            // Adınız Girişi
             _buildInputField(
               controller: _nameController,
               label: 'your_name_label'.tr,
               readOnly: false,
             ),
-            const SizedBox(height: 15),
-
-            // Telefon Bilginiz Girişi
-            _buildInputField(
-              controller: _phoneController,
-              label: 'your_phone_number_label'.tr,
-              readOnly: true,
-              trailingIcon: Icons.arrow_forward_ios,
-              onTap: () {
-                Get.to(() => const PhoneNumberInputScreen(),
-                    binding: ProfileEditNumberBinding(),
-                    arguments: _phoneController.text);
-              },
-            ),
-            const SizedBox(height: 15),
-
-            _buildInputField(
-              controller: _passwordController,
-              label: 'password_label'.tr,
-              obscureText: true,
-              readOnly: true,
-              trailingIcon: Icons.arrow_forward_ios,
-              onTap: () {},
-            ),
-            const SizedBox(height: 40),
-
+            Spacer(),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () async {
-                  final bool? confirmLogout =
-                      await DialogUtils().showDeleteProfileDialog(context);
-                  if (confirmLogout == true) {
-                    await settingsController.logout();
-                  }
-                  ;
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC7D3E8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                child:  Text(
-                  'delete_my_profile'.tr,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Değişiklikleri kaydetme işlemi
-                },
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColorConstants.kPrimaryColor2,
                   shape: RoundedRectangleBorder(
@@ -219,7 +152,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                   ),
                   elevation: 0,
                 ),
-                child:  Text(
+                child: Text(
                   'save_changes'.tr,
                   style: TextStyle(
                     color: Colors.white,

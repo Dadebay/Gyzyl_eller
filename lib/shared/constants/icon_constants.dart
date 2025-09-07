@@ -95,4 +95,5 @@ class IconConstants {
   static const String pupup = 'assets/icons/Popup.svg';
   static const String personwork = 'assets/icons/personwork.svg';
   static const String personwork2 = 'assets/icons/personwork2.svg';
+  static const String uploadfoto = 'assets/icons/uploadfoto.svg';
 }

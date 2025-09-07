@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get.dart'; // Added Get import
+import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/modules/home/views/bottomnavbar/custom_bottom_nav_extension.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/language_controller.dart';
-
 import 'package:gyzyleller/modules/home/controllers/home_controller.dart';
-import 'package:gyzyleller/core/constants/list_constants.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
@@ -70,19 +67,17 @@ class LanguagePage extends StatelessWidget {
           )
         ],
       ),
-      bottomNavigationBar: null,
     );
   }
 
   Widget _buildLanguageItem(BuildContext context, String title, String iconPath,
       String code, LanguageController languageController) {
     return Obx(
-      // Use Obx for reactivity
       () {
         bool isSelected = languageController.selectedLanguage.value == code;
         return InkWell(
           onTap: () {
-            languageController.changeLanguage(code); // Call changeLanguage
+            languageController.changeLanguage(code);
           },
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
