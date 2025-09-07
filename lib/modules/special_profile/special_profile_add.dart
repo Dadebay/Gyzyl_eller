@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -7,7 +9,10 @@ import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 
 class SpecialProfileAdd extends StatefulWidget {
-  const SpecialProfileAdd({super.key});
+  final String name;
+  final String? imageUrl;
+
+  const SpecialProfileAdd({super.key, required this.name, this.imageUrl});
 
   @override
   State<SpecialProfileAdd> createState() => _ProfileScreenState();
@@ -17,6 +22,8 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
   final TextEditingController _shortBioController = TextEditingController();
   final TextEditingController _longBioController = TextEditingController();
   String? _selectedProvince;
+  final ImagePicker _picker = ImagePicker();
+  final List<File> _selectedImages = [];
 
   bool _termsAccepted = false;
 
@@ -31,7 +38,7 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Hünärmen profilm'.tr,
+        title: 'specialist_profile_title'.tr,
         showBackButton: true,
         centerTitle: true,
         showElevation: false,
@@ -45,35 +52,18 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
             Center(
               child: Stack(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
-                    backgroundImage:
-                        NetworkImage('https://via.placeholder.com/150'),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.grey,
-                        size: 20,
-                      ),
-                    ),
+                    backgroundImage: NetworkImage(widget.imageUrl ?? ''),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 10),
-            const Center(
+            Center(
               child: Text(
-                'Kerwen Myradow',
-                style: TextStyle(
+                widget.name,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -82,11 +72,9 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
             const SizedBox(height: 30),
             _buildTextField(
               controller: _shortBioController,
-              hintText: 'Gysgaça özüň barada',
+              hintText: 'short_bio_hint'.tr,
             ),
             const SizedBox(height: 15),
-
-            // Vilayet Seçimi
             _buildDropdownField(
               hintText: 'Welaýat',
               value: _selectedProvince,
@@ -104,23 +92,19 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
               },
             ),
             const SizedBox(height: 15),
-
-            // Geniş Özgeçmiş Alanı
             _buildTextField(
               controller: _longBioController,
-              hintText: 'Ginişleyin özüňiz hakda ýazyň',
+              hintText: 'long_bio_hint'.tr,
               maxLines: 5,
             ),
             const SizedBox(height: 20),
-
             _buildInfoCard(
               icon: Icons.access_time,
-              text: 'Düzgünnamany hökman okap tanyşyň',
+              text: 'read_the_rules'.tr,
               color: ColorConstants.whiteColor,
               textColor: ColorConstants.fonts,
             ),
             const SizedBox(height: 20),
-
             Row(
               children: [
                 Transform.scale(
@@ -153,9 +137,9 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
                       style: const TextStyle(
                           color: ColorConstants.fonts, fontSize: 15),
                       children: [
-                        const TextSpan(text: 'Ähli şertleri bilen '),
+                        TextSpan(text: 'i_agree_with'.tr),
                         TextSpan(
-                          text: 'ylalaşýan',
+                          text: 'all_the_terms'.tr,
                           style: const TextStyle(
                             color: ColorConstants.kPrimaryColor2,
                             decoration: TextDecoration.underline,
@@ -170,8 +154,8 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
               ],
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Işlerim, diplomlarym, sertifikatlarym',
+            Text(
+              'my_works_title'.tr,
               style: TextStyle(
                 fontSize: 14,
                 color: ColorConstants.blue,
@@ -180,10 +164,12 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
             ),
             const SizedBox(height: 10),
             _buildFileUploadArea(),
-            const SizedBox(height: 100),
+            const SizedBox(height: 10),
+            _buildSelectedImages(),
+            const SizedBox(height: 25),
             CustomElevatedButton(
               onPressed: () {},
-              text: 'continue_button'.tr,
+              text: 'create_account_button'.tr,
               backgroundColor: ColorConstants.kPrimaryColor2,
               textColor: Colors.white,
               fontSize: 16,
@@ -192,6 +178,18 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickImage() async {
+    if (_selectedImages.length >= 8) {
+      return;
+    }
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedImages.add(File(image.path));
+      });
+    }
   }
 
   Widget _buildTextField({
@@ -271,38 +269,65 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
   }
 
   Widget _buildFileUploadArea() {
-    return DottedBorder(
-      borderType: BorderType.RRect,
-      radius: const Radius.circular(10),
-      dashPattern: const [6, 3],
-      color: Colors.grey.shade400,
-      strokeWidth: 1.5,
-      child: Container(
-        color: ColorConstants.whiteColor,
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 30),
-        child: Column(
-          children: [
-            SvgPicture.asset(
-              IconConstants.uploadfoto,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Click to upload',
-              style:
-                  TextStyle(color: ColorConstants.kPrimaryColor2, fontSize: 12),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              'PNG, JPG',
-              style: TextStyle(color: ColorConstants.secondary, fontSize: 12),
-            ),
-            Text(
-              '(max, 800 X 800px) 2/8',
-              style: TextStyle(color: ColorConstants.secondary, fontSize: 12),
-            ),
-          ],
+    return GestureDetector(
+      onTap: _pickImage,
+      child: DottedBorder(
+        borderType: BorderType.RRect,
+        radius: const Radius.circular(10),
+        dashPattern: const [6, 3],
+        color: Colors.grey.shade400,
+        strokeWidth: 1.5,
+        child: Container(
+          color: ColorConstants.whiteColor,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 30),
+          child: Column(
+            children: [
+              SvgPicture.asset(
+                IconConstants.uploadfoto,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'click_to_upload'.tr,
+                style: TextStyle(
+                    color: ColorConstants.kPrimaryColor2, fontSize: 12),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'PNG, JPG',
+                style: TextStyle(color: ColorConstants.secondary, fontSize: 12),
+              ),
+              Text(
+                '${'max_file_size'.tr} ${_selectedImages.length}/8',
+                style: TextStyle(color: ColorConstants.secondary, fontSize: 12),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedImages() {
+    return SizedBox(
+      height: 100,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _selectedImages.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.file(
+                _selectedImages[index],
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
