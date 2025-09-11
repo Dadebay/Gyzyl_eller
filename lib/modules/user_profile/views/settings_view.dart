@@ -34,10 +34,7 @@ class SettingsView extends GetView<SettingsController> {
                 'create_professional_profile'.tr,
                 IconConstants.new_releases,
                 () {
-                  Get.to(SpecialProfileAdd(
-                    name: controller.username,
-                    imageUrl: controller.imageUrl,
-                  ));
+                  Get.to(SpecialProfileAdd());
                 },
               ),
             const SizedBox(height: 10.0),

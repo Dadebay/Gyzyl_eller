@@ -10,6 +10,7 @@ class LoginController extends GetxController {
 
   final isLoading = false.obs;
   final obscureText = true.obs;
+  final isChecked = false.obs;
 
   @override
   void onClose() {

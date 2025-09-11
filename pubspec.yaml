@@ -42,7 +42,6 @@ dependencies:
 
   #==================== MEDIA ====================#
   image_picker: ^1.1.2
-  photo_view: ^0.15.0
   cached_network_image: ^3.3.1
   change_app_package_name: ^1.5.0
   flutter_svg: ^2.0.10+1

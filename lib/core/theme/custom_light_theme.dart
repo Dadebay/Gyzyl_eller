@@ -12,5 +12,6 @@ final class CustomLightTheme {
               statusBarIconBrightness: Brightness.dark),
         ),
         colorScheme: CustomColorScheme.lightColorScheme,
+        scaffoldBackgroundColor: ColorConstants.background,
       );
 }

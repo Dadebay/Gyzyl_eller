@@ -89,7 +89,7 @@ class DialogUtils {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Profili pozmak',
+                  'deleteProfileTitle'.tr,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -100,12 +100,10 @@ class DialogUtils {
                 const SizedBox(height: 20),
                 SvgPicture.asset(
                   IconConstants.pupup,
-
-                  // colorFilter: ColorFilter.mode(Colors.red, BlendMode.srcIn),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Siz hakykatdanam pofiliňizi pozmak isleýärsiňizmi? Pozsaňaz ŞAÝ balanşyňyz pozular.',
+                  'deleteProfileDescription'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -122,7 +120,7 @@ class DialogUtils {
                         Navigator.of(dialogContext).pop(false);
                       },
                       child: Text(
-                        'ÝOK',
+                        'cancel'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -137,7 +135,7 @@ class DialogUtils {
                         await controller.logout();
                       },
                       child: Text(
-                        'HAWA',
+                        'delete'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

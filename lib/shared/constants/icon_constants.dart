@@ -98,4 +98,5 @@ class IconConstants {
   static const String uploadfoto = 'assets/icons/uploadfoto.svg';
   static const String Isolation_Mode = 'assets/icons/Isolation_Mode.svg';
   static const String Isolation_Mode2 = 'assets/icons/Isolation_Mode2.svg';
+
 }

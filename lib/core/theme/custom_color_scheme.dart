@@ -70,10 +70,11 @@ class ColorConstants {
   static const Color background = Color.fromARGB(255, 231, 239, 255);
   static const Color fonts = Color.fromARGB(255, 11, 21, 39);
   static const Color secondary = Color.fromARGB(255, 157, 172, 212);
-    static const Color blue = Color.fromARGB(255, 31, 85, 188);
+  static const Color blue = Color.fromARGB(255, 31, 85, 188);
 
   //
   static const Color kSecondaryColor = Color(0xff009B00);
+  static const Color successtatus = Color.fromARGB(255, 120 , 229, 118);
   static const Color kPrettyBlack = Color(0xff1A1A1A);
   static const Color kPrettyBlack2 = Color(0xFF1d1d1b);
   static const Color whiteColor = Colors.white;

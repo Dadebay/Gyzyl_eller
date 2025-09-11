@@ -23,6 +23,7 @@ class AuthService {
       isForm: false,
     );
     if (responseData is Map<String, dynamic>) {
+      print("Access Token: ${responseData['access_token']}");
       _auth.saveToken(responseData['access_token'].toString());
       _auth.saveRefreshToken(responseData['refresh_token'].toString());
       if (responseData['data'] is Map<String, dynamic>) {

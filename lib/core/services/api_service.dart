@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import '../../shared/extensions/packages.dart';
 
@@ -74,6 +75,7 @@ class ApiService {
       isForm: false,
     );
   }
+
 
   Future<dynamic> handleApiRequest(String endpoint,
       {required Map<String, dynamic> body, required String method, required bool requiresToken, bool isForm = false, List<http.MultipartFile>? multipartFiles}) async {

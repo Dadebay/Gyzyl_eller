@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_svg/svg.dart';
+import 'package:get/get.dart';
+import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
@@ -8,34 +10,17 @@ import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 
 import 'special_profile.dart';
 
-class SpecialProfileAdd extends StatefulWidget {
-  final String name;
-  final String? imageUrl;
-
-  const SpecialProfileAdd({super.key, required this.name, this.imageUrl});
-
-  @override
-  State<SpecialProfileAdd> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<SpecialProfileAdd> {
-  final TextEditingController _shortBioController = TextEditingController();
-  final TextEditingController _longBioController = TextEditingController();
-  String? _selectedProvince;
-  final ImagePicker _picker = ImagePicker();
-  final List<File> _selectedImages = [];
-
-  bool _termsAccepted = false;
-
-  @override
-  void dispose() {
-    _shortBioController.dispose();
-    _longBioController.dispose();
-    super.dispose();
-  }
-
+class SpecialProfileAdd extends StatelessWidget {
+  SpecialProfileAdd({super.key});
+  final SpecialProfileController controller =
+      Get.put(SpecialProfileController());
   @override
   Widget build(BuildContext context) {
+    final TextEditingController _shortBioController =
+        TextEditingController(text: controller.shortBio.value);
+    final TextEditingController _longBioController =
+        TextEditingController(text: controller.longBio.value);
+
     return Scaffold(
       appBar: CustomAppBar(
         title: 'specialist_profile_title'.tr,
@@ -52,50 +37,54 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
             Center(
               child: Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: NetworkImage(widget.imageUrl ?? ''),
-                  ),
+                  Obx(() => CircleAvatar(
+                        radius: 50,
+                        backgroundImage: controller.imageUrl.value != null
+                            ? NetworkImage(controller.name.value)
+                            : null,
+                      )),
                 ],
               ),
             ),
             const SizedBox(height: 10),
             Center(
-              child: Text(
-                widget.name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Obx(() => Text(
+                    controller.name.value,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )),
             ),
             const SizedBox(height: 30),
             _buildTextField(
               controller: _shortBioController,
               hintText: 'short_bio_hint'.tr,
+              onChanged: (value) => controller.shortBio.value = value,
             ),
             const SizedBox(height: 15),
-            _buildDropdownField(
-              hintText: 'Welaýat',
-              value: _selectedProvince,
-              items: ['Ahal', 'Balkan', 'Daşoguz', 'Lebap', 'Mary']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedProvince = newValue;
-                });
-              },
-            ),
+            Obx(() => _buildDropdownField(
+                  hintText: 'Welaýat',
+                  value: controller.province.value.isEmpty
+                      ? null
+                      : controller.province.value,
+                  items: ['Ahal', 'Balkan', 'Daşoguz', 'Lebap', 'Mary']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    controller.province.value = newValue ?? '';
+                  },
+                )),
             const SizedBox(height: 15),
             _buildTextField(
               controller: _longBioController,
               hintText: 'long_bio_hint'.tr,
               maxLines: 5,
+              onChanged: (value) => controller.longBio.value = value,
             ),
             const SizedBox(height: 20),
             _buildInfoCard(
@@ -105,54 +94,6 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
               textColor: ColorConstants.fonts,
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Transform.scale(
-                  scale: 1.4,
-                  child: Checkbox(
-                    value: _termsAccepted,
-                    onChanged: (bool? newValue) {
-                      setState(() {
-                        _termsAccepted = newValue ?? false;
-                      });
-                    },
-                    activeColor: ColorConstants.whiteColor,
-                    fillColor: WidgetStateProperty.all(Colors.white),
-                    checkColor: ColorConstants.kPrimaryColor2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    side: const BorderSide(
-                      color: ColorConstants.whiteColor,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 10,
-                ),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                          color: ColorConstants.fonts, fontSize: 15),
-                      children: [
-                        TextSpan(text: 'i_agree_with'.tr),
-                        TextSpan(
-                          text: 'all_the_terms'.tr,
-                          style: const TextStyle(
-                            color: ColorConstants.kPrimaryColor2,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.red,
-                            decorationThickness: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 20),
             Text(
               'my_works_title'.tr,
@@ -163,20 +104,13 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
               ),
             ),
             const SizedBox(height: 10),
-            _buildFileUploadArea(),
+            _buildFileUploadArea(controller),
             const SizedBox(height: 10),
-            _buildSelectedImages(),
+            _buildSelectedImages(controller),
             const SizedBox(height: 25),
             CustomElevatedButton(
               onPressed: () {
-                Get.to(() => SpecialProfile(
-                      name: widget.name,
-                      imageUrl: widget.imageUrl,
-                      shortBio: _shortBioController.text,
-                      longBio: _longBioController.text,
-                      province: _selectedProvince ?? '',
-                      images: _selectedImages,
-                    ));
+                Get.to(() => SpecialProfile());
               },
               text: 'create_account_button'.tr,
               backgroundColor: ColorConstants.kPrimaryColor2,
@@ -189,22 +123,11 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
     );
   }
 
-  Future<void> _pickImage() async {
-    if (_selectedImages.length >= 8) {
-      return;
-    }
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _selectedImages.add(File(image.path));
-      });
-    }
-  }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
     int maxLines = 1,
+    required ValueChanged<String> onChanged,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -214,6 +137,7 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
       child: TextField(
         controller: controller,
         maxLines: maxLines,
+        onChanged: onChanged,
         decoration: InputDecoration(
           hintText: hintText,
           contentPadding:
@@ -277,9 +201,9 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
     );
   }
 
-  Widget _buildFileUploadArea() {
+  Widget _buildFileUploadArea(SpecialProfileController controller) {
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: () => controller.pickImage(),
       child: DottedBorder(
         borderType: BorderType.RRect,
         radius: const Radius.circular(10),
@@ -306,10 +230,11 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
                 'PNG, JPG',
                 style: TextStyle(color: ColorConstants.secondary, fontSize: 12),
               ),
-              Text(
-                '${'max_file_size'.tr} ${_selectedImages.length}/8',
-                style: TextStyle(color: ColorConstants.secondary, fontSize: 12),
-              ),
+              Obx(() => Text(
+                    '${'max_file_size'.tr} ${controller.images.length}/8',
+                    style: TextStyle(
+                        color: ColorConstants.secondary, fontSize: 12),
+                  )),
             ],
           ),
         ),
@@ -317,27 +242,27 @@ class _ProfileScreenState extends State<SpecialProfileAdd> {
     );
   }
 
-  Widget _buildSelectedImages() {
-    return SizedBox(
-      height: 100,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _selectedImages.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Image.file(
-                _selectedImages[index],
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-              ),
-            ),
-          );
-        },
-      ),
-    );
+  Widget _buildSelectedImages(SpecialProfileController controller) {
+    return Obx(() => SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: controller.images.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.file(
+                    controller.images[index],
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            },
+          ),
+        ));
   }
 }

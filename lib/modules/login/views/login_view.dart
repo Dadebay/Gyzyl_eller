@@ -37,7 +37,7 @@ class LoginView extends GetView<LoginController> {
                 const SizedBox(height: 15),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: ColorConstants.whiteColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: TextField(
@@ -58,7 +58,7 @@ class LoginView extends GetView<LoginController> {
                 const SizedBox(height: 15),
                 Obx(() => Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: ColorConstants.whiteColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: TextField(
@@ -83,30 +83,34 @@ class LoginView extends GetView<LoginController> {
                       ),
                     )),
                 const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: true,
-                      onChanged: (bool? newValue) {},
-                      activeColor: ColorConstants.kPrimaryColor2,
-                    ),
-                    Text(
-                      'with_all_terms'.tr,
-                      style: TextStyle(color: Colors.grey[700]),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        print('Yalasygyny tıklandı!');
-                      },
-                      child: Text(
-                        'agreement_text'.tr,
-                        style: TextStyle(
-                          color: ColorConstants.kPrimaryColor2,
-                          decoration: TextDecoration.underline,
+                Obx(
+                  () => Row(
+                    children: [
+                      Checkbox(
+                        value: controller.isChecked.value,
+                        onChanged: (bool? newValue) {
+                          controller.isChecked.value = newValue ?? false;
+                        },
+                        activeColor: ColorConstants.kPrimaryColor2,
+                      ),
+                      Text(
+                        'with_all_terms'.tr,
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          print('Yalasygyny tıklandı!');
+                        },
+                        child: Text(
+                          'agreement_text'.tr,
+                          style: TextStyle(
+                            color: ColorConstants.kPrimaryColor2,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 30),
                 Obx(() => ElevatedButton(

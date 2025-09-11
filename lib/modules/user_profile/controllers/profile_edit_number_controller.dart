@@ -8,7 +8,6 @@ class ProfileEditNumberController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Initialize with initial phone number if passed
     if (Get.arguments != null && Get.arguments is String) {
       phoneController.text = Get.arguments as String;
     }
@@ -22,14 +21,11 @@ class ProfileEditNumberController extends GetxController {
 
   void continueButtonPressed() {
     if (!isCodeInput.value) {
-      // First step: Phone number input
       print('Telefon Numarası: ${phoneController.text}');
       isCodeInput.value = true;
-      phoneController.clear(); // Clear for code input
+      phoneController.clear();
     } else {
-      // Second step: Code input
       print('Girilen Kod: ${phoneController.text}');
-      // Here you would typically verify the code
     }
   }
 }

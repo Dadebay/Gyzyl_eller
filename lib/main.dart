@@ -7,7 +7,6 @@ import 'package:gyzyleller/core/init/translation_service.dart';
 import 'package:gyzyleller/core/theme/custom_dark_theme.dart';
 import 'package:gyzyleller/core/theme/custom_light_theme.dart';
 import 'package:gyzyleller/modules/splash/splash_screen.dart';
-import 'package:gyzyleller/modules/home/views/bottomnavbar/bottom_nav_bar_view.dart';
 
 Future<void> main() async {
   await ApplicationInitialize.initialize();

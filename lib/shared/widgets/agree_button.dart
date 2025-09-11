@@ -1,5 +1,3 @@
-// ignore_for_file: file_names, must_be_immutable
-
 import 'package:kartal/kartal.dart';
 import '../extensions/packages.dart';
 

@@ -32,6 +32,6 @@ class SettingsController extends GetxController {
 
   Future<void> logout() async {
     await _authService.logout();
-    loadUser(); // Refresh user state
+    loadUser();
   }
 }
