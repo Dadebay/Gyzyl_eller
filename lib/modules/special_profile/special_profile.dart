@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
-import 'widgets/profile_header.dart';
-import 'widgets/bio_section.dart';
-import 'widgets/works_section.dart';
-import 'widgets/reviews_section.dart';
-import 'package:gyzyleller/modules/special_profile/widgets/special_profile_app_bar.dart';
+import 'page/profile_header.dart';
+import 'page/bio_section.dart';
+import 'page/works_section.dart';
+import 'page/reviews_section.dart';
+import 'package:gyzyleller/modules/special_profile/page/special_profile_app_bar.dart';
 
 class SpecialProfile extends StatelessWidget {
   SpecialProfile({super.key});
