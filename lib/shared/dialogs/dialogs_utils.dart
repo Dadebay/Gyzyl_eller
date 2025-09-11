@@ -1,12 +1,8 @@
-// ignore_for_file: inference_failure_on_function_return_type, inference_failure_on_function_invocation, duplicate_ignore, unused_local_variable
-
 import 'dart:io';
-
 import 'package:flutter_svg/svg.dart';
 import 'package:gyzyleller/modules/user_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:kartal/kartal.dart';
-
 import '../extensions/packages.dart';
 
 class DialogUtils {

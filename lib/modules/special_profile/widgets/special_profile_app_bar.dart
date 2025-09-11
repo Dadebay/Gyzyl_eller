@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
-import 'package:gyzyleller/modules/special_profile/special_profile_edit.dart';
 
 class SpecialProfileAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -33,16 +32,7 @@ class SpecialProfileAppBar extends StatelessWidget
       foregroundColor: Colors.black,
       actions: [
         IconButton(
-          onPressed: () {
-            // Get.to(() => SpecialProfileEdit(
-            //       // name: controller.name.value,
-            //       // imageUrl: controller.imageUrl.value,
-            //       // shortBio: controller.shortBio.value,
-            //       // longBio: controller.longBio.value,
-            //       // province: controller.province.value,
-            //       // images: controller.images.toList(),
-            //     ));
-          },
+          onPressed: () {},
           iconSize: 20,
           padding: EdgeInsets.zero,
           icon: SvgPicture.asset(

@@ -1,8 +1,5 @@
 import 'dart:io';
-
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
-
 import '../../shared/extensions/packages.dart';
 
 enum HttpMethod { get, post, put, delete }
@@ -10,7 +7,9 @@ enum HttpMethod { get, post, put, delete }
 class ApiService {
   final _auth = AuthStorage();
 
-  Future<dynamic> getRequest(String endpoint, {bool requiresToken = true, void Function(dynamic)? handleSuccess}) async {
+  Future<dynamic> getRequest(String endpoint,
+      {bool requiresToken = true,
+      void Function(dynamic)? handleSuccess}) async {
     try {
       final token = _auth.token;
       final headers = <String, String>{
@@ -21,27 +20,34 @@ class ApiService {
       final response = await http.get(Uri.parse(fullUrl), headers: headers);
       final decodedBody = utf8.decode(response.bodyBytes);
       if (response.statusCode == 200) {
-        final responseJson = decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
+        final responseJson =
+            decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
         handleSuccess?.call(responseJson);
         return responseJson;
       } else {
-        final responseJson = decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
-        _handleApiError(response.statusCode, responseJson['message']?.toString() ?? 'anErrorOccurred'.tr);
+        final responseJson =
+            decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
+        _handleApiError(response.statusCode,
+            responseJson['message']?.toString() ?? 'anErrorOccurred'.tr);
         return null;
       }
     } on SocketException {
-      CustomWidgets.showSnackBar('networkError'.tr, 'noInternet'.tr, Colors.red);
+      CustomWidgets.showSnackBar(
+          'networkError'.tr, 'noInternet'.tr, Colors.red);
       return null;
     } catch (_) {
       return null;
     }
   }
 
-  Future<dynamic> postMultipartRequest(String endpoint, Map<String, dynamic> body, {List<XFile>? xFiles}) async {
+  Future<dynamic> postMultipartRequest(
+      String endpoint, Map<String, dynamic> body,
+      {List<XFile>? xFiles}) async {
     List<http.MultipartFile> multipartFiles = [];
     if (xFiles != null) {
       for (XFile file in xFiles) {
-        multipartFiles.add(await http.MultipartFile.fromPath('photo', file.path));
+        multipartFiles
+            .add(await http.MultipartFile.fromPath('photo', file.path));
       }
     }
 
@@ -76,12 +82,17 @@ class ApiService {
     );
   }
 
-
   Future<dynamic> handleApiRequest(String endpoint,
-      {required Map<String, dynamic> body, required String method, required bool requiresToken, bool isForm = false, List<http.MultipartFile>? multipartFiles}) async {
+      {required Map<String, dynamic> body,
+      required String method,
+      required bool requiresToken,
+      bool isForm = false,
+      List<http.MultipartFile>? multipartFiles}) async {
     try {
       final token = _auth.token;
-      final uriString = endpoint.startsWith('http') ? endpoint : '${ApiConstants.baseUrl}$endpoint';
+      final uriString = endpoint.startsWith('http')
+          ? endpoint
+          : '${ApiConstants.baseUrl}$endpoint';
       print('handleApiRequest: Parsing URI: $uriString');
       final uri = Uri.parse(uriString);
       late http.BaseRequest request;
@@ -97,7 +108,8 @@ class ApiService {
         }
       } else {
         request = http.Request(method, uri);
-        request.headers[HttpHeaders.contentTypeHeader] = 'application/json; charset=UTF-8';
+        request.headers[HttpHeaders.contentTypeHeader] =
+            'application/json; charset=UTF-8';
         if (body.isNotEmpty) {
           (request as http.Request).body = jsonEncode(body);
         }
@@ -125,7 +137,8 @@ class ApiService {
         }
         if (statusCode == 409) {
         } else {
-          _handleApiError(statusCode, errorJson['message']?.toString() ?? 'anErrorOccurred'.tr);
+          _handleApiError(statusCode,
+              errorJson['message']?.toString() ?? 'anErrorOccurred'.tr);
         }
         return statusCode;
       }

@@ -15,6 +15,10 @@ class ImageConstants {
   static const String onboarding33 = 'assets/images/onboarding33.png';
   static const String onboarding44 = 'assets/images/onboarding44.png';
   static const String onboarding55 = 'assets/images/onboarding55.png';
+  static const String image = 'assets/images/doc_mock2.png';
+  static const String profileAvatar = 'assets/images/profile_avatar.png';
+  // static const String onboardingWorkerFifth =
+  //     'assets/images/onboarding_worker_fifth.png';
   // static const String onboardingWorkerFifth =
   //     'assets/images/onboarding_worker_fifth.png';
   // static const String onboardingWorkerFirst =
@@ -29,5 +33,4 @@ class ImageConstants {
   //     'assets/images/onboarding_worker_sixth.png';
   // static const String onboardingWorkerThird =
   //     'assets/images/onboarding_worker_third.png';
-  static const String profileAvatar = 'assets/images/profile_avatar.png';
 }

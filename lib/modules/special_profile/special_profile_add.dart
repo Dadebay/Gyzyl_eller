@@ -1,13 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter_svg/svg.dart';
-import 'package:get/get.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
-
 import 'special_profile.dart';
 
 class SpecialProfileAdd extends StatelessWidget {
@@ -16,9 +12,9 @@ class SpecialProfileAdd extends StatelessWidget {
       Get.put(SpecialProfileController());
   @override
   Widget build(BuildContext context) {
-    final TextEditingController _shortBioController =
+    final TextEditingController shortBioController =
         TextEditingController(text: controller.shortBio.value);
-    final TextEditingController _longBioController =
+    final TextEditingController longBioController =
         TextEditingController(text: controller.longBio.value);
 
     return Scaffold(
@@ -57,13 +53,13 @@ class SpecialProfileAdd extends StatelessWidget {
                   )),
             ),
             const SizedBox(height: 30),
-            _buildTextField(
-              controller: _shortBioController,
+            buildTextField(
+              controller: shortBioController,
               hintText: 'short_bio_hint'.tr,
               onChanged: (value) => controller.shortBio.value = value,
             ),
             const SizedBox(height: 15),
-            Obx(() => _buildDropdownField(
+            Obx(() => buildDropdownField(
                   hintText: 'Welaýat',
                   value: controller.province.value.isEmpty
                       ? null
@@ -80,14 +76,14 @@ class SpecialProfileAdd extends StatelessWidget {
                   },
                 )),
             const SizedBox(height: 15),
-            _buildTextField(
-              controller: _longBioController,
+            buildTextField(
+              controller: longBioController,
               hintText: 'long_bio_hint'.tr,
               maxLines: 5,
               onChanged: (value) => controller.longBio.value = value,
             ),
             const SizedBox(height: 20),
-            _buildInfoCard(
+            buildInfoCard(
               icon: Icons.access_time,
               text: 'read_the_rules'.tr,
               color: ColorConstants.whiteColor,
@@ -104,9 +100,9 @@ class SpecialProfileAdd extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _buildFileUploadArea(controller),
+            buildFileUploadArea(controller),
             const SizedBox(height: 10),
-            _buildSelectedImages(controller),
+            buildSelectedImages(controller),
             const SizedBox(height: 25),
             CustomElevatedButton(
               onPressed: () {
@@ -123,7 +119,7 @@ class SpecialProfileAdd extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({
+  Widget buildTextField({
     required TextEditingController controller,
     required String hintText,
     int maxLines = 1,
@@ -148,7 +144,7 @@ class SpecialProfileAdd extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdownField({
+  Widget buildDropdownField({
     required String hintText,
     required String? value,
     required List<DropdownMenuItem<String>> items,
@@ -173,7 +169,7 @@ class SpecialProfileAdd extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard({
+  Widget buildInfoCard({
     required IconData icon,
     required String text,
     required Color color,
@@ -201,7 +197,7 @@ class SpecialProfileAdd extends StatelessWidget {
     );
   }
 
-  Widget _buildFileUploadArea(SpecialProfileController controller) {
+  Widget buildFileUploadArea(SpecialProfileController controller) {
     return GestureDetector(
       onTap: () => controller.pickImage(),
       child: DottedBorder(
@@ -242,7 +238,7 @@ class SpecialProfileAdd extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedImages(SpecialProfileController controller) {
+  Widget buildSelectedImages(SpecialProfileController controller) {
     return Obx(() => SizedBox(
           height: 100,
           child: ListView.builder(
