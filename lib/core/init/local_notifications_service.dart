@@ -3,13 +3,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 class LocalNotificationsService {
   LocalNotificationsService._internal();
 
-  static final LocalNotificationsService _instance = LocalNotificationsService._internal();
+  static final LocalNotificationsService _instance =
+      LocalNotificationsService._internal();
 
   factory LocalNotificationsService.instance() => _instance;
 
   late FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
 
-  final _androidInitializationSettings = const AndroidInitializationSettings('@mipmap/ic_launcher');
+  final _androidInitializationSettings =
+      const AndroidInitializationSettings('@mipmap/ic_launcher');
 
   final _iosInitializationSettings = const DarwinInitializationSettings(
     requestAlertPermission: true,
@@ -40,11 +42,13 @@ class LocalNotificationsService {
       iOS: _iosInitializationSettings,
     );
 
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings, onDidReceiveNotificationResponse: (NotificationResponse response) {
-      print('Foreground notification has been tapped: ${response.payload}');
-    });
+    await _flutterLocalNotificationsPlugin.initialize(initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {});
 
-    await _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(_androidChannel);
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_androidChannel);
 
     _isFlutterLocalNotificationInitialized = true;
   }

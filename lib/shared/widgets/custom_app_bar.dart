@@ -1,50 +1,41 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:gyzyleller/shared/extensions/extensions.dart';
-import 'package:kartal/kartal.dart';
+import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
-  final bool showBackButton;
-  final bool? centerTitle;
-  final bool? showElevation;
-  final Widget? actionButton;
-  final Widget? leadingButton;
+  final List<Widget>? actions;
+  final PreferredSizeWidget? bottom;
+  final Widget? leading;
+  final double? leadingWidth;
 
-  CustomAppBar({required this.title, required this.showBackButton, this.centerTitle, this.showElevation, this.leadingButton, this.actionButton});
+  const CustomAppBar({
+    super.key,
+    required this.title,
+    this.actions,
+    this.bottom,
+    this.leading,
+    this.leadingWidth,
+  });
+
   @override
   Widget build(BuildContext context) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return AppBar(
-      automaticallyImplyLeading: false,
-      scrolledUnderElevation: 0.0,
-      elevation: showElevation == true ? 1.0 : 0.0,
-      shadowColor: isDarkMode ? context.blackColor : context.greyColor.withOpacity(.3),
-      centerTitle: centerTitle ?? true,
-      backgroundColor: isDarkMode ? context.blackColor : context.whiteColor,
-      leadingWidth: centerTitle == false ? 10.0 : 80,
-      leading: showBackButton
-          ? IconButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              icon: Icon(
-                CupertinoIcons.arrow_left_circle,
-                size: 22,
-              ),
-            )
-          : leadingButton ?? const SizedBox.shrink(),
+      backgroundColor: ColorConstants.background,
+      elevation: 0,
+      leading: leading,
+      leadingWidth: leadingWidth,
       title: Text(
-        title.tr,
-        style: context.general.textTheme.headlineMedium!.copyWith(fontSize: 20, fontWeight: FontWeight.w500),
+        title,
+        style:
+            const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
       ),
-      actions: [
-        actionButton ?? const SizedBox.shrink(),
-      ],
+      centerTitle: true,
+      actions: actions,
+      bottom: bottom,
     );
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0.0));
 }

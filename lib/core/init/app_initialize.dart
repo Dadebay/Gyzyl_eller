@@ -1,5 +1,9 @@
+// ignore_for_file: empty_catches
+
+import 'package:gyzyleller/core/services/chat_socket_service.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:kartal/kartal.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 @immutable
 final class ApplicationInitialize {
@@ -13,14 +17,20 @@ final class ApplicationInitialize {
   static Future<void> _initialize() async {
     try {
       await GetStorage.init();
-      Get.put(ThemeController());
+      Get.put(GetStorage());
+      Get.put(ChatSocketService(), permanent: true);
+      await initializeDateFormatting('tk', null);
+      await initializeDateFormatting('ru', null);
+
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       await DeviceUtility.instance.initPackageInfo();
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform);
       final localNotificationsService = LocalNotificationsService.instance();
       await localNotificationsService.init();
       final firebaseMessagingService = FirebaseMessagingService.instance();
-      await firebaseMessagingService.init(localNotificationsService: localNotificationsService);
+      await firebaseMessagingService.init(
+          localNotificationsService: localNotificationsService);
       await FirebaseMessaging.instance.subscribeToTopic('EVENT');
     } catch (e) {}
   }

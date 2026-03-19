@@ -1,14 +1,25 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:gyzyleller/core/init/app_initialize.dart';
-import 'package:gyzyleller/core/init/theme_controller.dart';
 import 'package:gyzyleller/core/init/translation_service.dart';
-import 'package:gyzyleller/core/theme/custom_dark_theme.dart';
-import 'package:gyzyleller/core/theme/custom_light_theme.dart';
+import 'package:gyzyleller/modules/splash/splash_screen.dart';
+import 'package:gyzyleller/shared/extensions/packages.dart';
+import 'package:gyzyleller/utils/global_safe_area_wrapper.dart';
 
 Future<void> main() async {
   await ApplicationInitialize.initialize();
+
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+  );
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarContrastEnforced: false,
+    ),
+  );
   runApp(MyApp());
 }
 
@@ -18,16 +29,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      translations: TranslationService(),
-      defaultTransition: Transition.fade,
-      fallbackLocale: const Locale('tr'),
-      debugShowCheckedModeBanner: false,
-      locale: storage.read('langCode') != null ? Locale(storage.read('langCode')) : const Locale('tr'),
-      theme: CustomLightTheme().themeData,
-      darkTheme: CustomDarkTheme().themeData,
-      themeMode: Get.find<ThemeController>().themeMode,
-      home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+    return GestureDetector(
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: GetMaterialApp(
+        translations: TranslationService(),
+        defaultTransition: Transition.fade,
+        fallbackLocale: const Locale('tk'),
+        debugShowCheckedModeBanner: false,
+        locale: storage.read('langCode') != null
+            ? Locale(storage.read('langCode'))
+            : const Locale('tk'),
+        home: const SplashScreen(),
+        builder: (context, child) {
+          return GlobalSafeAreaWrapper(
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+      ),
     );
   }
 }
