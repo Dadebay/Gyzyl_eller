@@ -5,7 +5,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class ChatSocketService extends GetxService {
   IO.Socket? _socket;
-  IO.Socket get socket => _socket!;
+  IO.Socket? get socket => _socket;
   bool get isInitialized => _socket != null;
 
   final _api = Api();
@@ -47,6 +47,13 @@ class ChatSocketService extends GetxService {
     _socket!.onError((e) => debugPrint('🚨 [ChatSocket] Ýalňyş: $e'));
 
     _socket!.connect();
+  }
+
+  void reconnect() {
+    _socket?.disconnect();
+    _socket?.dispose();
+    _socket = null;
+    _connect();
   }
 
   @override

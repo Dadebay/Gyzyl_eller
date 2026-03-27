@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
 import 'package:gyzyleller/modules/bottomnavbar/views/custom_bottom_nav_extension.dart';
+import 'package:gyzyleller/modules/chats/controllers/notification_controller.dart';
 import 'package:gyzyleller/modules/chats/views/chats_view.dart';
 import 'package:gyzyleller/shared/constants/list_constants.dart';
 import 'package:gyzyleller/modules/all/views/all_view.dart';
@@ -12,6 +13,7 @@ import 'package:gyzyleller/modules/task/task_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
+import 'package:in_app_update/in_app_update.dart';
 import 'package:upgrader/upgrader.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -23,7 +25,32 @@ class BottomNavBar extends StatefulWidget {
 
 class _BottomNavBarState extends State<BottomNavBar> {
   final HomeController homeController = Get.put(HomeController());
-  final ChatController chatController = Get.put(ChatController());
+  final ChatController chatController =
+      Get.put(ChatController(), permanent: true);
+  final NotificationController notifController =
+      Get.put(NotificationController(), permanent: true);
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        if (info.immediateUpdateAllowed) {
+          await InAppUpdate.performImmediateUpdate();
+        } else if (info.flexibleUpdateAllowed) {
+          await InAppUpdate.startFlexibleUpdate();
+          await InAppUpdate.completeFlexibleUpdate();
+        }
+      }
+    } catch (e) {
+      debugPrint('_checkForUpdate Error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,13 +87,13 @@ class _BottomNavBarState extends State<BottomNavBar> {
               },
               selectedIcons: ListConstants.selectedIcons,
               unselectedIcons: ListConstants.mainIcons,
-              labels: [
-                'bottom_nav_all'.tr,
-                'bottom_nav_tasks_tab'.tr,
-                'Çatlar',
-                'bottom_nav_menu'.tr
+              labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
+              badges: [
+                0,
+                0,
+                chatController.unreadCount.value,
+                chatController.notifCount.value
               ],
-              badges: [0, 0, chatController.unreadCount.value, 0],
             ),
           )),
     );

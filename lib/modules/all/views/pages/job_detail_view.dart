@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,6 +30,7 @@ class JobDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final JobDetailController controller = Get.put(JobDetailController());
+    final RefreshController refreshController = RefreshController();
 
     return Scaffold(
       backgroundColor: ColorConstants.background,
@@ -104,7 +106,13 @@ class JobDetailView extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(
+              color: ColorConstants.blue,
+              backgroundColor: ColorConstants.background,
+              strokeWidth: 4.0,
+            ),
+          );
         }
 
         if (controller.error.isNotEmpty) {
@@ -133,7 +141,7 @@ class JobDetailView extends StatelessWidget {
         }
 
         final job = controller.job.value;
-        if (job == null) return const Center(child: Text("Empty data"));
+        if (job == null) return Center(child: Text("no_data_found".tr));
 
         final position = controller.parsePosition(job.position);
         final jobStatusEnum = MyTasksStatus.fromApiValue(job.status);
@@ -141,435 +149,378 @@ class JobDetailView extends StatelessWidget {
         String displayCreatedAt = job.createdAt;
         try {
           final dateTime = DateTime.parse(job.createdAt);
-          final monthNames = [
-            'ýanwar',
-            'fewral',
-            'mart',
-            'aprel',
-            'maý',
-            'iýun',
-            'iýul',
-            'awgust',
-            'sentýabr',
-            'oktýabr',
-            'noýabr',
-            'dekabr'
-          ];
-          final month = monthNames[dateTime.month - 1];
+          final month = 'month_${dateTime.month}'.tr;
           displayCreatedAt =
               "${dateTime.day} $month ${dateTime.year}, ${DateFormat('HH:mm').format(dateTime)}";
         } catch (_) {}
 
-        return Stack(
-          children: [
-            RefreshIndicator(
-              onRefresh: () =>
-                  controller.fetchJobDetail(controller.job.value!.id),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                      left: 16.0, right: 16.0, top: 16.0, bottom: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildDateCard(displayCreatedAt),
-                      const SizedBox(height: 16),
-                      Text(
-                        'isin_gys'.tr,
-                        style: const TextStyle(
-                            color: ColorConstants.blue,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        job.name,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-                      if (job.desc.isNotEmpty)
-                        _buildInfoCard(
-                          title: "additional_info_label".tr,
-                          content: job.desc,
-                          isAdditional: true,
-                          isExpandable: true,
-                          controller: controller,
-                        ),
-                      const SizedBox(height: 16),
-                      ..._buildGroupedAnswers(job),
-                      const SizedBox(height: 8),
-                      Builder(builder: (context) {
-                        final List<String> allImages = [];
-                        // 1. Multiple images
-                        if (job.images.isNotEmpty) {
-                          for (final img in job.images) {
-                            String path = img;
-                            if (path.startsWith('/')) path = path.substring(1);
-                            if (!path.startsWith('http')) {
-                              allImages.add("${Api().urlImage}$path");
-                            } else {
-                              allImages.add(path);
-                            }
-                          }
-                        } else if (job.image != null && job.image!.isNotEmpty) {
-                          // 2. Single image fallback
-                          String path = job.image!;
-                          if (path.startsWith('/')) path = path.substring(1);
-                          if (!path.startsWith('http')) {
-                            allImages.add("${Api().urlImage}$path");
-                          } else {
-                            allImages.add(path);
-                          }
-                        }
-                        // 3. Answer images/files
-                        for (final answer in job.answers) {
-                          if ((answer.type == 'image' ||
-                                  answer.type == 'file') &&
-                              answer.value != null &&
-                              answer.value!.isNotEmpty) {
-                            String path = answer.value!;
-                            if (path.startsWith('/')) path = path.substring(1);
-                            if (!path.startsWith('http')) {
-                              allImages.add("${Api().urlImage}$path");
-                            } else {
-                              allImages.add(path);
-                            }
-                          }
-                        }
+        return SmartRefresher(
+          header: const MaterialClassicHeader(
+            color: ColorConstants.blue,
+            backgroundColor: ColorConstants.background,
+          ),
+          controller: refreshController,
+          enablePullDown: true,
+          enablePullUp: false,
+          onRefresh: () async {
+            await controller.fetchJobDetail(controller.job.value!.id);
+            refreshController.refreshCompleted();
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(
+                left: 16.0, right: 16.0, top: 16.0, bottom: 20.0),
+            children: [
+              _buildDateCard(displayCreatedAt),
+              const SizedBox(height: 16),
+              Text(
+                'isin_gys'.tr,
+                style: const TextStyle(
+                    color: ColorConstants.blue,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                job.name,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              if (job.desc.isNotEmpty)
+                _buildInfoCard(
+                  title: "additional_info_label".tr,
+                  content: job.desc,
+                  isAdditional: true,
+                  isExpandable: true,
+                  controller: controller,
+                ),
+              const SizedBox(height: 16),
+              ..._buildGroupedAnswers(job),
+              const SizedBox(height: 8),
+              Builder(builder: (context) {
+                final List<String> allImages = [];
+                // 1. Multiple images
+                if (job.images.isNotEmpty) {
+                  for (final img in job.images) {
+                    String path = img;
+                    if (path.startsWith('/')) path = path.substring(1);
+                    if (!path.startsWith('http')) {
+                      allImages.add("${Api().urlImage}$path");
+                    } else {
+                      allImages.add(path);
+                    }
+                  }
+                } else if (job.image != null && job.image!.isNotEmpty) {
+                  // 2. Single image fallback
+                  String path = job.image!;
+                  if (path.startsWith('/')) path = path.substring(1);
+                  if (!path.startsWith('http')) {
+                    allImages.add("${Api().urlImage}$path");
+                  } else {
+                    allImages.add(path);
+                  }
+                }
+                // 3. Answer images/files
+                for (final answer in job.answers) {
+                  if ((answer.type == 'image' || answer.type == 'file') &&
+                      answer.value != null &&
+                      answer.value!.isNotEmpty) {
+                    String path = answer.value!;
+                    if (path.startsWith('/')) path = path.substring(1);
+                    if (!path.startsWith('http')) {
+                      allImages.add("${Api().urlImage}$path");
+                    } else {
+                      allImages.add(path);
+                    }
+                  }
+                }
 
-                        if (allImages.isEmpty) return const SizedBox.shrink();
+                if (allImages.isEmpty) return const SizedBox.shrink();
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "file_img".tr,
-                              style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: ColorConstants.blue),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "file_img".tr,
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.blue),
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(() => _buildImageGallery(
+                          allImages,
+                          controller.currentPage.value,
+                          controller,
+                          context,
+                        )),
+                    const SizedBox(height: 10),
+                  ],
+                );
+              }),
+              if (job.position != null &&
+                  job.position!.isNotEmpty &&
+                  job.position != "0.0, 0.0" &&
+                  job.position != "(0.0, 0.0)") ...[
+                const SizedBox(height: 14),
+                _buildMapPreview(job, position, context),
+                const SizedBox(height: 14),
+              ],
+              Text(
+                'bash_mag'.tr,
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.blue),
+              ),
+              const SizedBox(height: 14),
+              NewTag(status: job.status),
+              const SizedBox(height: 16),
+              if (jobStatusEnum == MyTasksStatus.retEdilen) ...[
+                Text(
+                  'duzgun'.tr,
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: ColorConstants.kPrimaryColor2),
+                ),
+                const SizedBox(height: 12),
+              ],
+              _buildOtherInfoSection(context, job),
+              const SizedBox(height: 15),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Builder(builder: (context) {
+                    if (job.finished) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                            const SizedBox(height: 12),
-                            Obx(() => _buildImageGallery(
-                                  allImages,
-                                  controller.currentPage.value,
-                                  controller,
-                                  context,
-                                )),
-                            const SizedBox(height: 10),
                           ],
-                        );
-                      }),
-                      if (job.position != null &&
-                          job.position!.isNotEmpty &&
-                          job.position != "0.0, 0.0" &&
-                          job.position != "(0.0, 0.0)") ...[
-                        const SizedBox(height: 14),
-                        _buildMapPreview(job, position, context),
-                        const SizedBox(height: 14),
-                      ],
-                      Text(
-                        'bash_mag'.tr,
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: ColorConstants.blue),
-                      ),
-                      const SizedBox(height: 14),
-                      if (job.finished) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFE6D9), // Light beige
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.check_circle_outline,
-                                  size: 18, color: Color(0xFF6C632B)),
-                              SizedBox(width: 8),
-                              Text(
-                                "Iş tamamlanan",
-                                style: TextStyle(
-                                  color: Color(0xFF6C632B),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.access_time,
+                                size: 24, color: Colors.black),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "job_completed_rating_pending".tr,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                      ],
-                      NewTag(status: job.status),
-                      const SizedBox(height: 16),
-                      if (jobStatusEnum == MyTasksStatus.retEdilen) ...[
-                        Text(
-                          'duzgun'.tr,
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: ColorConstants.kPrimaryColor2),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                      );
+                    }
 
-                      _buildOtherInfoSection(context, job),
-                      const SizedBox(height: 32),
-
-                      // Bottom Action Buttons (Now Scrollable)
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+                    if (controller.isOfferSent.value || job.requestId != null) {
+                      return Column(
                         children: [
-                          Obx(() {
-                            if (job.finished) {
-                              return Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 20),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.02),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.access_time,
-                                        size: 24, color: Colors.black),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        "Ýumuş tamamlandy. Baha nobata goýuldy."
-                                            .tr,
-                                        style: const TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-
-                            if (controller.isOfferSent.value ||
-                                job.requestId != null) {
-                              return Column(
-                                children: [
-                                  if (controller.isOfferSent.value)
-                                    _buildOfferSuccessBox(
-                                      price: controller.sentPrice.value,
-                                      comment: controller.sentComment.value,
-                                    )
-                                  else
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        color: ColorConstants.whiteColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.info_outline,
-                                              color: ColorConstants.blackColor),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            "Siziň teklibiňiz ugradyldy",
-                                            style: TextStyle(
-                                              color: ColorConstants.blackColor,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  const SizedBox(height: 16),
-                                  if (controller.isCompleteRequestSent.value)
-                                    const SizedBox.shrink()
-                                  else
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 50,
-                                      child: ElevatedButton(
-                                        onPressed:
-                                            controller.isCompletingJob.value
-                                                ? null
-                                                : () => controller
-                                                    .markJobDoneByMaster(),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              ColorConstants.kPrimaryColor2,
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 14),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          elevation: 0,
-                                        ),
-                                        child: controller.isCompletingJob.value
-                                            ? const SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white,
-                                                ),
-                                              )
-                                            : const Text(
-                                                'Iş tamamlamak',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                      ),
-                                    ),
-                                  const SizedBox(height: 16),
-                                ],
-                              );
-                            }
-                            return // Teklip etmek button
-                                SizedBox(
+                          if (controller.isOfferSent.value)
+                            _buildOfferSuccessBox(
+                              price: controller.sentPrice.value,
+                              comment: controller.sentComment.value,
+                            )
+                          else
+                            Container(
                               width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) =>
-                                        const JobRequestBottomSheet(),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      ColorConstants.kPrimaryColor2,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: const Text(
-                                  "Teklip etmek",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: ColorConstants.whiteColor,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            );
-                          }),
-                          const SizedBox(height: 10),
-                          // Ginişleýin button with Balance
-                          Obx(() => controller.isLoggedIn.value
-                              ? SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () =>
-                                        Get.to(() => const WalletView()),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: ColorConstants.blue,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 10, horizontal: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 0,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.access_time,
+                                      color: ColorConstants.blackColor),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "offer_sent".tr,
+                                    style: const TextStyle(
+                                      color: ColorConstants.blackColor,
+                                      fontWeight: FontWeight.w400,
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () =>
-                                              Get.to(() => const WalletView()),
-                                          child: Row(
-                                            children: [
-                                              SvgPicture.asset(
-                                                  IconConstants.hasabym,
-                                                  colorFilter:
-                                                      const ColorFilter.mode(
-                                                          Colors.white,
-                                                          BlendMode.srcIn),
-                                                  width: 18),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                "Hasabym: ${controller.userBalance.value.toStringAsFixed(0)} TMT",
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                ColorConstants.kPrimaryColor2,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              SvgPicture.asset(
-                                                  IconConstants.arrowOutward,
-                                                  colorFilter:
-                                                      const ColorFilter.mode(
-                                                          Colors.white,
-                                                          BlendMode.srcIn),
-                                                  width: 14),
-                                              const SizedBox(width: 6),
-                                              const Text(
-                                                "Giňişleýin",
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          if (job.selected)
+                            if (controller.isCompleteRequestSent.value)
+                              const SizedBox.shrink()
+                            else
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: controller.isCompletingJob.value
+                                      ? null
+                                      : () async {
+                                          final result = await DialogUtils()
+                                              .showCompleteJobDialog(context);
+                                          if (result == true) {
+                                            controller
+                                                .markJobDoneByMasterWithRequestId();
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        ColorConstants.kPrimaryColor2,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: controller.isCompletingJob.value
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
                                           ),
                                         )
-                                      ],
-                                    ),
+                                      : Text(
+                                          'complete_job'.tr,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                          if (job.selected) const SizedBox(height: 16),
+                        ],
+                      );
+                    }
+                    if (!controller.isLoggedIn.value) {
+                      return const SizedBox.shrink();
+                    }
+                    return // Teklip etmek button
+                        SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => const JobRequestBottomSheet(),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorConstants.kPrimaryColor2,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          "make_offer".tr,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+                  Obx(() => controller.isLoggedIn.value
+                      ? SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Get.to(() => const WalletView()),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ColorConstants.blue,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  onTap: () => Get.to(() => const WalletView()),
+                                  child: Row(
+                                    children: [
+                                      SvgPicture.asset(IconConstants.hasabym,
+                                          colorFilter: const ColorFilter.mode(
+                                              Colors.white, BlendMode.srcIn),
+                                          width: 18),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "${"wallet".tr}: ${controller.userBalance.value.toStringAsFixed(0)} TMT",
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: ColorConstants.kPrimaryColor2,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SvgPicture.asset(
+                                          IconConstants.arrowOutward,
+                                          colorFilter: const ColorFilter.mode(
+                                              Colors.white, BlendMode.srcIn),
+                                          width: 14),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "ginis".tr,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 )
-                              : const SizedBox.shrink()),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink()),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+            ],
+          ),
         );
       }),
     );
@@ -588,7 +539,7 @@ class JobDetailView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Siziň teklibiňiz $price TMT.",
+            "your_offer_is".trParams({'price': price}),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -612,34 +563,6 @@ class JobDetailView extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOfferSuccessBar(JobDetailController controller) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFC7EBC1), // Light green
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            "Siziň teklibiňiz ugradyldy",
-            style: TextStyle(
-              color: Color(0xFF3B7D2F), // Darker green for text
-              fontWeight: FontWeight.w500,
-              fontSize: 15,
-            ),
-          ),
-          InkWell(
-            onTap: () => controller.closeOfferSuccess(),
-            child: const Icon(Icons.close, color: Color(0xFF3B7D2F), size: 20),
           ),
         ],
       ),
@@ -750,7 +673,7 @@ class JobDetailView extends StatelessWidget {
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 4),
                                     child: Text(
-                                      isExpanded ? "gizle".tr : "dolyac".tr,
+                                      isExpanded ? "hide".tr : "show_more".tr,
                                       style: const TextStyle(
                                         fontSize: 13,
                                         color: ColorConstants.blue,
@@ -1255,19 +1178,7 @@ class JobDetailView extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: ColorConstants.whiteColor,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
+          color: ColorConstants.background,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1276,25 +1187,19 @@ class JobDetailView extends StatelessWidget {
                 text: _formatDateStatus(context, job),
                 suffix: 'job_date_label'.tr,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               InfoRow(
                 icon: IconConstants.grid,
                 text: job.categoryName,
               ),
               const SizedBox(height: 12),
-              InfoRow(
-                icon: IconConstants.locationHouse,
-                text:
-                    "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1, color: ColorConstants.background),
-              const SizedBox(height: 12),
               Row(
                 children: [
                   SmallInfo(
                     icon: IconConstants.payment,
-                    text: "${job.minPrice} TMT - ${job.maxPrice} TMT",
+                    text: (job.minPrice == 0 && job.maxPrice == 0)
+                        ? "not_priced".tr
+                        : "${job.minPrice} TMT - ${job.maxPrice} TMT",
                   ),
                   const SizedBox(width: 16),
                   SmallInfo(
@@ -1309,6 +1214,15 @@ class JobDetailView extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              InfoRow(
+                icon: IconConstants.locationHouse,
+                text:
+                    "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
+              ),
+              const SizedBox(height: 12),
+              const Divider(height: 1.5, color: ColorConstants.whiteColor),
+              const SizedBox(height: 12),
             ],
           ),
         ),

@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import '../../chats/controllers/chat_controller.dart';
 
 import '../controllers/home_controller.dart';
 

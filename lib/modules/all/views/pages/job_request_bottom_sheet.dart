@@ -68,9 +68,9 @@ class JobRequestBottomSheet extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Title
-              const Text(
-                "Teklibiňizi ugratmak",
-                style: TextStyle(
+              Text(
+                "send_offer_title".tr,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -78,10 +78,10 @@ class JobRequestBottomSheet extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              const Text(
-                "Ýumuşlara ýazylmak, teklip ugratmak mugt.\nTöleg Siz saýlanyňyzdan soň bolar. Telefon\nnomeriňizi ýazmak gadagan",
+              Text(
+                "send_offer_desc".tr,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 14,
                     color: ColorConstants.secondary,
                     fontWeight: FontWeight.w500),
@@ -130,13 +130,13 @@ class JobRequestBottomSheet extends StatelessWidget {
                 child: TextFormField(
                   controller: controller.commentController,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: "Teklibiňizi giňişleýin beýan ediň",
-                    hintStyle: TextStyle(
+                  decoration: InputDecoration(
+                    hintText: "comment_hint".tr,
+                    hintStyle: const TextStyle(
                       color: ColorConstants.secondary,
                     ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                 ),
               ),
@@ -151,10 +151,10 @@ class JobRequestBottomSheet extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "Ýazan tekstyňyz ýatda saklanyldy. Ýene ulanmak isleseňiz, Şablonlar düwmeden ulanyp bilersiňiz.",
-                          style: TextStyle(
+                          "template_saved_msg".tr,
+                          style: const TextStyle(
                             color: Color(0xFF2E7D32),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -190,9 +190,9 @@ class JobRequestBottomSheet extends StatelessWidget {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          "Şablonlar",
-                          style: TextStyle(
+                        child: Text(
+                          "templates".tr,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -222,7 +222,7 @@ class JobRequestBottomSheet extends StatelessWidget {
                           elevation: 0,
                         ),
                         child: Text(
-                          "Ýatda sakla",
+                          "save_template".tr,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -258,9 +258,9 @@ class JobRequestBottomSheet extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    "Teklip ugratmak",
-                    style: TextStyle(
+                  child: Text(
+                    "send_offer_title".tr,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -295,11 +295,11 @@ class JobRequestBottomSheet extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios, size: 20),
                 onPressed: () => controller.showingTemplates.value = false,
               ),
-              const Expanded(
+               Expanded(
                 child: Center(
                   child: Text(
-                    "Şablonlar",
-                    style: TextStyle(
+                    "templates".tr,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -321,10 +321,10 @@ class JobRequestBottomSheet extends StatelessWidget {
               }
 
               if (controller.templates.isEmpty) {
-                return const Center(
+                return  Center(
                   child: Text(
-                    "Şablon ýok",
-                    style: TextStyle(
+                    "no_templates".tr,
+                    style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 16,
                     ),

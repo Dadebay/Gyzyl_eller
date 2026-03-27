@@ -71,6 +71,7 @@ class JobModel {
   final String? position;
   final int? requestId;
   final bool finished;
+  final bool selected;
 
   JobModel({
     required this.id,
@@ -101,6 +102,7 @@ class JobModel {
     this.position,
     this.requestId,
     this.finished = false,
+    this.selected = false,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
@@ -147,6 +149,7 @@ class JobModel {
               ? int.tryParse(json['requestId'].toString())
               : null),
       finished: json['finished'] ?? false,
+      selected: json['selected'] ?? false,
     );
   }
 }

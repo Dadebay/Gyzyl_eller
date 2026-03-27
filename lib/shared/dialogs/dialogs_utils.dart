@@ -263,7 +263,7 @@ class DialogUtils {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Siz bu işi tamamlamak isleýäňizmi?',
+                  'Iş tamamlandy',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -272,49 +272,50 @@ class DialogUtils {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                const Icon(
-                  Icons.check_circle_outline,
-                  color: ColorConstants.kPrimaryColor2,
-                  size: 60,
+                SvgPicture.asset(
+                  IconConstants.succes,
+                  width: 85,
+                  height: 85,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Siz bu işi tamamlamak isleýäňizmi?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF1E1E1E),
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop(false);
-                        },
-                        child: Text(
-                          'cancel'.tr,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: ColorConstants.fonts,
-                          ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop(false);
+                      },
+                      child: const Text(
+                        'ÝOK',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E1E1E),
                         ),
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorConstants.kPrimaryColor2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop(true);
-                        },
-                        child: const Text(
-                          'Howwa',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop(true);
+                      },
+                      child: const Text(
+                        'HAWA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.kPrimaryColor2,
                         ),
                       ),
                     ),

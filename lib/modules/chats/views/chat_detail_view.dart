@@ -17,7 +17,6 @@ import 'package:gyzyleller/modules/chats/controllers/chat_detail_controller.dart
 import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:gyzyleller/modules/all/views/pages/job_detail_view.dart';
 import 'package:latlong2/latlong.dart' as ll;
 
 class ChatDetailView extends StatefulWidget {
@@ -174,21 +173,11 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       toolbarHeight: widget.notification ? 80 : 160,
       automaticallyImplyLeading: false,
       pinned: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(0),
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            // Container(
-            //   height: 20,
-            //   width: double.maxFinite,
-            //   decoration: const BoxDecoration(
-            //     color: ColorConstants.background,
-            //     borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-            //   ),
-            // ),
-            // if (!widget.notification) _buildProductBanner(context),
-          ],
+          children: [],
         ),
       ),
       title: Padding(
@@ -292,9 +281,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       child: url.isNotEmpty && url != 'null'
           ? ClipOval(
               child: CachedNetworkImage(
-                imageUrl: url.startsWith('http')
-                    ? url
-                    : '${_api.urlImage}images/user/avatar/$url',
+                imageUrl: url.startsWith('http') ? url : '${_api.urlImage}$url',
                 width: 44,
                 height: 44,
                 fit: BoxFit.cover,
@@ -304,39 +291,6 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           : _fallbackAvatar(),
     );
   }
-
-  // Widget _buildProductAvatar() {
-  //   String url = widget.productImage;
-  //   if (url.contains(',')) {
-  //     url = url.split(',').first;
-  //   }
-  //   if (url.startsWith('/')) url = url.substring(1);
-
-  //   return Container(
-  //     decoration: BoxDecoration(
-  //       shape: BoxShape.circle,
-  //       border: Border.all(color: Colors.white, width: 2),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: ColorConstants.kPrimaryColor.withOpacity(0.1),
-  //           blurRadius: 8,
-  //           offset: const Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: url.isNotEmpty && url != 'null'
-  //         ? ClipOval(
-  //             child: CachedNetworkImage(
-  //               imageUrl: url.startsWith('http') ? url : '${_api.urlImage}$url',
-  //               width: 44,
-  //               height: 44,
-  //               fit: BoxFit.cover,
-  //               errorWidget: (_, __, ___) => _fallbackAvatar(),
-  //             ),
-  //           )
-  //         : _fallbackAvatar(),
-  //   );
-  // }
 
   Widget _fallbackAvatar() {
     final uid = int.tryParse(widget.userId) ?? 0;
@@ -397,10 +351,6 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             value: 'report',
             child: Text('report'.tr),
           ),
-          // PopupMenuItem(
-          //   value: 'location',
-          //   child: Text('location'.tr),
-          // ),
         ],
       );
     });
@@ -500,8 +450,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
   Future<void> _blockOrUnblockUser() async {
     final endpoint = widget.blocked
-        ? '${_api.urlLink}api/user/unblock/${widget.userId}'
-        : '${_api.urlLink}api/user/block/${widget.chatId}';
+        ? '${_api.urlLink}/api/user/unblock/${widget.userId}'
+        : '${_api.urlLink}/api/user/block/${widget.chatId}';
     try {
       await http.post(
         Uri.parse(endpoint),
@@ -596,7 +546,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                         Navigator.pop(context);
                         try {
                           await http.post(
-                            Uri.parse('${_api.urlLink}api/user/report'),
+                            Uri.parse('${_api.urlLink}/api/user/report'),
                             headers: {
                               'Authorization': 'Bearer $_token',
                               'Content-Type': 'application/json',
@@ -625,152 +575,6 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
-  Widget _buildProductBanner(BuildContext context) {
-    return Obx(() {
-      final job = _controller.job.value;
-
-      // Use dynamic job data if available, otherwise fallback to widget parameters
-      final title = job?.name ?? widget.productTitle;
-      final image = job?.image ?? widget.productImage;
-      final price = job != null ? job.minPrice.toString() : widget.productPrice;
-      final status = job != null ? job.status.toString() : widget.productStatus;
-
-      if (title.isEmpty) return const SizedBox.shrink();
-
-      final imageUrl = _getProductImageUrl(image);
-      final isActive = status == '1';
-
-      return Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: InkWell(
-          onTap: () {
-            if (!isActive) return;
-            if (widget.productId.isNotEmpty) {
-              Get.to(
-                () => const JobDetailView(),
-                arguments: int.tryParse(widget.productId) ?? widget.productId,
-              );
-            }
-          },
-          child: Row(
-            children: [
-              _buildProductImage(context, imageUrl, isActive),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      price == 'null' || price.isEmpty
-                          ? 'negotiable'.tr
-                          : '$price TMT',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: ColorConstants.kPrimaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isActive)
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.grey.shade400,
-                ),
-            ],
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildProductImage(BuildContext context, String? url, bool isActive) {
-    if (url == null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 60,
-          height: 45,
-          color: Colors.grey[200],
-          child: const Icon(Icons.image_not_supported, color: Colors.grey),
-        ),
-      );
-    }
-    if (!isActive) {
-      return Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          borderRadius: BorderRadius.circular(10),
-        ),
-        width: 60,
-        height: 45,
-        child: const Icon(Icons.block, color: Colors.grey),
-      );
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: CachedNetworkImage(
-        imageUrl: url,
-        width: 60,
-        height: 45,
-        fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => Container(
-          width: 60,
-          height: 45,
-          color: Colors.grey[200],
-          child: const Icon(Icons.image_not_supported),
-        ),
-      ),
-    );
-  }
-
-  String? _getProductImageUrl(String? img) {
-    if (img == null || img.isEmpty || img == 'null') return null;
-
-    String path = img;
-    if (img.contains(',')) {
-      path = img.split(',').first;
-    }
-
-    if (path.startsWith('/')) path = path.substring(1);
-    print('BANNER PHOTO API URL (Grouped Logic): ${_api.urlImage}$path');
-
-    String finalUrl;
-    if (path.startsWith('http')) {
-      finalUrl = path;
-    } else {
-      finalUrl = '${_api.urlImage}$path';
-    }
-
-    // Debug print for verification
-
-    return finalUrl;
-  }
-
   Widget _buildMessageList(BuildContext context) {
     return Obx(() {
       if (_controller.isLoading.value) {
@@ -782,7 +586,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       }
 
       if (_controller.hasError.value) {
-        return Center(child: Text('could_not_load_chat'.tr));
+        return Center(child: Text(''.tr));
       }
 
       if (widget.notification) {
@@ -965,9 +769,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     if (url.isNotEmpty && url != 'null') {
       return ClipOval(
         child: CachedNetworkImage(
-          imageUrl: url.startsWith('http')
-              ? url
-              : '${_api.urlImage}images/user/avatar/$url',
+          imageUrl: url.startsWith('http') ? url : '${_api.urlImage}$url',
           width: 30,
           height: 30,
           fit: BoxFit.cover,

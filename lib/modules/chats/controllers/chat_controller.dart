@@ -1,6 +1,8 @@
-// ignore_for_file: avoid_print
+import 'dart:convert';
 
 import 'package:gyzyleller/core/models/chat_model.dart';
+import 'package:gyzyleller/modules/chats/controllers/notification_controller.dart';
+import 'package:gyzyleller/core/services/my_jobs_service.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:http/http.dart' as http;
 import 'package:gyzyleller/core/services/chat_socket_service.dart';
@@ -8,7 +10,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import '../../../core/services/api.dart';
 
-class ChatController extends GetxController {
+class ChatController extends GetxController with WidgetsBindingObserver {
   final _auth = AuthStorage();
   final _api = Api();
 
@@ -21,10 +23,16 @@ class ChatController extends GetxController {
   final RxSet<String> selectedChatIds = <String>{}.obs;
   final RxBool isSelectionMode = false.obs;
 
+  bool _isFetching = false;
+
   // Sorting: 0=All, 1=Buy, 2=Sell, 3=Blocked
   final RxInt currentSort = 0.obs;
   // SortDate: 0=Last Message, 1=Unread
   final RxInt sortDate = 0.obs;
+
+  // Metadata Cache to prevent "disappearing" job names
+  final Map<String, dynamic> _productsCache = {};
+  final Map<String, dynamic> _usersCache = {};
 
   Timer? _pollingTimer;
 
@@ -34,36 +42,76 @@ class ChatController extends GetxController {
     return user?['id']?.toString() ?? '';
   }
 
-  IO.Socket get _socket => Get.find<ChatSocketService>().socket;
+  IO.Socket? get _socket => Get.find<ChatSocketService>().socket;
   bool get _socketConnected => Get.find<ChatSocketService>().isConnected;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _initSocketListeners();
+
+    // Bind notification count to stay updated in UI
+    final notifCtrl = Get.isRegistered<NotificationController>()
+        ? Get.find<NotificationController>()
+        : Get.put(NotificationController());
+
+    notifCount.value = notifCtrl.unreadCount.value;
+    ever<int>(notifCtrl.unreadCount, (val) => notifCount.value = val);
+
     fetchChats();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('🔄 [ChatController] App resumed, refreshing data...');
+      fetchChats();
+    }
+  }
+
+  @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopPolling();
     super.onClose();
   }
 
   // ─── Socket listeners ───
   void _initSocketListeners() {
-    if (!Get.find<ChatSocketService>().isInitialized) return;
-    _socket.on('last_sended_message', (_) => fetchChats());
-    _socket.on('chat_created', (_) => fetchChats());
-    _socket.on('new_message', (_) => fetchChats());
-    _socket.on('user_connected', (_) => _getData());
-    _socket.on('user_disconnected', (_) => _getData());
+    final s = _socket;
+    if (s == null) return;
+    s.on('last_sended_message', (_) => fetchChats());
+    s.on('chat_created', (_) => fetchChats());
+    s.on('new_message', (_) => fetchChats());
+    s.on('user_connected', (_) => _getData());
+    s.on('user_disconnected', (_) => _getData());
+
+    s.onConnect((_) {
+      debugPrint('✅ [ChatController] Socket bağlandy – polling durduryldy');
+      fetchChats();
+      _stopPolling();
+    });
+
+    s.onDisconnect((reason) {
+      debugPrint(
+          '❌ [ChatController] Socket kesildi: $reason – polling başladyldy');
+      _fetchChatsHttp(); // Immediate fetch on cut
+      _startPolling();
+    });
+
+    s.onConnectError((data) {
+      debugPrint('⚠️ [ChatController] Birikme ýalňyşy (onConnectError): $data');
+      _fetchChatsHttp();
+      _startPolling();
+    });
   }
 
   void _getData() {
     if (!_socketConnected) return;
     final lang = Get.find<GetStorage>().read('langCode') ?? 'tk';
-    _socket.emitWithAck('get_data', {'lang': lang}, ack: (data) {
+    _socket?.emitWithAck('get_data', {'lang': lang}, ack: (data) {
       if (data['status'] == 200) {
         onlineUsers.value = data['online_users'] ?? [];
       }
@@ -73,24 +121,109 @@ class ChatController extends GetxController {
   // ─── Polling fallback ───
   void _startPolling() {
     if (_pollingTimer != null) return;
+    debugPrint('⏳ [ChatController] Polling başlady (10s interval)');
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (!_socketConnected) _fetchChatsHttp();
+      if (!_socketConnected) {
+        debugPrint('--> [HTTP Polling] Chatlar çekilýär...');
+        _fetchChatsHttp();
+      }
     });
   }
 
   void _stopPolling() {
+    debugPrint('🛑 [ChatController] Polling stopped.');
     _pollingTimer?.cancel();
     _pollingTimer = null;
   }
 
-  // ─── Main fetch: socket first, HTTP fallback ───
+  void reset() {
+    _stopPolling();
+    chats.clear();
+    _productsCache.clear();
+    _usersCache.clear();
+    unreadCount.value = 0;
+    notifCount.value = 0;
+    onlineUsers.clear();
+    selectedChatIds.clear();
+    isSelectionMode.value = false;
+    hasError.value = false;
+    _isFetching = false;
+  }
+
+  /// Proactively fetches missing job/product metadata for a list of raw chats
+  Future<void> _healMissingMetadata(List<dynamic> rawChats) async {
+    final missingIds = <int>{};
+    for (var chat in rawChats) {
+      final pidStr = chat['product_id']?.toString() ??
+          chat['job_id']?.toString() ??
+          chat['service_id']?.toString();
+      if (pidStr != null && pidStr != '0' && pidStr != '') {
+        if (!_productsCache.containsKey(pidStr)) {
+          final pid = int.tryParse(pidStr);
+          if (pid != null) missingIds.add(pid);
+        }
+      }
+    }
+
+    if (missingIds.isEmpty) return;
+
+    debugPrint(
+        '🩹 [ChatController] Healing ${missingIds.length} missing job names...');
+    final service = MyJobsService();
+
+    // Fetch missing details in parallel (limited)
+    await Future.wait(missingIds.map((id) async {
+      try {
+        final detail = await service.getJobDetail(id);
+        if (detail.success) {
+          // Convert JobModel to Map structure expected by ChatModel.fromApiData
+          final jobMap = {
+            'id': detail.job.id,
+            'name': detail.job.name,
+            'image': detail.job.image,
+            'price': detail.job.minPrice,
+            'status': detail.job.status,
+          };
+          _productsCache[id.toString()] = jobMap;
+        }
+      } catch (e) {
+        debugPrint('⚠️ [ChatController] Failed to heal job $id: $e');
+      }
+    }));
+
+    // Trigger UI refresh if we found anything new
+    if (missingIds.any((id) => _productsCache.containsKey(id.toString()))) {
+      debugPrint('✅ [ChatController] Metadata healed, refreshing list...');
+      // To reflect changes, assignAll again
+      final refreshed = rawChats
+          .map((e) => ChatModel.fromApiData(
+              e as Map<String, dynamic>, _productsCache, _usersCache))
+          .toList();
+      chats.assignAll(refreshed);
+    }
+  }
+
   Future<void> fetchChats() async {
-    if (_socketConnected) {
-      _fetchChatsSocket();
-      _getData();
-    } else {
-      await _fetchChatsHttp();
-      _startPolling();
+    if (_isFetching) return;
+    _isFetching = true;
+
+    // If we have data, don't show full screen loader
+    if (chats.isEmpty) {
+      isLoadingChats.value = true;
+    }
+
+    try {
+      if (_socketConnected) {
+        await _fetchChatsSocket();
+        _getData();
+        _stopPolling();
+      } else {
+        await _fetchChatsHttp();
+        _startPolling();
+      }
+    } finally {
+      _isFetching = false;
+      isLoadingChats.value = false;
     }
   }
 
@@ -104,8 +237,11 @@ class ChatController extends GetxController {
     fetchChats();
   }
 
-  void _fetchChatsSocket() {
-    isLoadingChats.value = true;
+  Future<void> _fetchChatsSocket() {
+    final completer = Completer<void>();
+    if (chats.isEmpty) {
+      isLoadingChats.value = true;
+    }
     bool responded = false;
     final lang = Get.find<GetStorage>().read('langCode') ?? 'tk';
 
@@ -113,12 +249,14 @@ class ChatController extends GetxController {
     Timer(const Duration(seconds: 1), () {
       if (!responded) {
         responded = true;
-        _fetchChatsHttp();
+        _fetchChatsHttp().then((_) {
+          if (!completer.isCompleted) completer.complete();
+        });
         _startPolling();
       }
     });
 
-    _socket.emitWithAck('get_chats', {
+    _socket?.emitWithAck('get_chats', {
       'all': currentSort.value == 0,
       'buy': currentSort.value == 1,
       'sell': currentSort.value == 2,
@@ -133,49 +271,125 @@ class ChatController extends GetxController {
       try {
         if (data['status'] == 200) {
           final List<dynamic> chatList = data['chats'] ?? [];
-          final Map<String, dynamic> products =
-              (data['products'] as Map?)?.cast<String, dynamic>() ??
-                  (data['jobs'] as Map?)?.cast<String, dynamic>() ??
-                  {};
-          final Map<String, dynamic> users =
-              (data['users'] as Map?)?.cast<String, dynamic>() ?? {};
-          chats.value = chatList
+          // Metadata processing: convert List to Map or ensure String keys
+          Map<String, dynamic> toMap(dynamic input) {
+            final map = <String, dynamic>{};
+            if (input is Map) {
+              input.forEach((k, v) => map[k.toString()] = v);
+            } else if (input is List) {
+              for (var item in input) {
+                if (item is Map && item['id'] != null) {
+                  map[item['id'].toString()] = item;
+                }
+              }
+            }
+            if (map.isNotEmpty) {
+              debugPrint(
+                  '📥 [ChatController] Socket Metadata keys: ${map.keys.take(5).toList()}');
+            }
+            return map;
+          }
+
+          if (chatList.isNotEmpty) {
+            debugPrint(
+                '📥 [ChatController] Socket First chat raw: ${jsonEncode(chatList.first)}');
+          }
+
+          final products = toMap(data['products'] ?? data['jobs']);
+          final users = toMap(data['users']);
+
+          // Update cache
+          _productsCache.addAll(products);
+          _usersCache.addAll(users);
+
+          // Metadata safety check (Ayterek style)
+          // Only retry if chats reference products but metadata is missing in BOTH current response and cache
+          final hasProductChats = chatList.any((c) =>
+              c['product_id'] != null ||
+              c['job_id'] != null ||
+              c['service_id'] != null);
+
+          if (hasProductChats &&
+              chatList.isNotEmpty &&
+              (_productsCache.isEmpty || _usersCache.isEmpty)) {
+            debugPrint(
+                '⚠️ [ChatController] Metadata eksik (Socket), 2s soň täzeden synanyşylýar...');
+            Future.delayed(const Duration(seconds: 2), () => fetchChats());
+            responded = true; // Mark as handled but don't update UI yet
+            return;
+          }
+
+          final newChats = chatList
               .map((e) => ChatModel.fromApiData(
                     e as Map<String, dynamic>,
-                    products,
-                    users,
+                    _productsCache,
+                    _usersCache,
                   ))
               .toList();
-          _computeUnread();
+
+          chats.value = newChats;
+          _computeUnread(newChats);
+
+          // Heal missing metadata in background
+          _healMissingMetadata(chatList);
+
+          // Also fetch notifications on socket response
+          if (Get.isRegistered<NotificationController>()) {
+            Get.find<NotificationController>()
+                .fetchNotificationCount()
+                .then((_) {
+              notifCount.value =
+                  Get.find<NotificationController>().unreadCount.value;
+            });
+          }
           hasError.value = false;
           debugPrint(
               '✅ [ChatController] Socket: ${chats.length} chat ýüklendi');
         }
       } catch (e) {
         debugPrint('⚠️ [ChatController] Socket ack parse ýalňyşy: $e');
-        _fetchChatsHttp();
+        _fetchChatsHttp().then((_) {
+          if (!completer.isCompleted) completer.complete();
+        });
       } finally {
-        isLoadingChats.value = false;
+        if (responded) {
+          isLoadingChats.value = false;
+          if (!completer.isCompleted) completer.complete();
+        }
       }
     });
 
-    // Also get general unread status
-    _socket.emitWithAck('get_data', {'lang': lang}, ack: (data) {
+    // Get online users, but don't overwrite unreadCount here to avoid lag
+    _socket?.emitWithAck('get_data', {'lang': lang}, ack: (data) {
       if (data['status'] == 200) {
-        unreadCount.value =
-            int.tryParse(data['messages']?.toString() ?? '0') ?? 0;
+        onlineUsers.value = data['online_users'] ?? [];
       }
     });
+
+    return completer.future;
   }
 
   Future<void> _fetchChatsHttp() async {
-    isLoadingChats.value = true;
+    if (chats.isEmpty) {
+      isLoadingChats.value = true;
+    }
     hasError.value = false;
+
+    final notifCtrl = Get.isRegistered<NotificationController>()
+        ? Get.find<NotificationController>()
+        : Get.put(NotificationController());
+
+    await notifCtrl.fetchNotificationCount();
+    notifCount.value = notifCtrl.unreadCount.value;
     try {
+      final uri = Uri.parse('${_api.urlLink}/api/user/chats').replace(
+        queryParameters: {
+          'all': 'true',
+          'type': 'gyzyl',
+        },
+      );
       final response = await http.get(
-        Uri.parse('${_api.urlLink}api/user/chats').replace(
-          queryParameters: {'type': 'gyzyl'},
-        ),
+        uri,
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -185,25 +399,79 @@ class ChatController extends GetxController {
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         final List<dynamic> chatList = data['chats'] ?? [];
-        final Map<String, dynamic> products =
-            (data['products'] as Map?)?.cast<String, dynamic>() ??
-                (data['jobs'] as Map?)?.cast<String, dynamic>() ??
-                {};
-        final Map<String, dynamic> users =
-            (data['users'] as Map?)?.cast<String, dynamic>() ?? {};
 
-        chats.value = chatList
+        if (chatList.isNotEmpty) {
+          debugPrint(
+              '📥 [ChatController] First chat full data: ${jsonEncode(chatList.first)}');
+        }
+
+        // Metadata processing: convert List to Map or ensure String keys
+        Map<String, dynamic> toMap(dynamic input) {
+          final map = <String, dynamic>{};
+          if (input is Map) {
+            input.forEach((k, v) => map[k.toString()] = v);
+          } else if (input is List) {
+            for (var item in input) {
+              if (item is Map && item['id'] != null) {
+                map[item['id'].toString()] = item;
+              }
+            }
+          }
+          if (map.isNotEmpty) {
+            debugPrint(
+                '📥 [ChatController] Metadata keys (sample): ${map.keys.take(5).toList()}');
+          }
+          return map;
+        }
+
+        final products = toMap(data['products'] ?? data['jobs']);
+        final users = toMap(data['users']);
+
+        // Update cache
+        _productsCache.addAll(products);
+        _usersCache.addAll(users);
+
+        // Metadata safety check (Ayterek style)
+        // Only retry if chats reference products but metadata is missing in BOTH current response and cache
+        final hasProductChats = chatList.any((c) =>
+            c['product_id'] != null ||
+            c['job_id'] != null ||
+            c['service_id'] != null);
+
+        if (hasProductChats &&
+            chatList.isNotEmpty &&
+            (_productsCache.isEmpty || _usersCache.isEmpty)) {
+          debugPrint(
+              '⚠️ [ChatController] HTTP metadata eksik, skipping list update but updating counts...');
+          // Pre-calculate unread count from raw data even if we don't update names/images yet
+          final tempModels =
+              chatList.map((e) => ChatModel.fromApiData(e, {}, {})).toList();
+          _computeUnread(tempModels);
+          Future.delayed(const Duration(seconds: 2), () => _fetchChatsHttp());
+          return;
+        }
+
+        final newHttpChats = chatList
             .map((e) => ChatModel.fromApiData(
                   e as Map<String, dynamic>,
-                  products,
-                  users,
+                  _productsCache,
+                  _usersCache,
                 ))
             .toList();
-        _computeUnread();
-        debugPrint('✅ [ChatController] HTTP: ${chats.length} chat ýüklendi');
+
+        chats.value = newHttpChats;
+        _computeUnread(newHttpChats);
+
+        // Heal missing metadata in background
+        _healMissingMetadata(chatList);
+
+        hasError.value = false;
+        debugPrint(
+            '✅ [ChatController] HTTP: ${chats.length} chat ýüklendi. Final badge count: ${unreadCount.value}');
       } else {
         hasError.value = true;
-        debugPrint('[ChatController] fetchChats error: ${response.statusCode}');
+        debugPrint(
+            '❌ [ChatController] fetchChats error: ${response.statusCode}');
       }
     } catch (e) {
       hasError.value = true;
@@ -213,12 +481,17 @@ class ChatController extends GetxController {
     }
   }
 
-  void _computeUnread() {
+  void _computeUnread([List<ChatModel>? customList]) {
+    final listToProcess = customList ?? chats;
     int total = 0;
-    for (final c in chats) {
+    for (final c in listToProcess) {
+      if (c.unreadCount > 0) {
+        debugPrint('📩 Chat ${c.chatId} has ${c.unreadCount} unread');
+      }
       total += c.unreadCount;
     }
     unreadCount.value = total;
+    debugPrint('🔔 [ChatController] Total unread computed: $total');
   }
 
   bool isUserOnline(String userId) {
@@ -227,20 +500,19 @@ class ChatController extends GetxController {
 
   void blockUser(String chatId) {
     if (_socketConnected) {
-      _socket.emitWithAck('block_chat', {'chat_id': chatId}, ack: (_) {});
+      _socket?.emitWithAck('block_chat', {'chat_id': chatId}, ack: (_) {});
     }
   }
 
   void unBlockUser(String userId) {
     if (_socketConnected) {
-      _socket.emitWithAck('unblock_user', {'user_id': userId}, ack: (_) {
+      _socket?.emitWithAck('unblock_user', {'user_id': userId}, ack: (_) {
         fetchChats();
       });
     }
   }
 
   void setUnread(int index) {
-    if (!_socketConnected) return;
     if (index < 0 || index >= chats.length) return;
 
     final chat = chats[index];
@@ -265,15 +537,19 @@ class ChatController extends GetxController {
       postLng: chat.postLng,
     );
     chats[index] = updatedChat;
+    _computeUnread(); // Immediate local badge refresh
 
-    final lang = Get.find<GetStorage>().read('langCode') ?? 'tk';
-    _socket.emitWithAck('get_data', {'lang': lang}, ack: (data) {
-      if (data['status'] == 200) {
-        unreadCount.value =
-            int.tryParse(data['messages']?.toString() ?? '0') ?? 0;
-        onlineUsers.value = data['online_users'] ?? [];
-      }
-    });
+    if (_socketConnected) {
+      final lang = Get.find<GetStorage>().read('langCode') ?? 'tk';
+      _socket?.emitWithAck('get_data', {'lang': lang}, ack: (data) {
+        if (data['status'] == 200) {
+          onlineUsers.value = data['online_users'] ?? [];
+          // Note: we don't overwrite unreadCount from server response here
+          // to prevent flickering if server lag occurs.
+          // _computeUnread() already handled it locally.
+        }
+      });
+    }
   }
 
   void toggleSelection(String chatId) {
@@ -305,11 +581,11 @@ class ChatController extends GetxController {
 
   Future<void> deleteChat(String chatId, {bool refresh = true}) async {
     if (_socketConnected) {
-      _socket.emitWithAck('delete_chat', {'chat_id': chatId}, ack: (_) {});
+      _socket?.emitWithAck('delete_chat', {'chat_id': chatId}, ack: (_) {});
     } else {
       try {
         await http.delete(
-          Uri.parse('${_api.urlLink}api/user/chats/$chatId'),
+          Uri.parse('${_api.urlLink}/api/user/chats/$chatId'),
           headers: {'Authorization': 'Bearer $token'},
         );
       } catch (e) {

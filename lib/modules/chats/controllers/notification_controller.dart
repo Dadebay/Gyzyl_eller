@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -22,6 +23,29 @@ class NotificationController extends GetxController {
   void onInit() {
     super.onInit();
     fetchNotifications();
+    _startPolling();
+  }
+
+  Timer? _pollingTimer;
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      fetchNotificationCount();
+    });
+  }
+
+  @override
+  void onClose() {
+    _pollingTimer?.cancel();
+    super.onClose();
+  }
+
+  void reset() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    notifications.clear();
+    unreadCount.value = 0;
   }
 
   Future<void> fetchNotifications() async {
@@ -29,7 +53,7 @@ class NotificationController extends GetxController {
     isLoading.value = true;
     try {
       final response = await http.get(
-        Uri.parse('${_api.urlLink}api/user/$_lang/get-notifications'),
+        Uri.parse('${_api.urlLink}/api/user/$_lang/get-notifications'),
         headers: {'Authorization': 'Bearer $_token'},
       );
 
@@ -37,7 +61,8 @@ class NotificationController extends GetxController {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         if (data['status'] == 200 && data['notifications'] != null) {
           final List list = data['notifications'];
-          notifications.value = list.map((e) => NotificationModel.fromMap(e)).toList();
+          notifications.value =
+              list.map((e) => NotificationModel.fromMap(e)).toList();
           _updateUnreadCount();
         }
       }
@@ -45,6 +70,25 @@ class NotificationController extends GetxController {
       Get.log('Error fetching notifications: $e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchNotificationCount() async {
+    if (_token.isEmpty) return;
+    try {
+      final response = await http.get(
+        Uri.parse('${_api.urlLink}/api/user/$_lang/get-notification-count'),
+        headers: {'Authorization': 'Bearer $_token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data['status'] == 200 && data['count'] != null) {
+          unreadCount.value = int.tryParse(data['count'].toString()) ?? 0;
+        }
+      }
+    } catch (e) {
+      Get.log('Error fetching notification count: $e');
     }
   }
 
@@ -57,14 +101,14 @@ class NotificationController extends GetxController {
     if (index != -1 && notifications[index].showed == 'false') {
       notifications[index] = notifications[index].copyWith(showed: 'true');
       _updateUnreadCount();
-      
+
       try {
         await http.post(
-          Uri.parse('${_api.urlLink}api/user/$_lang/showed-notification/$id'),
+          Uri.parse('${_api.urlLink}/api/user/$_lang/showed-notification/$id'),
           headers: {'Authorization': 'Bearer $_token'},
         );
       } catch (e) {
-         Get.log('Error marking notification as showed: $e');
+        Get.log('Error marking notification as showed: $e');
       }
     }
   }
@@ -72,14 +116,14 @@ class NotificationController extends GetxController {
   Future<void> deleteNotification(String id) async {
     notifications.removeWhere((n) => n.id == id);
     _updateUnreadCount();
-    
+
     try {
       await http.post(
-        Uri.parse('${_api.urlLink}api/user/$_lang/delete-notification/$id'),
+        Uri.parse('${_api.urlLink}/api/user/$_lang/delete-notification/$id'),
         headers: {'Authorization': 'Bearer $_token'},
       );
     } catch (e) {
-       Get.log('Error deleting notification: $e');
+      Get.log('Error deleting notification: $e');
     }
   }
 }

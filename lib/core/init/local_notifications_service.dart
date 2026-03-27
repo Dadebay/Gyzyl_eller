@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
+import 'package:get/get.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
 class LocalNotificationsService {
   LocalNotificationsService._internal();
 
@@ -43,7 +45,20 @@ class LocalNotificationsService {
     );
 
     await _flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onDidReceiveNotificationResponse: (NotificationResponse response) {});
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+      if (response.payload != null) {
+        try {
+          final data = jsonDecode(response.payload!);
+          if (data['type'] == '9' || data['type'] == 'chat') {
+            if (Get.isRegistered<HomeController>()) {
+              Get.find<HomeController>().changePage(2);
+            }
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      }
+    });
 
     await _flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<

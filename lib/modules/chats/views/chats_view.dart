@@ -2,6 +2,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -11,6 +12,7 @@ import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/chats/controllers/chat_controller.dart';
 import 'package:gyzyleller/modules/chats/views/chat_detail_view.dart';
+import 'package:gyzyleller/modules/chats/views/non_auth_chat_detail_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
 import 'package:gyzyleller/shared/widgets/empty_state_widget.dart';
 import 'package:intl/intl.dart';
@@ -38,7 +40,8 @@ class _ChatsViewState extends State<ChatsView>
   void initState() {
     super.initState();
     if (_auth.isLoggedIn) {
-      _chatController = Get.put(ChatController());
+      _chatController = Get.find<ChatController>();
+      _chatController?.fetchChats();
     }
   }
 
@@ -49,6 +52,14 @@ class _ChatsViewState extends State<ChatsView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    if (_auth.isLoggedIn && _chatController == null) {
+      _chatController = Get.find<ChatController>();
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        _chatController?.fetchChats();
+      });
+    }
+
     if (!_auth.isLoggedIn) {
       return Scaffold(
         backgroundColor: ColorConstants.background,
@@ -56,12 +67,10 @@ class _ChatsViewState extends State<ChatsView>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeaderSimple(context),
-            // Admin chat kutusu header'ın hemen altında, ortada değil yukarıda
             Padding(
               padding: const EdgeInsets.only(top: 0),
               child: _buildAdminTile(context),
             ),
-            // Kalan alanı boş bırakmak için Expanded eklenebilir
             const Spacer(),
           ],
         ),
@@ -116,7 +125,7 @@ class _ChatsViewState extends State<ChatsView>
             ),
           ),
           GestureDetector(
-            onTap: () => Get.to(() => SettingsView()),
+            onTap: () => Get.to(() => SettingsView(showAppBar: true)),
             child: Container(
               height: 50,
               width: 50,
@@ -180,22 +189,26 @@ class _ChatsViewState extends State<ChatsView>
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
             onTap: () {
-              Get.to(
-                () => ChatDetailView(
-                  chatId: chatId,
-                  userName: 'Admin',
-                  userId: 'admin',
-                  userPicture: '',
-                  productId: '',
-                  productImage: '',
-                  productPrice: '',
-                  productTitle: '',
-                  productStatus: '1',
-                  lastSeen: '',
-                  blocked: false,
-                  notification: false,
-                ),
-              );
+              if (!_auth.isLoggedIn) {
+                Get.to(() => const NonAuthChatDetailView());
+              } else {
+                Get.to(
+                  () => ChatDetailView(
+                    chatId: chatId,
+                    userName: 'chat_admin'.tr,
+                    userId: 'admin',
+                    userPicture: '',
+                    productId: '',
+                    productImage: '',
+                    productPrice: '',
+                    productTitle: '',
+                    productStatus: '1',
+                    lastSeen: '',
+                    blocked: false,
+                    notification: false,
+                  ),
+                );
+              }
             },
             child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -204,16 +217,20 @@ class _ChatsViewState extends State<ChatsView>
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: ColorConstants.kPrimaryColor2.withOpacity(0.12),
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
+                        color: Colors.white,
                       ),
-                      child: const Icon(
-                        Icons.support_agent_rounded,
-                        color: ColorConstants.kPrimaryColor2,
-                        size: 28,
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/logo.jpg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.support_agent,
+                                  color: ColorConstants.kPrimaryColor2),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -286,12 +303,6 @@ class _ChatsViewState extends State<ChatsView>
     );
   }
 
-  // ─── Non-auth body: single admin chat tile ───
-  Widget _buildNonAuthBody(BuildContext context) {
-    return _buildAdminTile(context);
-  }
-
-  // ─── Header (matches services_chat_screen.dart) ───
   Widget _buildHeader(BuildContext context) {
     final ctrl = _chatController!;
     return Obx(() {
@@ -331,8 +342,8 @@ class _ChatsViewState extends State<ChatsView>
               )
             else
               GestureDetector(
-                onTap: () =>
-                    Get.to(() => SettingsView())?.then((_) => _onRefresh()),
+                onTap: () => Get.to(() => SettingsView(showAppBar: true))
+                    ?.then((_) => _onRefresh()),
                 child: Container(
                   height: 50,
                   width: 50,
@@ -478,7 +489,8 @@ class _ChatsViewState extends State<ChatsView>
       }
 
       final chats = ctrl.chats.where((c) => !c.isAdmin).toList();
-      final int firstValid = chats.indexWhere((c) => c.productTitle.isNotEmpty);
+      final int firstValid = chats.indexWhere(
+          (c) => c.productTitle.isNotEmpty || c.userName.isNotEmpty);
 
       return SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -554,8 +566,9 @@ class _ChatListItem extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final VoidCallback onDelete;
+  final _api = Api();
 
-  const _ChatListItem({
+  _ChatListItem({
     required this.chat,
     required this.borderRadius,
     required this.isSelected,
@@ -625,7 +638,7 @@ class _ChatListItem extends StatelessWidget {
                                     child: Text(
                                       chat.productTitle.isNotEmpty
                                           ? chat.productTitle
-                                          : '',
+                                          : chat.userName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -646,7 +659,7 @@ class _ChatListItem extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6), // Increased spacing
+                              const SizedBox(height: 6),
                               Row(
                                 children: [
                                   Expanded(
@@ -686,19 +699,6 @@ class _ChatListItem extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                  if (isSelectionMode)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 8.0),
-                                      child: Icon(
-                                        isSelected
-                                            ? Icons.check_circle_rounded
-                                            : Icons.circle_outlined,
-                                        color: isSelected
-                                            ? ColorConstants.kPrimaryColor2
-                                            : Colors.grey.shade300,
-                                        size: 22,
-                                      ),
-                                    ),
                                 ],
                               ),
                             ],
@@ -707,16 +707,19 @@ class _ChatListItem extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (borderRadius == BorderRadius.zero ||
-                      borderRadius ==
-                          const BorderRadius.vertical(top: Radius.circular(20)))
-                    Positioned(
-                      bottom: 0,
-                      left: 5,
-                      right: 5,
-                      child: Container(
-                        height: 2,
-                        color: ColorConstants.background,
+                  const SizedBox(width: 8),
+                  if (!isSelectionMode) _buildTrailingImage(chat),
+                  if (isSelectionMode)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Icon(
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                        color: isSelected
+                            ? ColorConstants.kPrimaryColor2
+                            : Colors.grey.shade300,
+                        size: 22,
                       ),
                     ),
                 ],
@@ -724,6 +727,59 @@ class _ChatListItem extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTrailingImage(ChatModel chat) {
+    if (chat.productImage.isEmpty || chat.productImage == 'null') {
+      return const SizedBox.shrink();
+    }
+    final url = chat.productImage.startsWith('http')
+        ? chat.productImage
+        : '${_api.urlImage}${chat.productImage}';
+
+    return GestureDetector(
+      onTap: () {
+        _navigateToDetail(chat);
+      },
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: CachedNetworkImage(
+            imageUrl: url,
+            fit: BoxFit.cover,
+            errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported,
+                size: 20, color: Colors.grey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToDetail(ChatModel chat) {
+    Get.to(
+      () => ChatDetailView(
+        chatId: chat.chatId,
+        userId: chat.userId,
+        userName: chat.userName,
+        userPicture: chat.userPicture,
+        productId: chat.productId,
+        productImage: chat.productImage,
+        productPrice: chat.productPrice,
+        productTitle: chat.productTitle,
+        productStatus: chat.productStatus,
+        lastSeen: chat.lastSeen,
+        blocked: chat.blocked,
+        notification: chat.notification,
+        postLat: chat.postLat,
+        postLng: chat.postLng,
       ),
     );
   }
@@ -742,26 +798,6 @@ class _ChatListItem extends StatelessWidget {
           ),
           child: _buildAvatar(),
         ),
-        // if (chat.unreadCount > 0)
-        //   Positioned(
-        //     right: 0,
-        //     bottom: 0,
-        //     child: Container(
-        //       width: 12,
-        //       height: 12,
-        //       decoration: BoxDecoration(
-        //         color: Colors.green,
-        //         shape: BoxShape.circle,
-        //         border: Border.all(color: Colors.white, width: 2),
-        //         boxShadow: [
-        //           BoxShadow(
-        //             color: Colors.green.withOpacity(0.3),
-        //             blurRadius: 4,
-        //           ),
-        //         ],
-        //       ),
-        //     ),
-        //   ),
       ],
     );
   }
@@ -784,7 +820,7 @@ class _ChatListItem extends StatelessWidget {
     if (chat.userPicture.isNotEmpty && chat.userPicture != 'null') {
       final url = chat.userPicture.startsWith('http')
           ? chat.userPicture
-          : '${Api().urlImage}images/user/avatar/${chat.userPicture}';
+          : '${_api.urlImage}${chat.userPicture}';
       return ClipOval(
         child: CachedNetworkImage(
           imageUrl: url,

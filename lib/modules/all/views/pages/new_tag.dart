@@ -35,9 +35,9 @@ class NewTag extends StatelessWidget {
         bgColor = const Color(0xFFFFEFDD);
         break;
       case MyTasksStatus.hunarmenSaylandy:
-        iconData = Icons.ads_click;
-        textColor = const Color(0xFF2D9CDB);
-        bgColor = const Color(0xFFE3F2FD);
+        iconData = Icons.check_circle_outline;
+        textColor = const Color(0xFF165500);
+        bgColor = const Color.fromARGB(255, 120, 229, 118);
         break;
       case MyTasksStatus.tamamlanan:
         iconData = Icons.help_outline;
@@ -61,27 +61,30 @@ class NewTag extends StatelessWidget {
         bgColor = ColorConstants.kPrimaryColor2.withOpacity(0.1);
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (svgIcon != null)
-            SvgPicture.asset(svgIcon,
-                width: 14,
-                height: 14,
-                colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn))
-          else if (iconData != null)
-            Icon(iconData, color: textColor, size: 14),
-          const SizedBox(width: 4),
-          Text(myStatus.displayName,
-              style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
-        ],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (svgIcon != null)
+              SvgPicture.asset(svgIcon,
+                  width: 14,
+                  height: 14,
+                  colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn))
+            else if (iconData != null)
+              Icon(iconData, color: textColor, size: 14),
+            const SizedBox(width: 4),
+            Text(myStatus.displayName,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
+          ],
+        ),
       ),
     );
   }

@@ -1,11 +1,10 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
+import 'package:gyzyleller/shared/extensions/packages.dart';
 
 @immutable
 class ListConstants {
-  static List<String> pageNames = ['all', 'tasks', 'Çatlar', 'Menýu'];
+  static List<String> pageNames = ['all', 'tasks', 'Çatlar', 'menu_tab'.tr];
   static List<String> mainIcons = [
     IconConstants.selected2,
     IconConstants.selected3,

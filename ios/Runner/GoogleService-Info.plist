@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyC8uZGzY9QQP4lkb04GXIh1kOYvkdW8ws8</string>
+	<string>AIzaSyAIHMP5hQihMp9Bj3h8MqEoONmiiHEVPyk</string>
 	<key>GCM_SENDER_ID</key>
-	<string>571168137463</string>
+	<string>261474756113</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.gurbanov.atelyam.atelyam</string>
+	<string>com.ayterek.hyzmatlar</string>
 	<key>PROJECT_ID</key>
-	<string>jaytap-61a1b</string>
+	<string>gyzyleller-d1cb3</string>
 	<key>STORAGE_BUCKET</key>
-	<string>jaytap-61a1b.firebasestorage.app</string>
+	<string>gyzyleller-d1cb3.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:571168137463:ios:77884f0aefe5639b4df3f2</string>
+	<string>1:261474756113:ios:ae9591870dae98cc8c73b0</string>
 </dict>
 </plist>

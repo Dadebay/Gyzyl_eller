@@ -74,7 +74,8 @@ class MyJobsService {
       // Also set date_from and date_to for compatibility if 2 dates are provided
       if (dates.length >= 2) {
         queryParams['date_from'] = DateFormat('yyyy-MM-dd').format(dates[0]);
-        queryParams['date_to'] = DateFormat('yyyy-MM-dd').format(dates[dates.length - 1]);
+        queryParams['date_to'] =
+            DateFormat('yyyy-MM-dd').format(dates[dates.length - 1]);
       } else if (dates.length == 1) {
         queryParams['date_from'] = DateFormat('yyyy-MM-dd').format(dates[0]);
         queryParams['date_to'] = DateFormat('yyyy-MM-dd').format(dates[0]);
@@ -103,7 +104,8 @@ class MyJobsService {
     print('-----------------------------------------');
 
     try {
-      final response = await _api.getRequest(endpoint, requiresToken: requiresToken);
+      final response =
+          await _api.getRequest(endpoint, requiresToken: requiresToken);
       print('Jobs API Response: $response');
 
       if (response != null) {
@@ -251,7 +253,8 @@ class MyJobsService {
   }
 
   Future<double> fetchBalance() async {
-    const String endpoint = 'api/user/ru/check-balance';
+    final lang = Get.locale?.languageCode ?? 'tk';
+    final String endpoint = 'api/user/$lang/check-balance';
 
     try {
       final response = await _api.getRequest(endpoint, requiresToken: true);
@@ -266,8 +269,9 @@ class MyJobsService {
     }
   }
 
-  Future<bool> markJobDoneByMaster(int jobId) async {
-    final String endpoint = 'api/user/job-done-by-master/$jobId';
+  Future<bool> markJobDoneByMaster(int idToSend) async {
+    // Note: this endpoint usually expects the request_id instead of the job_id
+    final String endpoint = 'api/user/job-done-by-master/$idToSend';
 
     print('--- Mark Job Done By Master (POST) ---');
     print('Endpoint: $endpoint');
@@ -360,9 +364,12 @@ class MyJobsService {
   }
 
   Future<List<CategoryModel>> getCategories() async {
+    final lang = Get.locale?.languageCode ?? 'tk';
     const String endpoint = 'api/service-cats';
     try {
+      print('DEBUG: Fetching categories from $endpoint with lang: $lang');
       final response = await _api.getRequest(endpoint, requiresToken: false);
+      print('DEBUG: Categories response: $response');
       if (response != null && response['data'] != null) {
         return (response['data'] as List)
             .map((e) => CategoryModel.fromJson(e))
@@ -376,7 +383,8 @@ class MyJobsService {
   }
 
   Future<List<LocationModel>> getLocations() async {
-    const String endpoint = 'api/tk/locations';
+    final lang = Get.locale?.languageCode ?? 'tk';
+    final String endpoint = 'api/$lang/locations';
     try {
       final response = await _api.getRequest(endpoint, requiresToken: false);
       print('--- getLocations raw response: $response');

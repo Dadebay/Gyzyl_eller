@@ -155,19 +155,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             Widget buildPicker() {
-              const months = [
-                'Ýanwar',
-                'Fewral',
-                'Mart',
-                'Aprel',
-                'Maý',
-                'Iýun',
-                'Iýul',
-                'Awgust',
-                'Sentýabr',
-                'Oktýabr',
-                'Noýabr',
-                'Dekabr'
+              final months = [
+                'month_1'.tr,
+                'month_2'.tr,
+                'month_3'.tr,
+                'month_4'.tr,
+                'month_5'.tr,
+                'month_6'.tr,
+                'month_7'.tr,
+                'month_8'.tr,
+                'month_9'.tr,
+                'month_10'.tr,
+                'month_11'.tr,
+                'month_12'.tr
               ];
 
               return Container(
@@ -280,19 +280,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                               formatButtonVisible: false,
                               titleCentered: true,
                               titleTextFormatter: (date, locale) {
-                                const months = [
-                                  'Ýanwar',
-                                  'Fewral',
-                                  'Mart',
-                                  'Aprel',
-                                  'Maý',
-                                  'Iýun',
-                                  'Iýul',
-                                  'Awgust',
-                                  'Sentýabr',
-                                  'Oktýabr',
-                                  'Noýabr',
-                                  'Dekabr'
+                                final months = [
+                                  'month_1'.tr,
+                                  'month_2'.tr,
+                                  'month_3'.tr,
+                                  'month_4'.tr,
+                                  'month_5'.tr,
+                                  'month_6'.tr,
+                                  'month_7'.tr,
+                                  'month_8'.tr,
+                                  'month_9'.tr,
+                                  'month_10'.tr,
+                                  'month_11'.tr,
+                                  'month_12'.tr
                                 ];
                                 return '${months[date.month - 1]} ${date.year}';
                               },
@@ -331,16 +331,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 fontSize: 13,
                               ),
                               dowTextFormatter: (date, locale) {
-                                const days = [
-                                  'Ýek',
-                                  'Duş',
-                                  'Siş',
-                                  'Çar',
-                                  'Pen',
-                                  'Anna',
-                                  'Şen'
+                                final days = [
+                                  'sunday_short'.tr,
+                                  'monday_short'.tr,
+                                  'tuesday_short'.tr,
+                                  'wednesday_short'.tr,
+                                  'thursday_short'.tr,
+                                  'friday_short'.tr,
+                                  'saturday_short'.tr
                                 ];
-                                return days[date.weekday - 1];
+                                return days[date.weekday % 7];
                               },
                             ),
                             calendarStyle: CalendarStyle(
@@ -421,9 +421,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                               });
                               Navigator.pop(context);
                             },
-                            child: const Text(
-                              "OK",
-                              style: TextStyle(
+                            child: Text(
+                              "OK".tr,
+                              style: const TextStyle(
                                 color: ColorConstants.kPrimaryColor2,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
@@ -523,22 +523,22 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
     switch (_currentPage) {
       case _FilterPage.main:
-        title = "Filter";
+        title = "Filter".tr;
         break;
       case _FilterPage.category:
-        title = "Kategoriýa";
+        title = "category".tr;
         break;
       case _FilterPage.subcategory:
-        title = _activeCategory?.name ?? "Bölüm";
+        title = _activeCategory?.name ?? "subcategory".tr;
         break;
       case _FilterPage.price:
-        title = "Bahasy";
+        title = "price".tr;
         break;
       case _FilterPage.welayat:
-        title = "Ýerleşişi";
+        title = "location".tr;
         break;
       case _FilterPage.etrap:
-        title = _activeWelayat?.name ?? "Etrap";
+        title = _activeWelayat?.name ?? "etrap".tr;
         break;
     }
 
@@ -605,7 +605,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       if (isSameDay(_startDate, _endDate)) {
         selectedYearText = _startDate!.year.toString();
       } else {
-        selectedYearText = "${_startDate!.year} - ${_endDate!.year}";
+        selectedYearText =
+            " 20${_startDate!.year % 100} - 20${_endDate!.year % 100}";
       }
     } else if (_startDate != null) {
       selectedYearText = _startDate!.year.toString();
@@ -670,7 +671,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           return const Center(child: CircularProgressIndicator());
         }
         if (_locations.isEmpty) {
-          return const Center(child: Text('Maglumat tapylmady'));
+          return Center(child: Text('no_data_found'.tr));
         }
         return WelayatFilterPage(
           locations: _locations,
@@ -723,7 +724,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           }
         }
       }
-      return "${_selectedEtrapIds.length} etrap saýlanan";
+      return "${_selectedEtrapIds.length} ${"etrap_selected".tr}";
     }
     if (_selectedWelayatIds.isNotEmpty) {
       if (_selectedWelayatIds.length == 1) {
@@ -731,9 +732,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           if (l.id == _selectedWelayatIds.first) return l.name;
         }
       }
-      return "${_selectedWelayatIds.length} welaýat saýlanan";
+      return "${_selectedWelayatIds.length} ${"welayat_selected".tr}";
     }
-    return "Hemmesi";
+    return "all".tr;
   }
 
   String _getCategoryValueText() {
@@ -747,11 +748,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           }
         }
       }
-      return "${_selectedCatIds.length} bölüm saýlanan";
+      return "${_selectedCatIds.length} ${"category_selected".tr}";
     }
-    return "Hemmesi";
+    return "all".tr;
   }
-
 
   Widget _buildBottomButtons(double width) {
     return Padding(
@@ -790,9 +790,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   });
                   Navigator.pop(context);
                 },
-                child: const Text(
-                  "Hemmesini arassala",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                child: Text(
+                  "clear_all".tr,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -830,7 +831,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       width: 20,
                       child: CircularProgressIndicator(color: Colors.white))
                   : Text(
-                      "Ýumuşlar tapyldy ($_resultCount)",
+                      "jobs_found".trParams({"count": _resultCount.toString()}),
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700),
                     ),

@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "571168137463",
-    "project_id": "jaytap-61a1b",
-    "storage_bucket": "jaytap-61a1b.firebasestorage.app"
+    "project_number": "261474756113",
+    "project_id": "gyzyleller-d1cb3",
+    "storage_bucket": "gyzyleller-d1cb3.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:571168137463:android:e83a191c928ce6ff4df3f2",
+        "mobilesdk_app_id": "1:261474756113:android:e2878f232a7445148c73b0",
         "android_client_info": {
-          "package_name": "com.example.gyzyleller"
+          "package_name": "com.ayterek.hyzmatlar"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD0nzeluCvx4i1OX2AMWbfYKai8Zio_hRs"
+          "current_key": "AIzaSyBQiCodPj_pgcNb8NBXR4pTT65p2KdD_OE"
         }
       ],
       "services": {

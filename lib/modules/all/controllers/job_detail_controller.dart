@@ -1,3 +1,5 @@
+// ignore_for_file: empty_catches
+
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -13,13 +15,45 @@ import 'package:gyzyleller/core/models/saved_request_model.dart';
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
 import 'package:gyzyleller/shared/widgets/widgets.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/core/services/chat_socket_service.dart';
-import 'package:gyzyleller/modules/chats/controllers/chat_controller.dart';
-import 'package:gyzyleller/core/services/api.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class JobDetailController extends GetxController {
+  Future<void> markJobDoneByMasterWithRequestId() async {
+    if (job.value == null || isCompletingJob.value) return;
+
+    isCompletingJob.value = true;
+
+    try {
+      final int? requestId = job.value!.requestId;
+      final int idToSend = requestId ?? job.value!.id;
+
+      final ok = await _jobsService.markJobDoneByMaster(idToSend);
+
+      if (ok) {
+        isCompleteRequestSent.value = true;
+        CustomWidgets.showSnackBar(
+          'Dogry',
+          'Ýumuş üstünlikli tamamlandy',
+          ColorConstants.greenColor,
+        );
+        await Future.delayed(const Duration(milliseconds: 500));
+      } else {
+        CustomWidgets.showSnackBar(
+          'Ýalňyşlyk',
+          'Ýumuş tamamlanmady',
+          ColorConstants.redColor,
+        );
+      }
+    } catch (e) {
+      CustomWidgets.showSnackBar(
+        'Ýalňyşlyk',
+        'Ýumuş tamamlanmady',
+        ColorConstants.redColor,
+      );
+    } finally {
+      isCompletingJob.value = false;
+    }
+  }
+
   final MyJobsService _jobsService = MyJobsService();
 
   final Rxn<JobModel> job = Rxn<JobModel>();
@@ -148,9 +182,7 @@ class JobDetailController extends GetxController {
       final balance = await _jobsService.fetchBalance();
       userBalance.value = balance;
       isLoggedIn.value = AuthStorage().isLoggedIn;
-    } catch (e) {
-      print('Error fetching balance: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> fetchTemplates() async {
@@ -159,7 +191,6 @@ class JobDetailController extends GetxController {
       final fetched = await _jobsService.getSavedRequests();
       templates.assignAll(fetched);
     } catch (e) {
-      print('Error fetching templates: $e');
     } finally {
       isLoadingTemplates.value = false;
     }
@@ -195,13 +226,13 @@ class JobDetailController extends GetxController {
 
     if (price == null || price <= 0) {
       CustomWidgets.showSnackBar(
-          'Ýalňyşlyk', 'Bahany dogry giriziň', ColorConstants.redColor);
+          'error_title'.tr, 'enter_valid_price'.tr, ColorConstants.redColor);
       return;
     }
 
     if (comment.isEmpty) {
       CustomWidgets.showSnackBar(
-          'Ýalňyşlyk', 'Teswiri boş goýmaň', ColorConstants.redColor);
+          'error_title'.tr, 'enter_description'.tr, ColorConstants.redColor);
       return;
     }
 
@@ -226,12 +257,14 @@ class JobDetailController extends GetxController {
       priceController.clear();
       commentController.clear();
 
+      fetchJobDetail(job.value!.id);
+
       // Create a chat for this job
       // await _createChatForJob(job.value!.id, comment);
     } catch (e) {
       Get.back();
       CustomWidgets.showSnackBar(
-          'Ýalňyşlyk', 'Teklip ugradylmady: $e', ColorConstants.redColor);
+          'error_title'.tr, '${'offer_not_sent'.tr}: $e', ColorConstants.redColor);
     } finally {
       isSubmittingRequest.value = false;
     }
@@ -248,7 +281,7 @@ class JobDetailController extends GetxController {
       showSuccessBanner.value = true;
     } catch (e) {
       CustomWidgets.showSnackBar(
-          'Ýalňyşlyk', 'Şablon ýatda saklanmady', ColorConstants.redColor);
+          'error_title'.tr, 'template_not_saved'.tr, ColorConstants.redColor);
     } finally {
       isSavingTemplate.value = false;
     }
@@ -267,7 +300,7 @@ class JobDetailController extends GetxController {
         templates.removeAt(index);
       } catch (e) {
         CustomWidgets.showSnackBar(
-            'Ýalňyşlyk', 'Şablon öçürilmedi', ColorConstants.redColor);
+            'error_title'.tr, 'template_not_deleted'.tr, ColorConstants.redColor);
       }
     }
   }
@@ -304,7 +337,7 @@ class JobDetailController extends GetxController {
 
       if (result.isSuccess) {
         CustomWidgets.showSnackBar(
-            'OK', 'Faýl ýüklenildi', ColorConstants.kPrimaryColor2);
+            'OK', 'Faýl ýüklenildi', ColorConstants.greenColor);
       }
     } catch (e) {
       CustomWidgets.showSnackBar(
@@ -362,43 +395,5 @@ class JobDetailController extends GetxController {
         ),
       ),
     );
-  }
-
-  Future<void> _createChatForJob(int jobId, String comment) async {
-    try {
-      final chatSocket = Get.find<ChatSocketService>();
-      final currentUserId = AuthStorage().getUser()?['id']?.toString() ?? '';
-
-      if (chatSocket.isConnected) {
-        chatSocket.socket.emit('create_chat', {
-          'message': comment,
-          'product_id': jobId.toString(),
-          'user_id': currentUserId,
-          'type': 'gyzyl',
-        });
-        print('✅ [JobDetailController] Chat created via Socket (gyzyl)');
-      } else {
-        final token = AuthStorage().token;
-        final response = await http.post(
-          Uri.parse('${Api().urlLink}api/user/create-chat')
-              .replace(queryParameters: {'type': 'gyzyl'}),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-          body:
-              jsonEncode({'product_id': jobId.toString(), 'message': comment}),
-        );
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          print('✅ [JobDetailController] Chat created via HTTP (gyzyl)');
-        } else {
-          print(
-              '⚠️ [JobDetailController] HTTP create-chat error: ${response.statusCode}');
-        }
-      }
-    } catch (e) {
-      print('❌ [JobDetailController] create-chat exception: $e');
-    }
   }
 }

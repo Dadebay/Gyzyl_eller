@@ -1,4 +1,4 @@
-package com.example.gyzyleller
+package com.ayterek.hyzmatlar
 
 import io.flutter.embedding.android.FlutterActivity
 

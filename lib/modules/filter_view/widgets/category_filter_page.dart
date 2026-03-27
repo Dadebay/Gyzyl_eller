@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/core/models/metadata_models.dart';
 
@@ -18,18 +19,19 @@ class CategoryFilterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.all(16),
+        Padding(
+          padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Kategoriýa",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                "category".tr,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               Text(
-                "Arassala",
-                style: TextStyle(
+                "clear".tr,
+                style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
                     color: ColorConstants.kPrimaryColor2),
@@ -65,7 +67,8 @@ class CategoryFilterPage extends StatelessWidget {
                             ),
                             if (selectedSubCount > 0)
                               Text(
-                                "$selectedSubCount bölüm saýlanan",
+                                "subcategory_selected_count"
+                                    .trParams({'count': selectedSubCount.toString()}),
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: ColorConstants.blue,

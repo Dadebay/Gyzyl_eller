@@ -18,7 +18,7 @@ class ApiService {
         'Accept': 'application/json',
         if (requiresToken && token != null) 'Authorization': 'Bearer $token',
       };
-      final fullUrl = Api().urlLink + endpoint;
+      final fullUrl = '${Api().urlLink}/$endpoint';
 
       final response = await http.get(Uri.parse(fullUrl), headers: headers);
       final decodedBody = utf8.decode(response.bodyBytes);
@@ -104,7 +104,7 @@ class ApiService {
     try {
       final token = _auth.token;
       final uriString =
-          endpoint.startsWith('http') ? endpoint : '${Api().urlLink}$endpoint';
+          endpoint.startsWith('http') ? endpoint : '${Api().urlLink}/$endpoint';
 
       final uri = Uri.parse(uriString);
       late http.BaseRequest request;

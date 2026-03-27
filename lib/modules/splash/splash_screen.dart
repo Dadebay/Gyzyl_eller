@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -24,8 +25,21 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   final HomeController controller = Get.put(HomeController());
+  
   Future<void> _checkOnboardingStatus() async {
     await Future.delayed(const Duration(seconds: 3));
+    
+    if (!mounted) return;
+
+    try {
+      final result = await InternetAddress.lookup('example.com');
+      if (result.isEmpty || result[0].rawAddress.isEmpty) {
+        return; 
+      }
+    } catch (_) {
+      return; 
+    }
+
     final box = GetStorage();
     bool isFirstLaunch = box.read('isFirstLaunch') ?? true;
 

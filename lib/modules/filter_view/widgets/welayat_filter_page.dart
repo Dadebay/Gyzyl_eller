@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/core/models/metadata_models.dart';
 
@@ -24,7 +25,6 @@ class WelayatFilterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
     return Column(
       children: [
         Padding(
@@ -32,15 +32,16 @@ class WelayatFilterPage extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Welaýat",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              Text(
+                "location".tr,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               GestureDetector(
                 onTap: onClear,
-                child: const Text(
-                  "Arassala",
-                  style: TextStyle(
+                child: Text(
+                  "clear_all".tr,
+                  style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
                       color: ColorConstants.kPrimaryColor2),
@@ -108,7 +109,7 @@ class WelayatFilterPage extends StatelessWidget {
                             ),
                             if (selectedEtrapCount > 0)
                               Text(
-                                "$selectedEtrapCount etrap saýlanan",
+                                "$selectedEtrapCount ${"etrap_selected".tr}",
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: ColorConstants.blue,

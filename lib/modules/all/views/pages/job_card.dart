@@ -23,21 +23,7 @@ class JobCard extends StatelessWidget {
   String _formatDate(String dateStr) {
     try {
       final dateTime = DateTime.parse(dateStr);
-      final monthNames = [
-        'ýanwar',
-        'fewral',
-        'mart',
-        'aprel',
-        'maý',
-        'iýun',
-        'iýul',
-        'awgust',
-        'sentýabr',
-        'oktýabr',
-        'noýabr',
-        'dekabr'
-      ];
-      final month = monthNames[dateTime.month - 1];
+      final month = 'month_${dateTime.month}'.tr;
       return "${dateTime.day} $month ${dateTime.year}, ${DateFormat('HH:mm').format(dateTime)}";
     } catch (_) {
       return dateStr;

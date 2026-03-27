@@ -169,7 +169,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
         },
         selectedIcons: ListConstants.selectedIcons,
         unselectedIcons: ListConstants.mainIcons,
-        labels: ["all_tab".tr, "tasks_tab".tr, "menu_tab".tr],
+        labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
       ),
     );
   }

@@ -36,7 +36,7 @@ class AboutView extends StatelessWidget {
         },
         selectedIcons: ListConstants.selectedIcons,
         unselectedIcons: ListConstants.mainIcons,
-        labels: const ["Hemmesi", "Yumuşlar", "Menýu"],
+         labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 
 class PriceFilterPage extends StatelessWidget {
@@ -28,15 +29,15 @@ class PriceFilterPage extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Bahasy",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              Text(
+                "price".tr,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               GestureDetector(
                 onTap: onClear,
-                child: const Text(
-                  "Arassala",
-                  style: TextStyle(
+                child: Text(
+                  "clear_all".tr,
+                  style: const TextStyle(
                     color: ColorConstants.kPrimaryColor2,
                     fontWeight: FontWeight.w500,
                   ),
@@ -50,9 +51,9 @@ class PriceFilterPage extends StatelessWidget {
           // Dan / Çenli kutuları
           Row(
             children: [
-              _priceBox("Dan", priceRange.start.toInt()),
+              _priceBox("from".tr, priceRange.start.toInt()),
               const SizedBox(width: 12),
-              _priceBox("Çenli", priceRange.end.toInt()),
+              _priceBox("to".tr, priceRange.end.toInt()),
             ],
           ),
 

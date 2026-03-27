@@ -14,10 +14,15 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final bool isCalendar = icon.contains('calendar');
+    final Color iconColor = isCalendar ? ColorConstants.kPrimaryColor2 : ColorConstants.secondary;
+
+    Widget coreContent = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         SvgPicture.asset(icon,
-            width: 16, height: 16, color: ColorConstants.secondary),
+            width: 16, height: 16, color: iconColor),
+        const SizedBox(width: 4),
         Flexible(
           child: Text(text,
               overflow: TextOverflow.ellipsis,
@@ -25,6 +30,24 @@ class InfoRow extends StatelessWidget {
               style:
                   const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
         ),
+      ],
+    );
+
+    if (isCalendar) {
+      coreContent = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+        decoration: BoxDecoration(
+          color: ColorConstants.whiteColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: coreContent,
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(child: coreContent),
         if (suffix != null) ...[
           const SizedBox(width: 4),
           Text(suffix!,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 
@@ -32,28 +33,28 @@ class MainFilterPage extends StatelessWidget {
       children: [
         _buildFilterItem(
           svgIcon: IconConstants.categoryFilled,
-          title: "Kategoriýa",
+          title: "category".tr,
           value: categoryValue,
           onTap: onCategoryTap,
         ),
         _buildFilterItem(
           svgIcon: IconConstants.locationHouse,
-          title: "Ýerleşişi",
+          title: "location".tr,
           value: locationValue,
           onTap: onLocationTap,
         ),
         _buildFilterItem(
           svgIcon: IconConstants.payment,
-          title: "Bahasy",
+          title: "price".tr,
           value: priceValue,
           onTap: onPriceTap,
         ),
         _buildFilterItem(
           svgIcon: IconConstants.calendar,
-          title: "Sene",
+          title: "job_date_label".tr,
           value: selectedYear != null && selectedYear!.isNotEmpty
               ? selectedYear!
-              : "Hemmesi",
+              : "all".tr,
           onTap: onYearTap,
         ),
         const SizedBox(height: 30),

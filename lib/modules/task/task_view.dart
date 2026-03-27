@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/filter_view/filter_view.dart';
-import 'package:gyzyleller/modules/task/pages/notification_page.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_card.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
 import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
@@ -24,7 +23,7 @@ class TaskView extends StatelessWidget {
       child: Scaffold(
         backgroundColor: ColorConstants.background,
         appBar: CustomAppBar(
-          title: 'Ýumuşlarym',
+          title: 'Ýumuşlarym'.tr,
           leadingWidth: 110,
           leading: Row(
             children: [
@@ -82,19 +81,19 @@ class TaskView extends StatelessWidget {
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: SvgPicture.asset(IconConstants.notifications),
-              onPressed: () {
-                Get.to(const NotificationsScreen());
-              },
-            ),
-          ],
+          // actions: [
+          //   IconButton(
+          //     icon: SvgPicture.asset(IconConstants.notifications),
+          //     onPressed: () {
+          //       Get.to(const NotificationsScreen());
+          //     },
+          //   ),
+          // ],
           bottom: PreferredSize(
               preferredSize: const Size.fromHeight(75),
               child: Container(
                 padding: const EdgeInsets.all(5),
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -119,19 +118,21 @@ class TaskView extends StatelessWidget {
                     tabs: [
                       Tab(
                         child: Text(
-                          "Tekliplerim ($reqCount)",
+                          "my_offers_tab"
+                              .trParams({"count": reqCount.toString()}),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                         ),
                       ),
                       Tab(
                         child: Text(
-                          "Işlerim ($procCount)",
+                          "my_jobs_tab"
+                              .trParams({"count": procCount.toString()}),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                         ),
                       ),
@@ -142,7 +143,6 @@ class TaskView extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            // Tab 1: Requested Input
             Obx(() {
               if (controller.isRequestedFirstLoad.value) {
                 return const Center(child: CircularProgressIndicator());
@@ -150,8 +150,8 @@ class TaskView extends StatelessWidget {
 
               return SmartRefresher(
                 header: const MaterialClassicHeader(
-                  color: ColorConstants.blue, // Tegelegiň reňki
-                  backgroundColor: ColorConstants.background, // Arka fon reňki
+                  color: ColorConstants.blue, 
+                  backgroundColor: ColorConstants.background, 
                 ),
                 controller: controller.requestedRefreshController,
                 enablePullDown: true,
@@ -161,7 +161,7 @@ class TaskView extends StatelessWidget {
                 child: controller.requestedJobs.isEmpty
                     ? EmptyStateWidget(
                         title: "no_tasks_found".tr,
-                        subtitle: "Gözleýän teklipleriňiz ýok.",
+                        subtitle: "no_offers_subtitle".tr,
                         onActionPressed: () => controller.clearFilters(),
                       )
                     : ListView.builder(
@@ -177,7 +177,6 @@ class TaskView extends StatelessWidget {
                       ),
               );
             }),
-            // Tab 2: Processing Input
             Obx(() {
               if (controller.isProcessingFirstLoad.value) {
                 return const Center(
@@ -203,7 +202,7 @@ class TaskView extends StatelessWidget {
                 child: controller.processingJobs.isEmpty
                     ? EmptyStateWidget(
                         title: "no_tasks_found".tr,
-                        subtitle: "Gözleýän işleriňiz ýok. ",
+                        subtitle: "no_jobs_subtitle".tr,
                         onActionPressed: () => controller.clearFilters(),
                       )
                     : ListView.builder(

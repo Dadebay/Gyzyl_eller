@@ -46,7 +46,7 @@ class ChatDetailController extends GetxController {
     return user?['id']?.toString() ?? '';
   }
 
-  IO.Socket get _socket => Get.find<ChatSocketService>().socket;
+  IO.Socket? get _socket => Get.find<ChatSocketService>().socket;
   bool get _socketConnected => Get.find<ChatSocketService>().isConnected;
 
   @override
@@ -57,6 +57,7 @@ class ChatDetailController extends GetxController {
     }
     _fetchInitialMessages();
     _fetchJobDetail();
+    readMessages();
   }
 
   void _fetchJobDetail() {
@@ -76,22 +77,27 @@ class ChatDetailController extends GetxController {
   void onClose() {
     _stopPolling();
     _removeSocketListeners();
+    // Refresh chats and unread count on return
+    if (Get.isRegistered<ChatController>()) {
+      Get.find<ChatController>().fetchChats();
+    }
     super.onClose();
   }
 
   void _setupSocketListeners() {
-    if (!Get.find<ChatSocketService>().isInitialized) return;
-    _socket.onConnect((_) {
-      debugPrint('✅ [ChatDetail] Socket bağlandý – polling durduryldy');
+    final s = _socket;
+    if (s == null) return;
+    s.onConnect((_) {
+      debugPrint('✅ [ChatDetail] Socket bağlandy – polling durduryldy');
       _stopPolling();
     });
 
-    _socket.onDisconnect((_) {
+    s.onDisconnect((_) {
       debugPrint('❌ [ChatDetail] Socket kesildi – polling başladyldy');
       _startPolling();
     });
 
-    _socket.on('new_message', (data) {
+    s.on('new_message', (data) {
       if (data == null) return;
       if (data is Map &&
           data['message'] != null &&
@@ -102,11 +108,12 @@ class ChatDetailController extends GetxController {
         final exists = messages.any((m) => m.id == msg.id);
         if (!exists) {
           messages.insert(0, msg);
+          readMessages(); // Mark as read if we are inside
         }
       }
     });
 
-    _socket.on('readed_messages_$chatId', (_) {
+    s.on('readed_messages_$chatId', (_) {
       for (int i = 0; i < messages.length; i++) {
         if (messages[i].readedAt == null || messages[i].readedAt == 'null') {
           messages[i] = MessageModel(
@@ -124,8 +131,8 @@ class ChatDetailController extends GetxController {
   }
 
   void _removeSocketListeners() {
-    _socket.off('new_message');
-    _socket.off('readed_messages_$chatId');
+    _socket?.off('new_message');
+    _socket?.off('readed_messages_$chatId');
   }
 
   void _fetchInitialMessages() {
@@ -135,7 +142,7 @@ class ChatDetailController extends GetxController {
     _fetchMessagesHttp(page: 0, isInitial: true);
 
     if (_socketConnected) {
-      _socket.emitWithAck(
+      _socket?.emitWithAck(
         'get_chat_2',
         {'chat_id': chatId, 'page': 0, 'limit': 20, 'type': 'gyzyl'},
         ack: (data) {
@@ -185,7 +192,7 @@ class ChatDetailController extends GetxController {
       {required int page, required bool isInitial}) async {
     if (isInitial) isLoading.value = true;
     try {
-      final uri = Uri.parse('${_api.urlLink}api/user/messages/$chatId').replace(
+      final uri = Uri.parse('${_api.urlLink}/api/user/messages/$chatId').replace(
         queryParameters: {
           'page': page.toString(),
           'limit': '20',
@@ -233,7 +240,7 @@ class ChatDetailController extends GetxController {
 
     if (_socketConnected) {
       bool got = false;
-      _socket.emitWithAck(
+      _socket?.emitWithAck(
         'get_chat_2',
         {'chat_id': chatId, 'page': _page, 'limit': 20, 'type': 'gyzyl'},
         ack: (data) {
@@ -271,12 +278,12 @@ class ChatDetailController extends GetxController {
     messages.insert(0, optimistic);
 
     if (_socketConnected) {
-      _socket.emit('send_message',
+      _socket?.emit('send_message',
           {'message': text, 'chat_id': chatId, 'type': 'gyzyl'});
     } else {
       try {
         await http.post(
-          Uri.parse('${_api.urlLink}api/user/message')
+          Uri.parse('${_api.urlLink}/api/user/message')
               .replace(queryParameters: {'type': 'gyzyl'}),
           headers: {
             'Authorization': 'Bearer $token',
@@ -294,7 +301,7 @@ class ChatDetailController extends GetxController {
     insideList.add(text);
 
     if (_socketConnected) {
-      _socket.emit('create_chat', {
+      _socket?.emit('create_chat', {
         'message': text,
         'product_id': productId,
         'user_id': currentUserId,
@@ -303,7 +310,7 @@ class ChatDetailController extends GetxController {
     } else {
       try {
         final response = await http.post(
-          Uri.parse('${_api.urlLink}api/user/create-chat')
+          Uri.parse('${_api.urlLink}/api/user/create-chat')
               .replace(queryParameters: {'type': 'gyzyl'}),
           headers: {
             'Authorization': 'Bearer $token',
@@ -337,6 +344,15 @@ class ChatDetailController extends GetxController {
       await sendMessage('Location: $postLat,$postLng');
     } finally {
       isSendingLocation.value = false;
+    }
+  }
+
+  void readMessages() {
+    if (_socketConnected) {
+      debugPrint('👁️ [ChatDetail] Sending readed_message for $chatId');
+      _socket?.emit('readed_message', {
+        'chat_id': chatId,
+      });
     }
   }
 }

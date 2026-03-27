@@ -44,10 +44,14 @@ class AllController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchMetadata();
     isLoggedIn.value = AuthStorage().isLoggedIn;
-    fetchBalance();
-    fetchJobs(isRefresh: true);
+
+    // Fire all requests in parallel
+    Future.wait([
+      fetchMetadata(),
+      fetchBalance(),
+      fetchJobs(isRefresh: true),
+    ]);
   }
 
   Future<void> fetchBalance() async {
@@ -58,11 +62,18 @@ class AllController extends GetxController {
   }
 
   Future<void> fetchMetadata() async {
-    final categories = await _jobsService.getCategories();
-    allCategories.assignAll(categories);
+    // Only fetch if empty to save time on tab switches
+    if (allCategories.isNotEmpty && allLocations.isNotEmpty) return;
 
-    final locations = await _jobsService.getLocations();
-    allLocations.assignAll(locations);
+    try {
+      final results = await Future.wait([
+        _jobsService.getCategories(),
+        _jobsService.getLocations(),
+      ]);
+
+      allCategories.assignAll(results[0] as List<CategoryModel>);
+      allLocations.assignAll(results[1] as List<LocationModel>);
+    } catch (e) {}
   }
 
   Future<void> fetchJobs({bool isRefresh = false}) async {
@@ -70,7 +81,10 @@ class AllController extends GetxController {
 
     if (isRefresh) {
       _page = 0;
-      isFirstLoad.value = true;
+      // Only show full screen loader if we have no data at all
+      if (jobs.isEmpty) {
+        isFirstLoad.value = true;
+      }
       fetchBalance();
     }
 
@@ -91,6 +105,15 @@ class AllController extends GetxController {
         maxPrice: maxPrice.value,
         search: search.value,
       );
+
+      print('============= ALL VIEW API =============');
+      print(
+          'Page: $_page, Limit: $_limit, Status: ${status.value}, Sort: ${orderBy.value.apiValue}');
+      print('Categories: $catIds, Welayat: $welayatIds, Etrap: $etrapIds');
+      print(
+          'Search: ${search.value}, MinPrice: ${minPrice.value}, MaxPrice: ${maxPrice.value}');
+      print('Response Job Count: ${response.data.jobs.length}');
+      print('========================================');
 
       if (isRefresh) {
         jobs.clear();

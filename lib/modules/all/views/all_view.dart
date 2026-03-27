@@ -19,12 +19,17 @@ class AllView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AllController controller = Get.put(AllController());
+    final AllController controller = Get.put(AllController(), permanent: true);
+
+    // Refresh data in background when entering the tab
+    if (!controller.isLoading.value) {
+      controller.fetchJobs(isRefresh: true);
+    }
 
     return Scaffold(
       backgroundColor: ColorConstants.background,
       appBar: CustomAppBar(
-        title: 'Hemmesi'.tr,
+        title: 'all_tab'.tr,
         leadingWidth: 110,
         leading: Row(
           children: [
@@ -133,7 +138,7 @@ class AllView extends StatelessWidget {
       floatingActionButton: Obx(() => controller.isLoggedIn.value
           ? AccountSummaryBar(
               balanceText:
-                  'Hasabym: ${controller.userBalance.value.toStringAsFixed(0)} TMT',
+                  '${"wallet".tr}: ${controller.userBalance.value.toStringAsFixed(0)} TMT',
               onPressed: () => Get.to(() => const WalletView()),
               onBalanceTap: () => Get.to(() => const WalletView()),
             )

@@ -46,8 +46,10 @@ class ChatModel {
     Map<String, dynamic> products,
     Map<String, dynamic> users,
   ) {
-    final productId =
-        chat['product_id']?.toString() ?? chat['job_id']?.toString() ?? '';
+    final productId = chat['product_id']?.toString() ??
+        chat['job_id']?.toString() ??
+        chat['service_id']?.toString() ??
+        '';
     final userId = chat['user_id']?.toString() ?? '';
     final product = products[productId] as Map<String, dynamic>? ?? {};
     final user = users[userId] as Map<String, dynamic>? ?? {};
@@ -61,12 +63,30 @@ class ChatModel {
       productId: productId,
       productImage: product['image']?.toString() ?? '',
       productPrice: product['price']?.toString() ?? '',
-      productTitle:
-          product['name']?.toString() ?? product['title']?.toString() ?? '',
+      productTitle: product['name']?.toString() ??
+          product['title']?.toString() ??
+          product['product_name']?.toString() ??
+          product['job_name']?.toString() ??
+          product['product_title']?.toString() ??
+          product['job_title']?.toString() ??
+          chat['name']?.toString() ??
+          chat['title']?.toString() ??
+          chat['product_name']?.toString() ??
+          chat['job_name']?.toString() ??
+          chat['product_title']?.toString() ??
+          chat['job_title']?.toString() ??
+          '',
       productStatus: product['status']?.toString() ?? '1',
       lastMessage: chat['last_message']?.toString() ?? '',
       lastMessageTime: chat['last_sended_message']?.toString() ?? '',
-      unreadCount: int.tryParse(chat['unread_count']?.toString() ?? '0') ?? 0,
+      unreadCount: () {
+        final val = chat['unread_count']?.toString() ?? chat['unreadCount']?.toString() ?? chat['unread']?.toString() ?? '0';
+        final parsed = int.tryParse(val) ?? 0;
+        if (parsed > 0) {
+          print('🔥 [ChatModel] Found unreadCount: $parsed in chat ${chat['id']}');
+        }
+        return parsed;
+      }(),
       lastSeen:
           user['last_seen']?.toString() ?? chat['last_seen']?.toString() ?? '',
       blocked: chat['banned'] == true,

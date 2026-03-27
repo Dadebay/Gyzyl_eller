@@ -105,4 +105,5 @@ class IconConstants {
 
   static const String delete = 'assets/icons/Date.svg';
   static const String teklipugrat = 'assets/icons/teklipugrat.svg';
+  static const String succes = 'assets/icons/succes.svg';
 }

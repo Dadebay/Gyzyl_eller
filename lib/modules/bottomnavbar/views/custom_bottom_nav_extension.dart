@@ -72,8 +72,12 @@ class CustomBottomNavBar extends StatelessWidget {
                         children: [
                           SvgPicture.asset(
                             isSelected
-                                ? unselectedIcons[index]
-                                : selectedIcons[index],
+                                ? (index < unselectedIcons.length
+                                    ? unselectedIcons[index]
+                                    : '')
+                                : (index < selectedIcons.length
+                                    ? selectedIcons[index]
+                                    : ''),
                           ),
                           if (badges != null &&
                               index < badges!.length &&
@@ -106,7 +110,7 @@ class CustomBottomNavBar extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        labels[index],
+                        index < labels.length ? labels[index] : '',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: Color.lerp(

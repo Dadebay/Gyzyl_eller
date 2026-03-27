@@ -19,7 +19,8 @@ import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 
 class SettingsView extends GetView<SettingsController> {
-  SettingsView({super.key});
+  final bool showAppBar;
+  SettingsView({super.key, this.showAppBar = false});
   @override
   final SettingsController controller = Get.put(SettingsController());
   final UserProfilController profilController = Get.put(UserProfilController());
@@ -27,6 +28,25 @@ class SettingsView extends GetView<SettingsController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorConstants.background,
+      appBar: showAppBar
+          ? AppBar(
+              backgroundColor: ColorConstants.background,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+                onPressed: () => Get.back(),
+              ),
+              title: Text(
+                'Settings'.tr,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -55,10 +75,14 @@ class SettingsView extends GetView<SettingsController> {
             }),
             _buildMenuItemSay(
               context,
-              'Meň hasabym'.tr,
+              'my_account_title'.tr,
               IconConstants.leaderboard,
               () {
-                Get.to(() => const WalletView());
+                if (!controller.isLoggedIn) {
+                  Get.to(() => const LoginView(), binding: LoginBinding());
+                } else {
+                  Get.to(() => const WalletView());
+                }
               },
             ),
             const SizedBox(height: 10.0),
