@@ -780,6 +780,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     _startDate = null;
                     _endDate = null;
                   });
+                  _fetchCount();
                   widget.onApply({
                     'catIds': <int>[],
                     'welayatIds': <int>[],
@@ -788,7 +789,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     'maxPrice': null,
                     'dates': <DateTime>[],
                   });
-                  // Navigator.pop(context);
                 },
                 child: Text(
                   "clear_all".tr,
