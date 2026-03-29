@@ -11,11 +11,20 @@ class FcmTokenSynchronizer {
   void init() {
     print('🔄 FcmTokenSynchronizer initializing...');
     _attachFcmTokenUpdateListener();
+
+    // Check current value immediately
+    if (_fcmTokenProvider.token.value != null) {
+      print('🔄 FcmTokenSynchronizer: Initial token found, syncing...');
+      _sendTokenToServer(fcmToken: _fcmTokenProvider.token.value);
+    } else {
+      print('🔄 FcmTokenSynchronizer: No initial token, waiting for update...');
+    }
   }
 
   void _attachFcmTokenUpdateListener() {
     final tokenNotifier = _fcmTokenProvider.token;
     tokenNotifier.addListener(() {
+      print('🔄 FcmTokenSynchronizer: Token changed, syncing...');
       _sendTokenToServer(fcmToken: tokenNotifier.value);
     });
   }
@@ -36,7 +45,7 @@ class FcmTokenSynchronizer {
       }
       return;
     }
-    
+
     final userToken = AuthStorage().token;
     if (userToken == null) {
       print('--- FCM SYNC START ---');
@@ -45,17 +54,15 @@ class FcmTokenSynchronizer {
     }
 
     print('--- FCM SYNC START ---');
-    print('FCM TOKEN TO SEND: $fcmToken');
+    print('📍 ENDPOINT: user/master/fcm-token');
+    print('🔑 TOKEN: $fcmToken');
 
     try {
       // Replicating Ayterek's putToken call
       await CallApi().putToken(
-        {'fcm_token': fcmToken}, 
-        'user/master/fcm-token', 
-        userToken
-      );
+          {'fcm_token': fcmToken}, 'user/master/fcm-token', userToken);
     } catch (e, s) {
-      print('❌ Error sending FCM token to server: $e');
+      print('❌ [SYNC ERROR] Sending FCM token to server: $e');
       print(s);
     }
   }

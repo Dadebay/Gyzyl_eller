@@ -23,22 +23,29 @@ class FcmTokenProvider {
     try {
       final savedToken = _fcmTokenStorage.getToken();
       if (savedToken != null) {
-        print('🔥 SAVED FCM TOKEN: $savedToken');
+        print('🔥 [FCM] Saved token in local storage: $savedToken');
         _tokenNotifier.value = savedToken;
-        // Don't return here, we still want to fetch the latest from FCM
+      } else {
+        print('🔥 [FCM] No token saved in local storage.');
       }
       
+      print('🔥 [FCM] Fetching current token from Firebase Messaging...');
       final newToken = await _fcm.getToken();
-      if (newToken != null && newToken != savedToken) {
-        print('🔥 NEW/UPDATED FCM TOKEN: $newToken');
-        await _fcmTokenStorage.setToken(newToken);
-        _tokenNotifier.value = newToken;
-      } else if (newToken != null) {
-        print('🔥 CURRENT FCM TOKEN: $newToken');
-        _tokenNotifier.value = newToken;
+      if (newToken != null) {
+        if (newToken != savedToken) {
+          print('🔥 [FCM] NEW/UPDATED TOKEN: $newToken');
+          await _fcmTokenStorage.setToken(newToken);
+          _tokenNotifier.value = newToken;
+        } else {
+          print('🔥 [FCM] Token is same as saved: $newToken');
+          // If value is same, ValueNotifier doesn't trigger listeners.
+          // We can manually trigger it or rely on the initial check in Synchronizer.
+        }
+      } else {
+        print('🔥 [FCM] Firebase Messaging returned NULL token.');
       }
     } catch (e, s) {
-      print('❌ Error getting FCM token: $e');
+      print('❌ [FCM] Error getting token: $e');
       print(s);
     }
   }

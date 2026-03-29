@@ -8,18 +8,27 @@ class CallApi {
     String apiUrl,
     String token,
   ) async {
-    final fullUrl = '${Api().urlLink}/$apiUrl';
-    print('--- FCM API POST START ---');
-    print('URL: $fullUrl');
-    print('Body: ${jsonEncode(data)}');
+    // 🔗 URL Birleştirme - Çift / işaretini engeller
+    final baseUrl = Api().urlLink.endsWith('/')
+        ? Api().urlLink.substring(0, Api().urlLink.length - 1)
+        : Api().urlLink;
+    final path = apiUrl.startsWith('/') ? apiUrl : '/$apiUrl';
+    final fullUrl = '$baseUrl$path';
+
+    print('--- 🚀 FCM API CALL START ---');
+    print('ℹ️ METHOD: POST');
+    print('🌐 FULL URL: $fullUrl');
+    print('📦 BODY: ${jsonEncode(data)}');
+
     final response = await http.post(
       Uri.parse(fullUrl),
       body: jsonEncode(data),
       headers: _setTokenHeaders(token),
     );
-    print('Status Code: ${response.statusCode}');
-    print('Response: ${response.body}');
-    print('--- FCM API POST END ---');
+
+    print('✅ [API-POST] Status: ${response.statusCode}');
+    print('✅ [API-POST] Response: ${response.body}');
+    print('--- 🏁 FCM API CALL END ---');
     return response;
   }
 
@@ -28,18 +37,27 @@ class CallApi {
     String apiUrl,
     String token,
   ) async {
-    final fullUrl = '${Api().urlLink}/$apiUrl';
-    print('--- FCM API PUT START ---');
-    print('URL: $fullUrl');
-    print('Body: ${jsonEncode(data)}');
+    // 🔗 URL Birleştirme - Çift / işaretini engeller
+    final baseUrl = Api().urlLink.endsWith('/')
+        ? Api().urlLink.substring(0, Api().urlLink.length - 1)
+        : Api().urlLink;
+    final path = apiUrl.startsWith('/') ? apiUrl : '/$apiUrl';
+    final fullUrl = '$baseUrl$path';
+
+    print('--- 🚀 FCM API CALL START ---');
+    print('ℹ️ METHOD: PUT');
+    print('🌐 FULL URL: $fullUrl');
+    print('📦 BODY: ${jsonEncode(data)}');
+
     final response = await http.put(
       Uri.parse(fullUrl),
       body: jsonEncode(data),
       headers: _setTokenHeaders(token),
     );
-    print('Status Code: ${response.statusCode}');
-    print('Response: ${response.body}');
-    print('--- FCM API PUT END ---');
+
+    print('✅ [API-PUT] Status: ${response.statusCode}');
+    print('✅ [API-PUT] Response: ${response.body}');
+    print('--- 🏁 FCM API CALL END ---');
     return response;
   }
 
