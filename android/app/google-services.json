@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "261474756113",
+    "project_id": "gyzyleller-d1cb3",
+    "storage_bucket": "gyzyleller-d1cb3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:261474756113:android:e2878f232a7445148c73b0",
+        "android_client_info": {
+          "package_name": "com.ayterek.hyzmatlar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQiCodPj_pgcNb8NBXR4pTT65p2KdD_OE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
