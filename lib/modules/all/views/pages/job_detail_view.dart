@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use
-
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -22,7 +24,12 @@ import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_request_bottom_sheet.dart';
 import 'package:gyzyleller/shared/widgets/full_screen_image_gallery.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
-import 'dart:ui' as ui;
+import 'package:dio/dio.dart';
+import 'package:saver_gallery/saver_gallery.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:gyzyleller/shared/widgets/custom_flutter_map.dart';
+import 'package:gyzyleller/shared/widgets/services_map_screen.dart';
+import 'package:gyzyleller/core/models/location_model.dart';
 
 class JobDetailView extends StatelessWidget {
   const JobDetailView({super.key});
@@ -198,47 +205,9 @@ class JobDetailView extends StatelessWidget {
               const SizedBox(height: 16),
               ..._buildGroupedAnswers(job),
               const SizedBox(height: 8),
-              Builder(builder: (context) {
-                final List<String> allImages = [];
-                // 1. Multiple images
-                if (job.images.isNotEmpty) {
-                  for (final img in job.images) {
-                    String path = img;
-                    if (path.startsWith('/')) path = path.substring(1);
-                    if (!path.startsWith('http')) {
-                      allImages.add("${Api().urlImage}$path");
-                    } else {
-                      allImages.add(path);
-                    }
-                  }
-                } else if (job.image != null && job.image!.isNotEmpty) {
-                  // 2. Single image fallback
-                  String path = job.image!;
-                  if (path.startsWith('/')) path = path.substring(1);
-                  if (!path.startsWith('http')) {
-                    allImages.add("${Api().urlImage}$path");
-                  } else {
-                    allImages.add(path);
-                  }
-                }
-                // 3. Answer images/files
-                for (final answer in job.answers) {
-                  if ((answer.type == 'image' || answer.type == 'file') &&
-                      answer.value != null &&
-                      answer.value!.isNotEmpty) {
-                    String path = answer.value!;
-                    if (path.startsWith('/')) path = path.substring(1);
-                    if (!path.startsWith('http')) {
-                      allImages.add("${Api().urlImage}$path");
-                    } else {
-                      allImages.add(path);
-                    }
-                  }
-                }
-
-                if (allImages.isEmpty) return const SizedBox.shrink();
-
-                return Column(
+              if (job.images.isNotEmpty ||
+                  (job.image != null && job.image!.isNotEmpty))
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -249,16 +218,60 @@ class JobDetailView extends StatelessWidget {
                           color: ColorConstants.blue),
                     ),
                     const SizedBox(height: 12),
-                    Obx(() => _buildImageGallery(
-                          allImages,
-                          controller.currentPage.value,
-                          controller,
-                          context,
-                        )),
-                    const SizedBox(height: 10),
+                    _buildImageGallery(
+                      [
+                        if (job.images.isNotEmpty)
+                          ...job.images.map((img) {
+                            String path = img;
+                            if (path.startsWith('/')) path = path.substring(1);
+                            final url = path.startsWith('http')
+                                ? path
+                                : "${Api().urlImage}$path";
+                            debugPrint("🖼️ [Gallery URL]: $url");
+                            return url;
+                          })
+                        else if (job.image != null && job.image!.isNotEmpty)
+                          () {
+                            String path = job.image!;
+                            if (path.startsWith('/')) path = path.substring(1);
+                            final url = path.startsWith('http')
+                                ? path
+                                : "${Api().urlImage}$path";
+                            debugPrint("🖼️ [Cover URL]: $url");
+                            return url;
+                          }(),
+                        for (final answer in job.answers)
+                          if ((answer.type == 'image' ||
+                                  answer.type == 'file') &&
+                              answer.value != null &&
+                              answer.value!.isNotEmpty)
+                            () {
+                              String path = answer.value!;
+                              if (path.startsWith('/'))
+                                path = path.substring(1);
+                              final url = path.startsWith('http')
+                                  ? path
+                                  : "${Api().urlImage}$path";
+                              debugPrint("🖼️ [Answer URL]: $url");
+                              return url;
+                            }()
+                      ].whereType<String>().toList(),
+                      controller.currentPage.value,
+                      controller,
+                      context,
+                    ),
+                    const SizedBox(height: 16),
                   ],
-                );
-              }),
+                ),
+              if (job.files.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    ...job.files.map((file) => _buildFileCard(file)),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               if (job.position != null &&
                   job.position!.isNotEmpty &&
                   job.position != "0.0, 0.0" &&
@@ -719,7 +732,8 @@ class JobDetailView extends StatelessWidget {
     JobDetailController controller,
     BuildContext context,
   ) {
-    final int pageCount = (images.length / 2).ceil();
+    int pageCount = (images.length / 2).ceil();
+
     return Column(
       children: [
         SizedBox(
@@ -727,8 +741,10 @@ class JobDetailView extends StatelessWidget {
           child: PageView.builder(
             controller: controller.pageController,
             itemCount: pageCount,
-            onPageChanged: (index) => controller.currentPage.value = index,
-            itemBuilder: (ctx, pageIndex) {
+            onPageChanged: (index) {
+              controller.currentPage.value = index;
+            },
+            itemBuilder: (context, pageIndex) {
               final int firstIndex = pageIndex * 2;
               final int secondIndex = firstIndex + 1;
 
@@ -740,30 +756,33 @@ class JobDetailView extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: GestureDetector(
-                          onTap: () {
-                            Navigator.of(context, rootNavigator: true).push(
-                              MaterialPageRoute(
-                                builder: (_) => FullScreenImageGallery(
-                                  images: images,
-                                  initialIndex: firstIndex,
+                          onLongPress: () =>
+                              _showDownloadOption(context, images[firstIndex]),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context, rootNavigator: true).push(
+                                MaterialPageRoute(
+                                  builder: (context) => FullScreenImageGallery(
+                                    images: images,
+                                    initialIndex: firstIndex,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          onLongPress: () => controller.showDownloadOption(
-                              context, images[firstIndex]),
-                          child: Hero(
-                            tag: images[firstIndex],
-                            child: CachedNetworkImage(
-                              imageUrl: images[firstIndex],
-                              fit: BoxFit.cover,
-                              height: 120,
-                              placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator()),
-                              errorWidget: (context, url, error) => Container(
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image,
-                                    color: Colors.grey),
+                              );
+                            },
+                            child: Hero(
+                              tag: images[firstIndex],
+                              child: CachedNetworkImage(
+                                imageUrl: images[firstIndex],
+                                fit: BoxFit.cover,
+                                height: 120,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.broken_image,
+                                      color: Colors.grey),
+                                ),
                               ),
                             ),
                           ),
@@ -778,30 +797,35 @@ class JobDetailView extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.of(context, rootNavigator: true).push(
-                                MaterialPageRoute(
-                                  builder: (_) => FullScreenImageGallery(
-                                    images: images,
-                                    initialIndex: secondIndex,
-                                  ),
-                                ),
-                              );
-                            },
-                            onLongPress: () => controller.showDownloadOption(
+                            onLongPress: () => _showDownloadOption(
                                 context, images[secondIndex]),
-                            child: Hero(
-                              tag: images[secondIndex],
-                              child: CachedNetworkImage(
-                                imageUrl: images[secondIndex],
-                                fit: BoxFit.cover,
-                                height: 120,
-                                placeholder: (context, url) => const Center(
-                                    child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) => Container(
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image,
-                                      color: Colors.grey),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context, rootNavigator: true).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        FullScreenImageGallery(
+                                      images: images,
+                                      initialIndex: secondIndex,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Hero(
+                                tag: images[secondIndex],
+                                child: CachedNetworkImage(
+                                  imageUrl: images[secondIndex],
+                                  fit: BoxFit.cover,
+                                  height: 120,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.broken_image,
+                                        color: Colors.grey),
+                                  ),
                                 ),
                               ),
                             ),
@@ -842,59 +866,47 @@ class JobDetailView extends StatelessWidget {
 
   Widget _buildMapPreview(JobModel job, LatLng position, BuildContext context) {
     return InkWell(
-      onTap: () async {
-        final uri = Uri.parse(
-            "https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}");
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
-        }
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServicesMapScreen(
+              location: Location(
+                latitude: position.latitude,
+                longitude: position.longitude,
+              ),
+              placeName: job.name,
+              catName: job.categoryName,
+            ),
+          ),
+        );
       },
-      child: Container(
-        height: 200,
+      child: CustomFlutterMap(
+        aspectRatio: 360 / 200,
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: position,
-              initialZoom: 15.0,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
+        radius: 12,
+        center: position,
+        markerSize: 40,
+        zoom: 15.0,
+        locations: [position],
+        markerIcons: const [Icons.location_on],
+        markerColors: const [Colors.red],
+        interactive: true,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ServicesMapScreen(
+                location: Location(
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                ),
+                placeName: job.name,
+                catName: job.categoryName,
               ),
             ),
-            children: [
-              TileLayer(
-                urlTemplate: Api().mapApi,
-                userAgentPackageName: 'com.gyzyleller.app',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: position,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 40,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -995,49 +1007,33 @@ class JobDetailView extends StatelessWidget {
             ? "(${answer.lng},${answer.lat})"
             : ""));
 
-    return InkWell(
-      onTap: () async {
-        final uri = Uri.parse(
-            "https://www.google.com/maps/search/?api=1&query=${mapPos.latitude},${mapPos.longitude}");
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
-        }
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          height: 180,
-          width: double.infinity,
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: mapPos,
-              initialZoom: 14.0,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: CustomFlutterMap(
+        aspectRatio: 360 / 180,
+        width: double.infinity,
+        center: mapPos,
+        markerSize: 30,
+        zoom: 14.0,
+        locations: [mapPos],
+        markerIcons: const [Icons.location_on],
+        markerColors: const [Colors.red],
+        interactive: true,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ServicesMapScreen(
+                location: Location(
+                  latitude: mapPos.latitude,
+                  longitude: mapPos.longitude,
+                ),
+                placeName: job.name,
+                catName: answer.value ?? answer.question,
               ),
             ),
-            children: [
-              TileLayer(
-                urlTemplate: Api().mapApi,
-                userAgentPackageName: 'com.gyzyleller.app',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: mapPos,
-                    width: 30,
-                    height: 30,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 30,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -1172,6 +1168,59 @@ class JobDetailView extends StatelessWidget {
     }
   }
 
+  Widget _buildFileCard(JobFileModel file) {
+    String fileName = file.file.split('/').last;
+    return InkWell(
+      onTap: () async {
+        String path = file.file;
+        if (path.startsWith('/')) path = path.substring(1);
+        final String fullUrl =
+            path.startsWith('http') ? path : "${Api().urlImage}$path";
+        try {
+          await launchUrl(Uri.parse(fullUrl),
+              mode: LaunchMode.externalApplication);
+        } catch (_) {}
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: ColorConstants.whiteColor,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.insert_drive_file,
+                size: 32, color: ColorConstants.kPrimaryColor2),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            const Icon(Icons.download_rounded,
+                color: ColorConstants.kPrimaryColor2),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildOtherInfoSection(BuildContext context, JobModel job) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1227,6 +1276,90 @@ class JobDetailView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _downloadImage(String url) async {
+    try {
+      if (Platform.isAndroid) {
+        if (!(await Permission.storage.request().isGranted) &&
+            !(await Permission.photos.request().isGranted)) {}
+      } else if (Platform.isIOS) {
+        if (!(await Permission.photos.request().isGranted)) {
+          return;
+        }
+      }
+
+      final response = await Dio().get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final result = await SaverGallery.saveImage(
+        Uint8List.fromList(response.data),
+        quality: 100,
+        name: "gyzyleller_${DateTime.now().millisecondsSinceEpoch}.jpg",
+        androidRelativePath: "Pictures/Gyzyleller",
+        androidExistNotSave: false,
+      );
+
+      if (result.isSuccess) {
+        Get.snackbar("OK", "Fotoýurat ýüklendi".tr,
+            snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      debugPrint("Download error: $e");
+    }
+  }
+
+  void _showDownloadOption(BuildContext context, String url) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorConstants.kPrimaryColor2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _downloadImage(url);
+                },
+                icon: const Icon(Icons.download, color: Colors.white),
+                label: Text(
+                  'download'.tr,
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
     );
   }
 }

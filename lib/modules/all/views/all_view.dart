@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:get/get.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
@@ -9,7 +9,7 @@ import 'package:gyzyleller/modules/filter_view/filter_view.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_card.dart';
 import 'package:gyzyleller/modules/all/views/pages/searc_view.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
+
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/empty_state_widget.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
@@ -35,7 +35,11 @@ class AllView extends StatelessWidget {
           children: [
             IconButton(
               padding: EdgeInsets.zero,
-              icon: SvgPicture.asset(IconConstants.filter),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedFilter,
+                color: ColorConstants.blackColor,
+                size: 24.0,
+              ),
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -81,13 +85,21 @@ class AllView extends StatelessWidget {
                   },
                 );
               },
-              icon: SvgPicture.asset(IconConstants.sort),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedSorting05,
+                color: ColorConstants.blackColor,
+                size: 24.0,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: SvgPicture.asset(IconConstants.search),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedSearch01,
+              color: ColorConstants.blackColor,
+              size: 24.0,
+            ),
             onPressed: () {
               Get.to(() => const AllSearchView());
             },
@@ -98,7 +110,7 @@ class AllView extends StatelessWidget {
         if (controller.isFirstLoad.value) {
           return const Center(
             child: CircularProgressIndicator(
-              color: ColorConstants.blue,
+              color: ColorConstants.greyColor,
               backgroundColor: ColorConstants.background,
               strokeWidth: 4.0,
             ),
@@ -107,7 +119,7 @@ class AllView extends StatelessWidget {
 
         return SmartRefresher(
           header: const MaterialClassicHeader(
-            color: ColorConstants.blue,
+            color: ColorConstants.greyColor,
             backgroundColor: ColorConstants.background,
           ),
           controller: controller.refreshController,

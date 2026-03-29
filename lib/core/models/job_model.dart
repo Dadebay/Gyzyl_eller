@@ -64,6 +64,7 @@ class JobModel {
   final String username;
   final String? image;
   final List<String> images;
+  final List<JobFileModel> files;
   final List<String> catPath;
   final List<JobAnswer> answers;
   final int? responsesCount;
@@ -95,6 +96,7 @@ class JobModel {
     required this.username,
     this.image,
     this.images = const [],
+    this.files = const [],
     this.catPath = const [],
     this.answers = const [],
     this.responsesCount,
@@ -136,6 +138,9 @@ class JobModel {
       username: json['username'] ?? '',
       image: json['image']?.toString(),
       images: (json['images'] as List? ?? []).map((e) => e.toString()).toList(),
+      files: (json['files'] as List? ?? [])
+          .map((item) => JobFileModel.fromJson(item))
+          .toList(),
       catPath: (json['cat_path'] as List? ?? []).map((e) => e.toString()).toList(),
       answers: (json['answers'] as List? ?? [])
           .map((item) => JobAnswer.fromJson(item))
@@ -213,6 +218,21 @@ class JobAnswerOption {
   factory JobAnswerOption.fromJson(Map<String, dynamic> json) {
     return JobAnswerOption(
       optionName: json['option_name'] ?? '',
+    );
+  }
+}
+class JobFileModel {
+  final int id;
+  final String file;
+  final String fileType;
+
+  JobFileModel({required this.id, required this.file, required this.fileType});
+
+  factory JobFileModel.fromJson(Map<String, dynamic> json) {
+    return JobFileModel(
+      id: json['id'] ?? 0,
+      file: json['file'] ?? '',
+      fileType: json['file_type'] ?? '',
     );
   }
 }

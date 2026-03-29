@@ -490,7 +490,7 @@ class _ChatsViewState extends State<ChatsView>
 
       final chats = ctrl.chats.where((c) => !c.isAdmin).toList();
       final int firstValid = chats.indexWhere(
-          (c) => c.productTitle.isNotEmpty || c.userName.isNotEmpty);
+          (c) => c.productTitle.isNotEmpty);
 
       return SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -636,9 +636,7 @@ class _ChatListItem extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      chat.productTitle.isNotEmpty
-                                          ? chat.productTitle
-                                          : chat.userName,
+                                      chat.productTitle,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(

@@ -28,25 +28,9 @@ final class ApplicationInitialize {
 
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       await DeviceUtility.instance.initPackageInfo();
-      await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform);
+      // Notifications initialization (moved to main.dart logic)
       final localNotificationsService = LocalNotificationsService.instance();
       await localNotificationsService.init();
-      final firebaseMessagingService = FirebaseMessagingService.instance();
-      await firebaseMessagingService.init(
-          localNotificationsService: localNotificationsService);
-      print('🔥 Firebase & Notifications initialized');
-
-      // Ayterek approach: Init FCM Token Provider & Synchronizer
-      final fcmTokenProvider = FcmTokenProvider();
-      await fcmTokenProvider.init();
-      Get.put(fcmTokenProvider, permanent: true);
-
-      final fcmTokenSynchronizer = FcmTokenSynchronizer(fcmTokenProvider);
-      fcmTokenSynchronizer.init();
-      Get.put(fcmTokenSynchronizer, permanent: true);
-
-      await FirebaseMessaging.instance.subscribeToTopic('EVENT');
       print('✅ ApplicationInitialize complete!');
     } catch (e, stack) {
       print('❌ ApplicationInitialize Error: $e');

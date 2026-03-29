@@ -352,6 +352,7 @@ class ChatDetailController extends GetxController {
       debugPrint('👁️ [ChatDetail] Sending readed_message for $chatId');
       _socket?.emit('readed_message', {
         'chat_id': chatId,
+        'type': 'gyzyl',
       });
     }
   }

@@ -788,7 +788,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     'maxPrice': null,
                     'dates': <DateTime>[],
                   });
-                  Navigator.pop(context);
+                  // Navigator.pop(context);
                 },
                 child: Text(
                   "clear_all".tr,

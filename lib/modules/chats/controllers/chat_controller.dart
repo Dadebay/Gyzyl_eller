@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:gyzyleller/core/models/chat_model.dart';
 import 'package:gyzyleller/modules/chats/controllers/notification_controller.dart';
-import 'package:gyzyleller/core/services/my_jobs_service.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:http/http.dart' as http;
 import 'package:gyzyleller/core/services/chat_socket_service.dart';
@@ -111,7 +110,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
   void _getData() {
     if (!_socketConnected) return;
     final lang = Get.find<GetStorage>().read('langCode') ?? 'tk';
-    _socket?.emitWithAck('get_data', {'lang': lang}, ack: (data) {
+    _socket?.emitWithAck('get_data', {'lang': lang, 'type': 'gyzyl'}, ack: (data) {
       if (data['status'] == 200) {
         onlineUsers.value = data['online_users'] ?? [];
       }
@@ -150,58 +149,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     _isFetching = false;
   }
 
-  /// Proactively fetches missing job/product metadata for a list of raw chats
-  Future<void> _healMissingMetadata(List<dynamic> rawChats) async {
-    final missingIds = <int>{};
-    for (var chat in rawChats) {
-      final pidStr = chat['product_id']?.toString() ??
-          chat['job_id']?.toString() ??
-          chat['service_id']?.toString();
-      if (pidStr != null && pidStr != '0' && pidStr != '') {
-        if (!_productsCache.containsKey(pidStr)) {
-          final pid = int.tryParse(pidStr);
-          if (pid != null) missingIds.add(pid);
-        }
-      }
-    }
 
-    if (missingIds.isEmpty) return;
-
-    debugPrint(
-        '🩹 [ChatController] Healing ${missingIds.length} missing job names...');
-    final service = MyJobsService();
-
-    // Fetch missing details in parallel (limited)
-    await Future.wait(missingIds.map((id) async {
-      try {
-        final detail = await service.getJobDetail(id);
-        if (detail.success) {
-          // Convert JobModel to Map structure expected by ChatModel.fromApiData
-          final jobMap = {
-            'id': detail.job.id,
-            'name': detail.job.name,
-            'image': detail.job.image,
-            'price': detail.job.minPrice,
-            'status': detail.job.status,
-          };
-          _productsCache[id.toString()] = jobMap;
-        }
-      } catch (e) {
-        debugPrint('⚠️ [ChatController] Failed to heal job $id: $e');
-      }
-    }));
-
-    // Trigger UI refresh if we found anything new
-    if (missingIds.any((id) => _productsCache.containsKey(id.toString()))) {
-      debugPrint('✅ [ChatController] Metadata healed, refreshing list...');
-      // To reflect changes, assignAll again
-      final refreshed = rawChats
-          .map((e) => ChatModel.fromApiData(
-              e as Map<String, dynamic>, _productsCache, _usersCache))
-          .toList();
-      chats.assignAll(refreshed);
-    }
-  }
 
   Future<void> fetchChats() async {
     if (_isFetching) return;
@@ -302,16 +250,8 @@ class ChatController extends GetxController with WidgetsBindingObserver {
           _productsCache.addAll(products);
           _usersCache.addAll(users);
 
-          // Metadata safety check (Ayterek style)
-          // Only retry if chats reference products but metadata is missing in BOTH current response and cache
-          final hasProductChats = chatList.any((c) =>
-              c['product_id'] != null ||
-              c['job_id'] != null ||
-              c['service_id'] != null);
-
-          if (hasProductChats &&
-              chatList.isNotEmpty &&
-              (_productsCache.isEmpty || _usersCache.isEmpty)) {
+          if (chatList.length > 1 &&
+              (products.isEmpty || users.isEmpty)) {
             debugPrint(
                 '⚠️ [ChatController] Metadata eksik (Socket), 2s soň täzeden synanyşylýar...');
             Future.delayed(const Duration(seconds: 2), () => fetchChats());
@@ -329,9 +269,6 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
           chats.value = newChats;
           _computeUnread(newChats);
-
-          // Heal missing metadata in background
-          _healMissingMetadata(chatList);
 
           // Also fetch notifications on socket response
           if (Get.isRegistered<NotificationController>()) {
@@ -360,7 +297,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     });
 
     // Get online users, but don't overwrite unreadCount here to avoid lag
-    _socket?.emitWithAck('get_data', {'lang': lang}, ack: (data) {
+    _socket?.emitWithAck('get_data', {'lang': lang, 'type': 'gyzyl'}, ack: (data) {
       if (data['status'] == 200) {
         onlineUsers.value = data['online_users'] ?? [];
       }
@@ -431,26 +368,6 @@ class ChatController extends GetxController with WidgetsBindingObserver {
         _productsCache.addAll(products);
         _usersCache.addAll(users);
 
-        // Metadata safety check (Ayterek style)
-        // Only retry if chats reference products but metadata is missing in BOTH current response and cache
-        final hasProductChats = chatList.any((c) =>
-            c['product_id'] != null ||
-            c['job_id'] != null ||
-            c['service_id'] != null);
-
-        if (hasProductChats &&
-            chatList.isNotEmpty &&
-            (_productsCache.isEmpty || _usersCache.isEmpty)) {
-          debugPrint(
-              '⚠️ [ChatController] HTTP metadata eksik, skipping list update but updating counts...');
-          // Pre-calculate unread count from raw data even if we don't update names/images yet
-          final tempModels =
-              chatList.map((e) => ChatModel.fromApiData(e, {}, {})).toList();
-          _computeUnread(tempModels);
-          Future.delayed(const Duration(seconds: 2), () => _fetchChatsHttp());
-          return;
-        }
-
         final newHttpChats = chatList
             .map((e) => ChatModel.fromApiData(
                   e as Map<String, dynamic>,
@@ -461,9 +378,6 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
         chats.value = newHttpChats;
         _computeUnread(newHttpChats);
-
-        // Heal missing metadata in background
-        _healMissingMetadata(chatList);
 
         hasError.value = false;
         debugPrint(
@@ -500,13 +414,15 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
   void blockUser(String chatId) {
     if (_socketConnected) {
-      _socket?.emitWithAck('block_chat', {'chat_id': chatId}, ack: (_) {});
+      _socket?.emitWithAck('block_chat', {'chat_id': chatId, 'type': 'gyzyl'},
+          ack: (_) {});
     }
   }
 
   void unBlockUser(String userId) {
     if (_socketConnected) {
-      _socket?.emitWithAck('unblock_user', {'user_id': userId}, ack: (_) {
+      _socket?.emitWithAck('unblock_user', {'user_id': userId, 'type': 'gyzyl'},
+          ack: (_) {
         fetchChats();
       });
     }
@@ -541,7 +457,8 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
     if (_socketConnected) {
       final lang = Get.find<GetStorage>().read('langCode') ?? 'tk';
-      _socket?.emitWithAck('get_data', {'lang': lang}, ack: (data) {
+      _socket?.emitWithAck('get_data', {'lang': lang, 'type': 'gyzyl'},
+          ack: (data) {
         if (data['status'] == 200) {
           onlineUsers.value = data['online_users'] ?? [];
           // Note: we don't overwrite unreadCount from server response here
@@ -581,11 +498,13 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
   Future<void> deleteChat(String chatId, {bool refresh = true}) async {
     if (_socketConnected) {
-      _socket?.emitWithAck('delete_chat', {'chat_id': chatId}, ack: (_) {});
+      _socket?.emitWithAck('delete_chat', {'chat_id': chatId, 'type': 'gyzyl'},
+          ack: (_) {});
     } else {
       try {
         await http.delete(
-          Uri.parse('${_api.urlLink}/api/user/chats/$chatId'),
+          Uri.parse('${_api.urlLink}/api/user/chats/$chatId')
+              .replace(queryParameters: {'type': 'gyzyl'}),
           headers: {'Authorization': 'Bearer $token'},
         );
       } catch (e) {

@@ -8,7 +8,7 @@ class FcmTokenProvider {
   
   final _fcmTokenStorage = const FcmTokenLocalStorage();
   final _tokenNotifier = ValueNotifier<String?>(null);
-  final _fcm = FirebaseMessaging.instance;
+  FirebaseMessaging get _fcm => FirebaseMessaging.instance;
   StreamSubscription<String>? _tokenRefreshSubscription;
 
   ValueNotifier<String?> get token => _tokenNotifier;
@@ -23,15 +23,18 @@ class FcmTokenProvider {
     try {
       final savedToken = _fcmTokenStorage.getToken();
       if (savedToken != null) {
+        print('🔥 SAVED FCM TOKEN: $savedToken');
         _tokenNotifier.value = savedToken;
         // Don't return here, we still want to fetch the latest from FCM
       }
       
       final newToken = await _fcm.getToken();
       if (newToken != null && newToken != savedToken) {
+        print('🔥 NEW/UPDATED FCM TOKEN: $newToken');
         await _fcmTokenStorage.setToken(newToken);
         _tokenNotifier.value = newToken;
       } else if (newToken != null) {
+        print('🔥 CURRENT FCM TOKEN: $newToken');
         _tokenNotifier.value = newToken;
       }
     } catch (e, s) {

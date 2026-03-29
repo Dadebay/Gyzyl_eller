@@ -23,7 +23,7 @@ class FirebaseMessagingService {
 
     _handlePushNotificationsToken();
 
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    // Background handler moved to main.dart
 
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
 
@@ -68,16 +68,11 @@ class FirebaseMessagingService {
           notificationData.body, jsonEncode(message.data));
     }
   }
-}
 
-Future<void> _incrementNotificationCount() async {
-  await GetStorage.init();
-  final box = GetStorage();
-  final currentCount = box.read<int>('notification_count') ?? 0;
-  await box.write('notification_count', currentCount + 1);
-}
-
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await _incrementNotificationCount();
+  Future<void> _incrementNotificationCount() async {
+    await GetStorage.init();
+    final box = GetStorage();
+    final currentCount = box.read<int>('notification_count') ?? 0;
+    await box.write('notification_count', currentCount + 1);
+  }
 }
