@@ -54,13 +54,13 @@ class FcmTokenSynchronizer {
     }
 
     print('--- FCM SYNC START ---');
-    print('📍 ENDPOINT: user/master/fcm-token');
+    print('📍 ENDPOINT: api/user/master/fcm-token');
     print('🔑 TOKEN: $fcmToken');
 
     try {
       // Replicating Ayterek's putToken call
       await CallApi().postToken(
-          {'fcm_token': fcmToken}, 'user/master/fcm-token', userToken);
+          {'fcm_token': fcmToken}, 'api/user/master/fcm-token', userToken);
     } catch (e, s) {
       print('❌ [SYNC ERROR] Sending FCM token to server: $e');
       print(s);

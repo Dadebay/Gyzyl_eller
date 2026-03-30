@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -8,7 +7,6 @@ import 'package:gyzyleller/modules/filter_view/filter_view.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
 import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/empty_state_widget.dart';
 

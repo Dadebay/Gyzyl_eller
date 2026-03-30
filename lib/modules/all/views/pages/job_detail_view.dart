@@ -1098,8 +1098,8 @@ class JobDetailView extends StatelessWidget {
       if (job.startDate != null && job.startDate!.isNotEmpty) {
         try {
           final taskDate = DateTime.parse(job.startDate!);
-          final dateFormat =
-              DateFormat('EEEE, dd MMMM', Get.locale?.languageCode ?? 'tk');
+          final dateFormat = DateFormat(
+              'EEEE, dd MMMM', Localizations.localeOf(context).toString());
           final timeStr = DateFormat('HH:mm').format(taskDate);
           return "${job.whenToDo.tr} (${dateFormat.format(taskDate)}) $timeStr";
         } catch (_) {}
@@ -1112,8 +1112,8 @@ class JobDetailView extends StatelessWidget {
         final taskDate = DateTime.parse(job.startDate!);
         final now = DateTime.now();
         final tomorrow = now.add(const Duration(days: 1));
-        final dateFormat =
-            DateFormat('EEEE, dd MMMM', Get.locale?.languageCode ?? 'tk');
+        final dateFormat = DateFormat(
+            'EEEE, dd MMMM', Localizations.localeOf(context).toString());
 
         if (taskDate.year == now.year &&
             taskDate.month == now.month &&
@@ -1133,7 +1133,7 @@ class JobDetailView extends StatelessWidget {
     }
 
     if (job.whenToDo == 'urgent' || job.whenToDo.isEmpty) {
-      return 'urgent_label'.tr;
+      return 'Iň çalt wagytda'.tr;
     }
 
     if (job.whenToDo == 'special_date') {
