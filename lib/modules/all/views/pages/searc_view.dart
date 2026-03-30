@@ -1,6 +1,6 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
-import 'package:gyzyleller/modules/all/views/pages/job_card.dart';
+import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';

@@ -5,7 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/filter_view/filter_view.dart';
-import 'package:gyzyleller/modules/all/views/pages/job_card.dart';
+import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
 import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
@@ -82,11 +82,11 @@ class TaskView extends StatelessWidget {
                     },
                   );
                 },
-               icon: const HugeIcon(
-                icon: HugeIcons.strokeRoundedSorting05,
-                color: ColorConstants.blackColor,
-                size: 24.0,
-              ),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedSorting05,
+                  color: ColorConstants.blackColor,
+                  size: 24.0,
+                ),
               ),
             ],
           ),

@@ -7,7 +7,7 @@ import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
 import 'package:gyzyleller/modules/all/views/pages/account_summary_bar.dart';
 import 'package:gyzyleller/modules/filter_view/filter_view.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
-import 'package:gyzyleller/modules/all/views/pages/job_card.dart';
+import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/all/views/pages/searc_view.dart';
 
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';

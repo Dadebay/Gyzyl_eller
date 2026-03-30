@@ -13,30 +13,36 @@ import 'package:gyzyleller/shared/constants/icon_constants.dart';
 class JobCard extends StatelessWidget {
   final JobModel job;
   final bool isNew;
+  final bool showDelete;
+  final VoidCallback? onDeleted;
 
   const JobCard({
     super.key,
     required this.job,
-    required this.isNew,
+    this.isNew = false,
+    this.showDelete = false,
+    this.onDeleted,
   });
 
   String _formatDate(String dateStr) {
     try {
       final dateTime = DateTime.parse(dateStr);
-      final month = 'month_${dateTime.month}'.tr;
-      return "${dateTime.day} $month ${dateTime.year}, ${DateFormat('HH:mm').format(dateTime)}";
+      // Replicating Ayterek's exact format
+      return DateFormat('d MMMM yyyy, HH:mm', Get.locale?.toString() ?? 'tk')
+          .format(dateTime);
     } catch (_) {
       return dateStr;
     }
   }
 
   String _formatDateStatus(BuildContext context, JobModel job) {
+    final localeStr = Get.locale?.toString() ?? 'tk';
+
     if (job.whenToDo == 'date_today' || job.whenToDo == 'date_tomorrow') {
       if (job.startDate != null && job.startDate!.isNotEmpty) {
         try {
           final taskDate = DateTime.parse(job.startDate!);
-          final dateFormat =
-              DateFormat('EEEE, dd MMMM', Get.locale?.languageCode ?? 'tk');
+          final dateFormat = DateFormat('EEEE, dd MMMM', localeStr);
           final timeStr = DateFormat('HH:mm').format(taskDate);
           return "${job.whenToDo.tr} (${dateFormat.format(taskDate)}) $timeStr";
         } catch (_) {}
@@ -49,8 +55,7 @@ class JobCard extends StatelessWidget {
         final taskDate = DateTime.parse(job.startDate!);
         final now = DateTime.now();
         final tomorrow = now.add(const Duration(days: 1));
-        final dateFormat =
-            DateFormat('EEEE, dd MMMM', Get.locale?.languageCode ?? 'tk');
+        final dateFormat = DateFormat('EEEE, dd MMMM', localeStr);
 
         if (taskDate.year == now.year &&
             taskDate.month == now.month &&
@@ -70,6 +75,7 @@ class JobCard extends StatelessWidget {
     }
 
     if (job.whenToDo == 'urgent' || job.whenToDo.isEmpty) {
+      // Replicating Ayterek's specific text behavior if possible, or sticking to key
       return 'urgent_label'.tr;
     }
 
@@ -120,9 +126,21 @@ class JobCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_formatDate(job.createdAt),
-                  style: const TextStyle(
-                      color: ColorConstants.secondary, fontSize: 13)),
+              Row(
+                children: [
+                  Text(_formatDate(job.createdAt),
+                      style: const TextStyle(
+                          color: ColorConstants.secondary, fontSize: 13)),
+                  const Spacer(),
+                  if (showDelete)
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: onDeleted,
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               Text(job.name,
                   maxLines: 2,
@@ -159,12 +177,12 @@ class JobCard extends StatelessWidget {
                           color: ColorConstants.fonts, fontSize: 12)),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               InfoRow(icon: IconConstants.grid, text: job.categoryName),
               const SizedBox(height: 6),
               InfoRow(
                 icon: IconConstants.locationHouse,
-                text: "${job.welayat}, ${job.etrap}",
+                text: "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
               ),
               const SizedBox(height: 6),
               const Divider(height: 2, color: ColorConstants.background),
@@ -174,7 +192,7 @@ class JobCard extends StatelessWidget {
                   SmallInfo(
                     icon: IconConstants.payment,
                     text: (job.minPrice == 0 && job.maxPrice == 0)
-                        ? 'Baha goýulmady'
+                        ? 'not_priced'.tr
                         : '${job.minPrice} TMT - ${job.maxPrice} TMT',
                   ),
                   const SizedBox(width: 16),
