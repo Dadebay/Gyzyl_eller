@@ -25,7 +25,7 @@ class WalletView extends GetView<WalletController> {
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: CustomAppBar(
-          title: "Men hasabym".tr,
+          title: "my_account_title".tr,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios,
                 color: ColorConstants.kPrimaryColor2),

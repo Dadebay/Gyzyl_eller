@@ -94,7 +94,7 @@ class SpecialProfileController extends GetxController {
   }
 
   /// Re-fetches the master profile using get-master-by-id for full data.
-  void fetchProfileData() async {
+  Future<void> fetchProfileData() async {
     final ApiService apiService = ApiService();
     final response = await apiService.getRequest(ApiConstants.specialProfile);
     if (response != null && response['data'] != null) {
@@ -225,7 +225,7 @@ class SpecialProfileController extends GetxController {
         }
         CustomWidgets.showSnackBar('success_title'.tr, 'success_subtitle'.tr,
             ColorConstants.greenColor);
-        fetchProfileData();
+        await fetchProfileData();
         if (isEdit) {
           Get.back();
         } else {

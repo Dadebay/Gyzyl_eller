@@ -3,7 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:gyzyleller/modules/login/views/login_view.dart';
@@ -11,12 +14,12 @@ import 'package:gyzyleller/modules/login/views/login_view.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/user_profile_controller.dart';
-import 'package:gyzyleller/modules/settings_profile/views/about_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/language_page.dart';
 import 'package:gyzyleller/modules/settings_profile/views/profile_edit_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:gyzyleller/modules/onboarding/views/onboarding_view.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
+import 'package:gyzyleller/shared/dialogs/contact_us_dialog.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 
 class SettingsView extends GetView<SettingsController> {
@@ -25,6 +28,16 @@ class SettingsView extends GetView<SettingsController> {
   @override
   final SettingsController controller = Get.put(SettingsController());
   final UserProfilController profilController = Get.put(UserProfilController());
+
+  String get _langWeb => GetStorage().read('langCode') ?? 'tk';
+
+  void _launchURL(String url) {
+    launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.inAppBrowserView,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,7 +114,7 @@ class SettingsView extends GetView<SettingsController> {
               'about'.tr,
               IconConstants.description,
               () {
-                Get.to(() => AboutView());
+                _launchURL('${Api().urlSimple}general-rules/$_langWeb');
               },
             ),
             const SizedBox(height: 10.0),
@@ -109,7 +122,9 @@ class SettingsView extends GetView<SettingsController> {
               context,
               'faq'.tr,
               IconConstants.questionred,
-              () {},
+              () {
+                _launchURL('${Api().urlSimple}faq/$_langWeb');
+              },
             ),
             const SizedBox(height: 10.0),
             _buildMenuItem(
@@ -125,7 +140,9 @@ class SettingsView extends GetView<SettingsController> {
               context,
               'contact'.tr,
               IconConstants.support,
-              () {},
+              () {
+                showContactUsDialog(context);
+              },
             ),
             const SizedBox(height: 10.0),
             if (controller.isLoggedIn)
@@ -330,14 +347,16 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                 ),
               ),
-              Obx(() => Text(
-                    "${controller.userBalance.value.toStringAsFixed(0)} TMT",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: ColorConstants.greyColor,
-                    ),
-                  )),
+              Obx(() => controller.hasSpecialProfile.value
+                  ? Text(
+                      "${controller.userBalance.value.toStringAsFixed(0)} ŞAÝ",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: ColorConstants.greyColor,
+                      ),
+                    )
+                  : const SizedBox.shrink()),
               SvgPicture.asset(
                 IconConstants.expandMore,
                 width: 24,
