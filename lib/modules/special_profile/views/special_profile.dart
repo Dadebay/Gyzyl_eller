@@ -254,43 +254,42 @@ class _SpecialProfileState extends State<SpecialProfile> {
           }
 
           // Long text – show collapse / expand toggle.
-          return RichText(
-            text: TextSpan(
-              children: [
-                const TextSpan(
-                  text: 'Bio: ',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: ColorConstants.blackColor),
-                ),
-                TextSpan(
-                  text: _isExpanded ? _fullText : _shortText,
-                  style: const TextStyle(
-                      fontSize: 14, color: ColorConstants.blackColor),
-                ),
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.baseline,
-                  baseline: TextBaseline.alphabetic,
-                  child: GestureDetector(
-                    onTap: () => setState(() => _isExpanded = !_isExpanded),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Text(
-                        _isExpanded ? 'gizle'.tr : 'dolyac'.tr,
-                        style: const TextStyle(
-                            fontSize: 13,
-                            color: ColorConstants.blue,
-                            fontWeight: FontWeight.w500),
-                      ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Bio: ',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: ColorConstants.blackColor),
                     ),
-                  ),
+                    TextSpan(
+                      text: _fullText,
+                      style: const TextStyle(
+                          fontSize: 14, color: ColorConstants.blackColor),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            maxLines: _isExpanded ? null : 3,
-            overflow:
-                _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                maxLines: _isExpanded ? null : 3,
+                overflow:
+                    _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: () => setState(() => _isExpanded = !_isExpanded),
+                child: Text(
+                  _isExpanded ? 'gizle'.tr : 'dolyac'.tr,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: ColorConstants.blue,
+                      fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
           );
         },
       ),
