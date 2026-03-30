@@ -289,6 +289,7 @@ class TranslationService extends Translations {
           'welayat_selected': 'welaýat saýlandy',
           'category_selected': 'kategoriýa saýlandy',
           'all': 'Hemmesi',
+          "during_week": "Hepdäniň dowamynda",
           'clear_all': 'Ählisini arassala',
           'clear': 'Arassala',
           'from': 'Dan',

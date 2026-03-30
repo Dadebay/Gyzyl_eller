@@ -27,22 +27,20 @@ class JobCard extends StatelessWidget {
   String _formatDate(String dateStr) {
     try {
       final dateTime = DateTime.parse(dateStr);
-      // Replicating Ayterek's exact format
-      return DateFormat('d MMMM yyyy, HH:mm', Get.locale?.toString() ?? 'tk')
-          .format(dateTime);
+      final month = 'month_${dateTime.month}'.tr;
+      return "${dateTime.day} $month ${dateTime.year}, ${DateFormat('HH:mm').format(dateTime)}";
     } catch (_) {
       return dateStr;
     }
   }
 
   String _formatDateStatus(BuildContext context, JobModel job) {
-    final localeStr = Get.locale?.toString() ?? 'tk';
-
     if (job.whenToDo == 'date_today' || job.whenToDo == 'date_tomorrow') {
       if (job.startDate != null && job.startDate!.isNotEmpty) {
         try {
           final taskDate = DateTime.parse(job.startDate!);
-          final dateFormat = DateFormat('EEEE, dd MMMM', localeStr);
+          final dateFormat = DateFormat(
+              'EEEE, dd MMMM', Localizations.localeOf(context).toString());
           final timeStr = DateFormat('HH:mm').format(taskDate);
           return "${job.whenToDo.tr} (${dateFormat.format(taskDate)}) $timeStr";
         } catch (_) {}
@@ -55,7 +53,8 @@ class JobCard extends StatelessWidget {
         final taskDate = DateTime.parse(job.startDate!);
         final now = DateTime.now();
         final tomorrow = now.add(const Duration(days: 1));
-        final dateFormat = DateFormat('EEEE, dd MMMM', localeStr);
+        final dateFormat = DateFormat(
+            'EEEE, dd MMMM', Localizations.localeOf(context).toString());
 
         if (taskDate.year == now.year &&
             taskDate.month == now.month &&
@@ -75,8 +74,7 @@ class JobCard extends StatelessWidget {
     }
 
     if (job.whenToDo == 'urgent' || job.whenToDo.isEmpty) {
-      // Replicating Ayterek's specific text behavior if possible, or sticking to key
-      return 'urgent_label'.tr;
+      return 'Iň çalt wagytda'.tr;
     }
 
     if (job.whenToDo == 'special_date') {
@@ -137,7 +135,8 @@ class JobCard extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: onDeleted,
-                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      icon: const Icon(Icons.delete_outline,
+                          color: Colors.red, size: 20),
                     ),
                 ],
               ),
@@ -182,7 +181,8 @@ class JobCard extends StatelessWidget {
               const SizedBox(height: 6),
               InfoRow(
                 icon: IconConstants.locationHouse,
-                text: "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
+                text:
+                    "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
               ),
               const SizedBox(height: 6),
               const Divider(height: 2, color: ColorConstants.background),
