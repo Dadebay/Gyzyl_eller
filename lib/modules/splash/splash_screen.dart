@@ -44,9 +44,12 @@ class _SplashScreenState extends State<SplashScreen> {
     bool isFirstLaunch = box.read('isFirstLaunch') ?? true;
 
     if (isFirstLaunch) {
+      print('👋 First launch detected. Navigating to onboarding...');
+      // Mark as seen immediately so it doesn't show again on next launch
       await box.write('isFirstLaunch', false);
       Get.off(() => LanguagePageFirst());
     } else {
+      print('🏠 Onboarding already seen. Navigating to Home...');
       Get.off(() => const BottomNavBar(), binding: HomeBinding());
     }
   }

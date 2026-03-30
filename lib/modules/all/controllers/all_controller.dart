@@ -81,6 +81,9 @@ class AllController extends GetxController {
 
     if (isRefresh) {
       _page = 0;
+      // 🔄 Reset pagination state on refresh
+      refreshController.resetNoData();
+      
       // Only show full screen loader if we have no data at all
       if (jobs.isEmpty) {
         isFirstLoad.value = true;

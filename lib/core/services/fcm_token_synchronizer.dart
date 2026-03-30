@@ -59,7 +59,7 @@ class FcmTokenSynchronizer {
 
     try {
       // Replicating Ayterek's putToken call
-      await CallApi().putToken(
+      await CallApi().postToken(
           {'fcm_token': fcmToken}, 'user/master/fcm-token', userToken);
     } catch (e, s) {
       print('❌ [SYNC ERROR] Sending FCM token to server: $e');

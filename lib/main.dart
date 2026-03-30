@@ -26,6 +26,9 @@ Future<void> main() async {
   print('🎬 APP STARTING...');
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 🚀 Initialize basic services and GetStorage first
+  await ApplicationInitialize.initialize();
+
   bool firebaseReady = false;
 
   try {
@@ -34,7 +37,8 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     firebaseReady = true;
-    print('✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
+    print(
+        '✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
   } catch (e, stack) {
     print('❌ Firebase initializeApp ERROR: ${e.runtimeType}: $e');
     print('📋 Stack trace:\n$stack');
@@ -54,8 +58,7 @@ Future<void> main() async {
       await fcmTokenProvider.init();
       Get.put(fcmTokenProvider, permanent: true);
 
-      final fcmTokenSynchronizer =
-          FcmTokenSynchronizer(fcmTokenProvider);
+      final fcmTokenSynchronizer = FcmTokenSynchronizer(fcmTokenProvider);
       fcmTokenSynchronizer.init();
       Get.put(fcmTokenSynchronizer, permanent: true);
 
@@ -68,11 +71,9 @@ Future<void> main() async {
         sound: true,
       );
 
-      final firebaseMessagingService =
-          FirebaseMessagingService.instance();
+      final firebaseMessagingService = FirebaseMessagingService.instance();
       await firebaseMessagingService.init(
-        localNotificationsService:
-            LocalNotificationsService.instance(),
+        localNotificationsService: LocalNotificationsService.instance(),
       );
     } catch (e) {
       print('❌ Firebase services error: $e');
@@ -80,8 +81,6 @@ Future<void> main() async {
   } else {
     print('⚠️ Firebase NOT initialized → services skipped');
   }
-
-  await ApplicationInitialize.initialize();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
@@ -119,8 +118,7 @@ class _MyAppState extends State<MyApp> {
     try {
       final result = await InternetAddress.lookup('example.com');
       setState(() {
-        _hasInternet =
-            result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+        _hasInternet = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
       });
     } catch (_) {
       setState(() {
@@ -143,8 +141,7 @@ class _MyAppState extends State<MyApp> {
         locale: widget.storage.read('langCode') != null
             ? Locale(widget.storage.read('langCode'))
             : const Locale('tk'),
-        home:
-            _hasInternet ? const SplashScreen() : const NoInternetScreen(),
+        home: _hasInternet ? const SplashScreen() : const NoInternetScreen(),
         builder: (context, child) {
           return GlobalSafeAreaWrapper(
             child: child ?? const SizedBox.shrink(),

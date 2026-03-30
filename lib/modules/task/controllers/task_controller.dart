@@ -84,6 +84,7 @@ class TaskController extends GetxController {
 
     if (isRefresh) {
       _requestedPage = 0;
+      requestedRefreshController.resetNoData(); // 🔄 Reset pagination state
       isRequestedFirstLoad.value = true;
       fetchBalance();
     }
@@ -144,6 +145,7 @@ class TaskController extends GetxController {
 
     if (isRefresh) {
       _processingPage = 0;
+      processingRefreshController.resetNoData(); // 🔄 Reset pagination state
       isProcessingFirstLoad.value = true;
       fetchBalance();
     }
