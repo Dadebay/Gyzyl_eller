@@ -8,7 +8,7 @@ class SpecialProfileController extends GetxController {
   final Rx<SpecialProfileModel> profile = SpecialProfileModel().obs;
   final RxList<File> images = <File>[].obs;
   final Rxn<File> selectedProfileImage = Rxn<File>(null);
-  
+
   final ImagePicker _picker = ImagePicker();
   final AuthStorage _authStorage = AuthStorage();
   final RxBool isEditingName = false.obs;
@@ -18,10 +18,10 @@ class SpecialProfileController extends GetxController {
     if (currentUser == null) return false;
     final currentId = currentUser['id']?.toString();
     if (currentId == null) return false;
-    
+
     // Default to true if no profile ID (current user section)
     if (profile.value.id == null) return true;
-    
+
     return profile.value.id == currentId;
   }
 
@@ -43,40 +43,46 @@ class SpecialProfileController extends GetxController {
         id: user['id']?.toString(),
         userId: user['id']?.toString(), // needed for review fetching
         name: user['username'],
-        imageUrl: user['image'] != null ? ApiConstants.imageURL + user['image'] : null,
+        imageUrl: user['image'] != null
+            ? ApiConstants.imageURL + user['image']
+            : null,
       );
     }
   }
 
   /// Merges master-profile API data with the user info from local storage.
   ///
-  /// The API response (`api/user/masters/profile`) does NOT include username,
-  /// image or rating — those come from the authenticated user in storage.
-  /// Fields from [data]: id, user_id, welayat_id, etrap_id,
-  ///   short_description, description, legalization_type, created_at, files.
+  /// When called with data from `get-master-by-id/{id}`, the response already
+  /// includes username, image, rating, welayat/etrap names, etc.
+  /// Falls back to local user storage for any missing fields.
   void setProfileFromData(Map<String, dynamic> data) {
     // 1. Parse all available API fields.
     final fromApi = SpecialProfileModel.fromJson(data);
 
-    // 2. Keep name + imageUrl + userId from local user storage
-    //    (they are not returned by the masters/profile endpoint).
+    // 2. Fill in any missing fields from local user storage.
     final user = _authStorage.getUser();
-    final storedName = user?['username'] as String?;
-    final storedImage = user?['image'] != null
-        ? ApiConstants.imageURL + (user!['image'] as String)
-        : null;
-    // user_id from API overrides local id for review fetching.
+    final name = (fromApi.name != null && fromApi.name!.isNotEmpty)
+        ? fromApi.name
+        : user?['username'] as String?;
+    final imageUrl = (fromApi.imageUrl != null && fromApi.imageUrl!.isNotEmpty)
+        ? (fromApi.imageUrl!.startsWith('http')
+            ? fromApi.imageUrl
+            : ApiConstants.imageURL + fromApi.imageUrl!)
+        : (user?['image'] != null
+            ? ApiConstants.imageURL + (user!['image'] as String)
+            : null);
     final userId = fromApi.userId ?? user?['id']?.toString();
 
     print('🔑 [SpecialProfileController] setProfileFromData →\n'
         '   masterId=${fromApi.id}, userId=$userId\n'
         '   welayatId=${fromApi.welayatId}, etrapId=${fromApi.etrapId}\n'
+        '   rating=${fromApi.rating}, reviewCount=${fromApi.reviewCount}\n'
         '   createdAt=${fromApi.createdAt}, files=${fromApi.serverImages.length}');
 
     profile.value = fromApi.copyWith(
       userId: userId,
-      name: storedName,
-      imageUrl: storedImage,
+      name: name,
+      imageUrl: imageUrl,
     );
   }
 
@@ -87,11 +93,20 @@ class SpecialProfileController extends GetxController {
     isEditingName.value = !isEditingName.value;
   }
 
-  /// Re-fetches the master profile and merges with user storage data.
+  /// Re-fetches the master profile using get-master-by-id for full data.
   void fetchProfileData() async {
     final ApiService apiService = ApiService();
     final response = await apiService.getRequest(ApiConstants.specialProfile);
     if (response != null && response['data'] != null) {
+      final masterId = response['data']['id']?.toString();
+      if (masterId != null) {
+        final detailResponse =
+            await apiService.getRequest(ApiConstants.getMasterById(masterId));
+        if (detailResponse != null && detailResponse['data'] != null) {
+          setProfileFromData(detailResponse['data'] as Map<String, dynamic>);
+          return;
+        }
+      }
       setProfileFromData(response['data'] as Map<String, dynamic>);
     }
   }
@@ -130,16 +145,24 @@ class SpecialProfileController extends GetxController {
           children: [
             ListTile(
               leading: const Icon(Icons.camera, size: 35),
-              title: Text('select_by_camera'.tr, style: const TextStyle(fontSize: 18)),
-              onTap: () { Get.back(); pickProfileImage(ImageSource.camera); },
+              title: Text('select_by_camera'.tr,
+                  style: const TextStyle(fontSize: 18)),
+              onTap: () {
+                Get.back();
+                pickProfileImage(ImageSource.camera);
+              },
             ),
             ListTile(
               leading: const Padding(
                 padding: EdgeInsets.only(right: 4),
                 child: Icon(Icons.image, size: 30),
               ),
-              title: Text('select_by_gallery'.tr, style: const TextStyle(fontSize: 18)),
-              onTap: () { Get.back(); pickProfileImage(ImageSource.gallery); },
+              title: Text('select_by_gallery'.tr,
+                  style: const TextStyle(fontSize: 18)),
+              onTap: () {
+                Get.back();
+                pickProfileImage(ImageSource.gallery);
+              },
             ),
           ],
         ),
@@ -173,7 +196,7 @@ class SpecialProfileController extends GetxController {
 
       final ApiService apiService = ApiService();
       dynamic response;
-      
+
       if (images.isNotEmpty) {
         response = await apiService.postMultipartRequest(
           ApiConstants.specialProfileCreate,
@@ -194,7 +217,14 @@ class SpecialProfileController extends GetxController {
       Get.back();
 
       if (response != null) {
-        CustomWidgets.showSnackBar('success_title'.tr, 'success_subtitle'.tr, ColorConstants.greenColor);
+        // Save master profile ID if returned
+        if (response is Map<String, dynamic> &&
+            response['data'] != null &&
+            response['data']['id'] != null) {
+          _authStorage.saveMasterProfileId(response['data']['id'].toString());
+        }
+        CustomWidgets.showSnackBar('success_title'.tr, 'success_subtitle'.tr,
+            ColorConstants.greenColor);
         fetchProfileData();
         if (isEdit) {
           Get.back();

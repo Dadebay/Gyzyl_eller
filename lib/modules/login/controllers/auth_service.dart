@@ -47,7 +47,10 @@ class AuthService {
         if (responseData['data'] is Map<String, dynamic>) {
           _auth.saveUser(responseData['data'] as Map<String, dynamic>);
         }
-        
+
+        // Fetch and save master profile ID if it exists
+        _fetchAndSaveMasterProfileId();
+
         // Sync FCM token after login
         if (Get.isRegistered<FcmTokenSynchronizer>()) {
           Get.find<FcmTokenSynchronizer>().setTokenForUser();
@@ -75,7 +78,7 @@ class AuthService {
 
   Future<void> logout() async {
     _auth.clear();
-    
+
     // Remote FCM token on logout
     if (Get.isRegistered<FcmTokenProvider>()) {
       Get.find<FcmTokenProvider>().removeToken();
@@ -95,5 +98,20 @@ class AuthService {
     CustomWidgets.showSnackBar('logout_success_title'.tr,
         'logout_success_subtitle'.tr, ColorConstants.greenColor);
     Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
+  }
+
+  /// Fetches master profile after login and saves the ID locally.
+  Future<void> _fetchAndSaveMasterProfileId() async {
+    try {
+      final response =
+          await ApiService().getRequest(ApiConstants.specialProfile);
+      if (response != null &&
+          response['data'] != null &&
+          response['data']['id'] != null) {
+        _auth.saveMasterProfileId(response['data']['id'].toString());
+      }
+    } catch (e) {
+      print('Error fetching master profile id: $e');
+    }
   }
 }

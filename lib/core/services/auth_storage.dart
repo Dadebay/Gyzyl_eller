@@ -23,10 +23,16 @@ class AuthStorage {
     return null;
   }
 
+  // Master profile ID
+  void saveMasterProfileId(String id) => _storage.write('MasterProfileId', id);
+  String? get masterProfileId => _storage.read<String>('MasterProfileId');
+  void clearMasterProfileId() => _storage.remove('MasterProfileId');
+
   void clear() {
     _storage.remove('AccessToken');
     _storage.remove('RefreshToken');
     _storage.remove('UserData');
+    _storage.remove('MasterProfileId');
   }
 
   bool get isLoggedIn => token != null;

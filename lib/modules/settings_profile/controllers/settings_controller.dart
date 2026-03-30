@@ -58,9 +58,21 @@ class SettingsController extends GetxController {
   Future<void> checkSpecialProfile() async {
     if (!isLoggedIn) return;
     try {
+      // Check saved master profile ID first
+      final savedId = _authStorage.masterProfileId;
+      if (savedId != null) {
+        hasSpecialProfile.value = true;
+        return;
+      }
       final response =
           await _apiService.getRequest(ApiConstants.specialProfile);
-      hasSpecialProfile.value = response != null && response['data'] != null;
+      if (response != null && response['data'] != null) {
+        hasSpecialProfile.value = true;
+        final id = response['data']['id']?.toString();
+        if (id != null) _authStorage.saveMasterProfileId(id);
+      } else {
+        hasSpecialProfile.value = false;
+      }
     } catch (e) {
       hasSpecialProfile.value = false;
     }
@@ -68,40 +80,67 @@ class SettingsController extends GetxController {
 
   Future<void> navigateToSpecialProfile() async {
     try {
-      final profileUrl =
-          '${ApiConstants.baseUrl}${ApiConstants.specialProfile}';
-      print('📡 [SettingsController] Checking profile → $profileUrl');
+      Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
 
+      // Use saved master profile ID if available
+      final savedId = _authStorage.masterProfileId;
+      if (savedId != null) {
+        print('📡 [SettingsController] Using saved masterId=$savedId');
+        final detailResponse =
+            await _apiService.getRequest(ApiConstants.getMasterById(savedId));
+        Get.back();
+
+        if (detailResponse != null && detailResponse['data'] != null) {
+          hasSpecialProfile.value = true;
+          final spCtrl = Get.isRegistered<SpecialProfileController>()
+              ? Get.find<SpecialProfileController>()
+              : Get.put(SpecialProfileController(), permanent: true);
+          spCtrl.setProfileFromData(detailResponse['data']);
+          Get.to(() => const SpecialProfile());
+          return;
+        }
+        // Saved ID invalid — clear it and fall through
+        _authStorage.clearMasterProfileId();
+      } else {
+        Get.back();
+      }
+
+      // Fallback: check via masters/profile endpoint
       Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
       final response =
           await _apiService.getRequest(ApiConstants.specialProfile);
       Get.back();
 
       if (response != null && response['data'] != null) {
-        // Profile exists — pre-load data into controller then navigate to view.
         hasSpecialProfile.value = true;
-        print(
-            '✅ [SettingsController] Profile found → navigating to SpecialProfile');
+        final masterId = response['data']['id']?.toString();
+        if (masterId != null) {
+          _authStorage.saveMasterProfileId(masterId);
+        }
 
-        // Ensure the controller is registered and up-to-date.
+        Map<String, dynamic> fullData = response['data'];
+        if (masterId != null) {
+          final detailResponse = await _apiService
+              .getRequest(ApiConstants.getMasterById(masterId));
+          if (detailResponse != null && detailResponse['data'] != null) {
+            fullData = detailResponse['data'];
+          }
+        }
+
         final spCtrl = Get.isRegistered<SpecialProfileController>()
             ? Get.find<SpecialProfileController>()
             : Get.put(SpecialProfileController(), permanent: true);
-        spCtrl.setProfileFromData(response['data']);
-
+        spCtrl.setProfileFromData(fullData);
         Get.to(() => const SpecialProfile());
       } else {
-        // No profile yet — navigate to the creation screen.
         hasSpecialProfile.value = false;
-        print(
-            '⚠️ [SettingsController] No profile found → navigating to SpecialProfileAdd');
         if (Get.isRegistered<SpecialProfileController>()) {
           Get.find<SpecialProfileController>().loadInitialProfileData();
         }
         Get.to(() => const SpecialProfileAdd());
       }
     } catch (e) {
-      Get.back();
+      if (Get.isDialogOpen == true) Get.back();
       print('❌ [SettingsController] navigateToSpecialProfile error: $e');
       Get.to(() => const SpecialProfileAdd());
     }
