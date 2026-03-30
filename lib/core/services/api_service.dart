@@ -195,4 +195,25 @@ class ApiService {
       default:
     }
   }
+
+  /// Fetches reviews for a master profile by their user ID.
+  /// Calls `master-reviews/{userId}` and returns a list of [ReviewModel].
+  Future<List<dynamic>> getMasterReviews(String userId) async {
+    final url = '${ApiConstants.baseUrl}api/master-reviews/$userId';
+    print('📡 [ApiService] getMasterReviews → $url');
+    try {
+      final response = await getRequest('api/master-reviews/$userId');
+      if (response != null && response['data'] != null) {
+        final list = response['data'] as List<dynamic>;
+        print(
+            '✅ [ApiService] getMasterReviews → ${list.length} reviews received');
+        return list;
+      }
+      print('⚠️ [ApiService] getMasterReviews → response[data] is null');
+      return [];
+    } catch (e) {
+      print('❌ [ApiService] getMasterReviews error: $e');
+      return [];
+    }
+  }
 }

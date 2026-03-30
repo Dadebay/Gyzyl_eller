@@ -41,14 +41,43 @@ class SpecialProfileController extends GetxController {
     if (user != null) {
       profile.value = profile.value.copyWith(
         id: user['id']?.toString(),
+        userId: user['id']?.toString(), // needed for review fetching
         name: user['username'],
         imageUrl: user['image'] != null ? ApiConstants.imageURL + user['image'] : null,
       );
     }
   }
 
+  /// Merges master-profile API data with the user info from local storage.
+  ///
+  /// The API response (`api/user/masters/profile`) does NOT include username,
+  /// image or rating — those come from the authenticated user in storage.
+  /// Fields from [data]: id, user_id, welayat_id, etrap_id,
+  ///   short_description, description, legalization_type, created_at, files.
   void setProfileFromData(Map<String, dynamic> data) {
-    profile.value = SpecialProfileModel.fromJson(data);
+    // 1. Parse all available API fields.
+    final fromApi = SpecialProfileModel.fromJson(data);
+
+    // 2. Keep name + imageUrl + userId from local user storage
+    //    (they are not returned by the masters/profile endpoint).
+    final user = _authStorage.getUser();
+    final storedName = user?['username'] as String?;
+    final storedImage = user?['image'] != null
+        ? ApiConstants.imageURL + (user!['image'] as String)
+        : null;
+    // user_id from API overrides local id for review fetching.
+    final userId = fromApi.userId ?? user?['id']?.toString();
+
+    print('🔑 [SpecialProfileController] setProfileFromData →\n'
+        '   masterId=${fromApi.id}, userId=$userId\n'
+        '   welayatId=${fromApi.welayatId}, etrapId=${fromApi.etrapId}\n'
+        '   createdAt=${fromApi.createdAt}, files=${fromApi.serverImages.length}');
+
+    profile.value = fromApi.copyWith(
+      userId: userId,
+      name: storedName,
+      imageUrl: storedImage,
+    );
   }
 
   void toggleEditName(String? newName) {
@@ -58,11 +87,12 @@ class SpecialProfileController extends GetxController {
     isEditingName.value = !isEditingName.value;
   }
 
+  /// Re-fetches the master profile and merges with user storage data.
   void fetchProfileData() async {
     final ApiService apiService = ApiService();
     final response = await apiService.getRequest(ApiConstants.specialProfile);
     if (response != null && response['data'] != null) {
-      profile.value = SpecialProfileModel.fromJson(response['data']);
+      setProfileFromData(response['data'] as Map<String, dynamic>);
     }
   }
 
@@ -169,7 +199,7 @@ class SpecialProfileController extends GetxController {
         if (isEdit) {
           Get.back();
         } else {
-          Get.off(() => SpecialProfile());
+          Get.off(() => const SpecialProfile());
         }
       }
     } catch (e) {

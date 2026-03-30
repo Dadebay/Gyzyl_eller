@@ -15,6 +15,7 @@ import 'package:gyzyleller/modules/settings_profile/views/about_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/language_page.dart';
 import 'package:gyzyleller/modules/settings_profile/views/profile_edit_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
+import 'package:gyzyleller/modules/onboarding/views/onboarding_view.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 
@@ -115,7 +116,9 @@ class SettingsView extends GetView<SettingsController> {
               context,
               'learn'.tr,
               IconConstants.tour,
-              () {},
+              () {
+                Get.to(() => const OnboardingScreen(skipTimer: true));
+              },
             ),
             const SizedBox(height: 10.0),
             _buildMenuItem(

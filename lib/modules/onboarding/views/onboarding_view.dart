@@ -10,7 +10,8 @@ import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final bool skipTimer;
+  const OnboardingScreen({super.key, this.skipTimer = false});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -41,6 +42,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _startButtonTimer() {
+    if (widget.skipTimer) {
+      setState(() {
+        _isButtonEnabled = true;
+        _remainingSeconds = 0;
+      });
+      return;
+    }
     setState(() {
       _isButtonEnabled = false;
       _remainingSeconds = 3;
@@ -64,7 +72,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!_isButtonEnabled) return;
 
     if (controller.currentIndexNotifier.value == controller.pages.length - 1) {
-      controller.skipOnboarding(context);
+      if (widget.skipTimer) {
+        Get.back();
+      } else {
+        controller.skipOnboarding(context);
+      }
     } else {
       controller.nextPage();
       _startButtonTimer();
@@ -93,7 +105,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Expanded(
                   child: PageView.builder(
                     controller: controller.pageController,
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics: widget.skipTimer
+                        ? const BouncingScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
                     itemCount: controller.pages.length,
                     onPageChanged: (index) {
                       controller.onPageChanged(index);

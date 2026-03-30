@@ -68,20 +68,33 @@ class SettingsController extends GetxController {
 
   Future<void> navigateToSpecialProfile() async {
     try {
+      final profileUrl =
+          '${ApiConstants.baseUrl}${ApiConstants.specialProfile}';
+      print('📡 [SettingsController] Checking profile → $profileUrl');
+
       Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
       final response =
           await _apiService.getRequest(ApiConstants.specialProfile);
       Get.back();
 
       if (response != null && response['data'] != null) {
+        // Profile exists — pre-load data into controller then navigate to view.
         hasSpecialProfile.value = true;
-        if (Get.isRegistered<SpecialProfileController>()) {
-          Get.find<SpecialProfileController>()
-              .setProfileFromData(response['data']);
-        }
-        Get.to(() => SpecialProfile(), arguments: response['data']);
+        print(
+            '✅ [SettingsController] Profile found → navigating to SpecialProfile');
+
+        // Ensure the controller is registered and up-to-date.
+        final spCtrl = Get.isRegistered<SpecialProfileController>()
+            ? Get.find<SpecialProfileController>()
+            : Get.put(SpecialProfileController(), permanent: true);
+        spCtrl.setProfileFromData(response['data']);
+
+        Get.to(() => const SpecialProfile());
       } else {
+        // No profile yet — navigate to the creation screen.
         hasSpecialProfile.value = false;
+        print(
+            '⚠️ [SettingsController] No profile found → navigating to SpecialProfileAdd');
         if (Get.isRegistered<SpecialProfileController>()) {
           Get.find<SpecialProfileController>().loadInitialProfileData();
         }
@@ -89,7 +102,7 @@ class SettingsController extends GetxController {
       }
     } catch (e) {
       Get.back();
-
+      print('❌ [SettingsController] navigateToSpecialProfile error: $e');
       Get.to(() => const SpecialProfileAdd());
     }
   }
