@@ -347,7 +347,7 @@ class MyJobsService {
       {required int bankId, required String amount}) async {
     final lang = Get.locale?.languageCode ?? 'tk';
     final String endpoint = 'api/user/$lang/create-order';
-    final body = {"bank_id": bankId, "summ": amount, "device": "MOBILE"};
+    final body = {"bank_id": bankId, "summ": amount, "device": "DESKTOP"};
     print('--- Creating Order ---');
     try {
       final response = await _api.handleApiRequest(

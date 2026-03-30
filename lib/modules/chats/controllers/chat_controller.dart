@@ -319,7 +319,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     await notifCtrl.fetchNotificationCount();
     notifCount.value = notifCtrl.unreadCount.value;
     try {
-      final uri = Uri.parse('${_api.urlLink}/api/user/chats').replace(
+      final uri = Uri.parse('${_api.urlLink}api/user/chats').replace(
         queryParameters: {
           'all': 'true',
           'type': 'gyzyl',
@@ -503,7 +503,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     } else {
       try {
         await http.delete(
-          Uri.parse('${_api.urlLink}/api/user/chats/$chatId')
+          Uri.parse('${_api.urlLink}api/user/chats/$chatId')
               .replace(queryParameters: {'type': 'gyzyl'}),
           headers: {'Authorization': 'Bearer $token'},
         );
