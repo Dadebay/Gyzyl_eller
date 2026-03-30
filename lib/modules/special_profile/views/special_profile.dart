@@ -6,6 +6,7 @@ import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile_edit_view.dart';
+import 'package:gyzyleller/modules/special_profile/views/all_reviews_screen.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_header.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
@@ -54,7 +55,8 @@ class _SpecialProfileState extends State<SpecialProfile> {
   Future<void> _fetchReviews() async {
     final userId = _controller.profile.value.userId;
     if (userId == null || userId.isEmpty) {
-      print('⚠️ [SpecialProfile] _fetchReviews → userId is null/empty, skipping review fetch');
+      print(
+          '⚠️ [SpecialProfile] _fetchReviews → userId is null/empty, skipping review fetch');
       return;
     }
 
@@ -67,7 +69,8 @@ class _SpecialProfileState extends State<SpecialProfile> {
         final reviews = rawList
             .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
             .toList();
-        print('✅ [SpecialProfile] _fetchReviews → ${reviews.length} reviews parsed');
+        print(
+            '✅ [SpecialProfile] _fetchReviews → ${reviews.length} reviews parsed');
         setState(() {
           _reviews = reviews;
           _isLoadingReviews = false;
@@ -98,7 +101,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
     return Scaffold(
       backgroundColor: ColorConstants.background,
       appBar: _buildAppBar(),
-      floatingActionButton: _buildEditFab(),
       body: Obx(() {
         final profile = _controller.profile.value;
         final serverImages = profile.serverImages;
@@ -200,17 +202,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
   }
 
   /// Floating edit button at the bottom that navigates to the edit screen.
-  Widget _buildEditFab() {
-    return FloatingActionButton.extended(
-      onPressed: () => Get.to(() => const SpecialProfileEditView()),
-      backgroundColor: ColorConstants.kPrimaryColor2,
-      icon: const Icon(Icons.edit, color: Colors.white, size: 18),
-      label: Text(
-        'edit'.tr,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
 
   /// Bio card with expand / collapse behaviour.
   Widget _buildBioCard(BuildContext context) {
@@ -362,9 +353,8 @@ class _SpecialProfileState extends State<SpecialProfile> {
 
   /// Reviews section with AnimatedSwitcher + shimmer loading.
   Widget _buildReviewsSection(profile) {
-    final totalReviews = profile.reviewCount > 0
-        ? profile.reviewCount
-        : _reviews.length;
+    final totalReviews =
+        profile.reviewCount > 0 ? profile.reviewCount : _reviews.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,49 +413,14 @@ class _SpecialProfileState extends State<SpecialProfile> {
     );
   }
 
-  /// Shows all reviews in a bottom sheet / new screen.
+  /// Opens the full reviews page.
   void _showAllReviews() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        maxChildSize: 0.95,
-        builder: (_, scrollCtrl) => Column(
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'reviews_section_title'.tr,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollCtrl,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _reviews.length,
-                itemBuilder: (_, i) => ReviewTile(review: _reviews[i]),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    final userId = _controller.profile.value.userId;
+    if (userId == null || userId.isEmpty) return;
+    Get.to(() => AllReviewsScreen(
+          userId: userId,
+          username: _controller.profile.value.name,
+        ));
   }
 }
 
@@ -476,8 +431,7 @@ class _ImageGalleryScreen extends StatefulWidget {
   final List<String> images;
   final int initialIndex;
 
-  const _ImageGalleryScreen(
-      {required this.images, required this.initialIndex});
+  const _ImageGalleryScreen({required this.images, required this.initialIndex});
 
   @override
   State<_ImageGalleryScreen> createState() => _ImageGalleryScreenState();
@@ -525,8 +479,7 @@ class _ImageGalleryScreenState extends State<_ImageGalleryScreen> {
             child: Image.network(
               widget.images[i],
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) =>
-                  Container(color: Colors.grey[900]),
+              errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]),
             ),
           ),
         ),
@@ -534,4 +487,3 @@ class _ImageGalleryScreenState extends State<_ImageGalleryScreen> {
     );
   }
 }
-

@@ -197,12 +197,19 @@ class ApiService {
   }
 
   /// Fetches reviews for a master profile by their user ID.
-  /// Calls `master-reviews/{userId}` and returns a list of [ReviewModel].
-  Future<List<dynamic>> getMasterReviews(String userId) async {
-    final url = '${ApiConstants.baseUrl}api/master-reviews/$userId';
-    print('📡 [ApiService] getMasterReviews → $url');
+  /// Calls `master-reviews/{userId}` and returns a list of raw JSON maps.
+  Future<List<dynamic>> getMasterReviews(String userId,
+      {String? column, String? direction}) async {
+    String endpoint = 'api/master-reviews/$userId';
+    final Map<String, String> queryParams = {};
+    if (column != null) queryParams['column'] = column;
+    if (direction != null) queryParams['direction'] = direction;
+    if (queryParams.isNotEmpty) {
+      endpoint += '?${Uri(queryParameters: queryParams).query}';
+    }
+    print('📡 [ApiService] getMasterReviews → $endpoint');
     try {
-      final response = await getRequest('api/master-reviews/$userId');
+      final response = await getRequest(endpoint);
       if (response != null && response['data'] != null) {
         final list = response['data'] as List<dynamic>;
         print(
