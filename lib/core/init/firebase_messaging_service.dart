@@ -63,9 +63,11 @@ class FirebaseMessagingService {
     }
 
     final notificationData = message.notification;
-    if (notificationData != null) {
-      _localNotificationsService?.showNotification(notificationData.title,
-          notificationData.body, jsonEncode(message.data));
+    final title = notificationData?.title ?? message.data['title'] as String?;
+    final body = notificationData?.body ?? message.data['body'] as String?;
+    if (title != null || body != null) {
+      _localNotificationsService?.showNotification(
+          title, body, jsonEncode(message.data));
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:gyzyleller/core/init/app_initialize.dart';
@@ -19,6 +20,18 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+  } catch (_) {}
+
+  try {
+    final localNotifications = LocalNotificationsService.instance();
+    await localNotifications.init();
+    final title =
+        message.notification?.title ?? message.data['title'] as String?;
+    final body = message.notification?.body ?? message.data['body'] as String?;
+    if (title != null || body != null) {
+      await localNotifications.showNotification(
+          title, body, jsonEncode(message.data));
+    }
   } catch (_) {}
 }
 
@@ -66,9 +79,9 @@ Future<void> main() async {
 
       await FirebaseMessaging.instance
           .setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
+        alert: false,
+        badge: false,
+        sound: false,
       );
 
       final firebaseMessagingService = FirebaseMessagingService.instance();
