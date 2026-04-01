@@ -30,18 +30,20 @@ class WalletView extends GetView<WalletController> {
               automaticallyImplyLeading: false,
               leading: Padding(
                 padding: const EdgeInsets.only(left: 5),
-                child: IconButton(
-                  onPressed: () => Get.back(),
-                  icon: Container(
-                    height: 45,
-                    width: 45,
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Container(
+                      height: 45,
+                      width: 45,
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new,
+                          color: ColorConstants.kPrimaryColor2, size: 18),
                     ),
-                    child: const Icon(Icons.arrow_back_ios_new,
-                        color: ColorConstants.kPrimaryColor2, size: 18),
                   ),
                 ),
               ),
@@ -250,7 +252,6 @@ class WalletView extends GetView<WalletController> {
 
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(vertical: 2),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
