@@ -237,11 +237,13 @@ class WalletView extends GetView<WalletController> {
 
       final logs = controller.logs;
       if (logs.isEmpty) {
-        return Padding(
-          padding: const EdgeInsets.all(40),
+        return SizedBox(
+          height: 200,
           child: Center(
-            child: Text('Yazgy yok'.tr,
-                style: const TextStyle(color: Colors.grey)),
+            child: Text(
+              'no_transactions'.tr,
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
           ),
         );
       }
@@ -301,7 +303,7 @@ class WalletView extends GetView<WalletController> {
     String createdAtFormatted = '';
     try {
       DateTime first = DateTime.parse(log['created_at']).toLocal();
-      createdAtFormatted = DateFormat('dd MMMM yyyy HH:mm').format(first);
+      createdAtFormatted = DateFormat('dd.MM.yyyy HH:mm').format(first);
     } catch (_) {}
 
     final displayTitle = columnText.isNotEmpty ? columnText : title;
@@ -317,7 +319,7 @@ class WalletView extends GetView<WalletController> {
                 width: 52,
                 padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.12),
+                  color: ColorConstants.background,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: SvgPicture.asset(
@@ -333,7 +335,7 @@ class WalletView extends GetView<WalletController> {
                     Text(
                       displayTitle,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: ColorConstants.blue,
                       ),
