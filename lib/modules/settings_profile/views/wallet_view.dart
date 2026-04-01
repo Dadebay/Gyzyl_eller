@@ -271,6 +271,17 @@ class WalletView extends GetView<WalletController> {
       _ => 'unknown_transaction'.tr,
     };
 
+    final iconColor = switch (eventType) {
+      1 => ColorConstants.blue,
+      2 => ColorConstants.purpleColor,
+      3 => Colors.orange,
+      4 => Colors.pink,
+      5 => ColorConstants.greenColor,
+      6 => ColorConstants.kPrimaryColor2,
+      7 => ColorConstants.premiumColor,
+      _ => Colors.grey,
+    };
+
     String createdAtFormatted = '';
     try {
       DateTime first = DateTime.parse(log['created_at']).toLocal();
@@ -290,10 +301,12 @@ class WalletView extends GetView<WalletController> {
           Expanded(
             child: Row(
               children: [
-                isPositive
-                    ? const Icon(Icons.arrow_outward,
-                        color: ColorConstants.kPrimaryColor2)
-                    : Icon(Icons.south_west, color: Colors.red.shade700),
+                SvgPicture.asset(
+                  'assets/icons/toleg.svg',
+                  width: 24,
+                  height: 24,
+                  color: iconColor,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
