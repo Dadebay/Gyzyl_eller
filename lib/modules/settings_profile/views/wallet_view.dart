@@ -71,7 +71,11 @@ class WalletView extends GetView<WalletController> {
         },
         body: Obx(() {
           if (controller.isLoading.value && controller.logs.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Colors.grey,
+              ),
+            );
           }
           return RefreshIndicator(
             onRefresh: controller.refreshData,
@@ -98,7 +102,7 @@ class WalletView extends GetView<WalletController> {
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: ColorConstants.kPrimaryColor2,
+        color: ColorConstants.whiteColor,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -115,7 +119,7 @@ class WalletView extends GetView<WalletController> {
                       height: 24,
                       width: 24,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
+                          color: ColorConstants.kPrimaryColor2, strokeWidth: 2),
                     );
                   }
                   return Column(
@@ -124,13 +128,13 @@ class WalletView extends GetView<WalletController> {
                       Text(
                         'your_balance'.tr,
                         style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w300),
+                            color: Colors.black, fontWeight: FontWeight.w300),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${controller.balance.value.toStringAsFixed(0)} ŞAÝ',
                         style:
-                            const TextStyle(color: Colors.white, fontSize: 24),
+                            const TextStyle(color: Colors.black, fontSize: 24),
                       ),
                     ],
                   );
@@ -145,11 +149,11 @@ class WalletView extends GetView<WalletController> {
                   width: 48,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: ColorConstants.kPrimaryColor2,
                     borderRadius: BorderRadius.circular(100),
                   ),
-                  child: const Icon(Icons.add,
-                      color: ColorConstants.kPrimaryColor2),
+                  child:
+                      const Icon(Icons.add, color: ColorConstants.whiteColor),
                 ),
               ),
             ],
@@ -163,7 +167,8 @@ class WalletView extends GetView<WalletController> {
                 Get.to(() => const AddCashView());
               },
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white),
+                backgroundColor: ColorConstants.kPrimaryColor2,
+                side: const BorderSide(color: ColorConstants.kPrimaryColor2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -172,11 +177,12 @@ class WalletView extends GetView<WalletController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.account_balance_wallet_outlined,
-                      color: Colors.white, size: 20),
+                      color: ColorConstants.whiteColor, size: 20),
                   const SizedBox(width: 10),
                   Text(
                     'add_money'.tr,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: const TextStyle(
+                        color: ColorConstants.whiteColor, fontSize: 14),
                   ),
                 ],
               ),
@@ -240,19 +246,29 @@ class WalletView extends GetView<WalletController> {
         );
       }
 
-      return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: logs.length,
-        itemBuilder: (context, index) {
-          final log = logs[index];
-          return _buildTransactionItem(context, log);
-        },
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: logs.length,
+          itemBuilder: (context, index) {
+            final log = logs[index];
+            return _buildTransactionItem(
+                context, log, index == logs.length - 1);
+          },
+        ),
       );
     });
   }
 
-  Widget _buildTransactionItem(BuildContext context, dynamic log) {
+  Widget _buildTransactionItem(BuildContext context, dynamic log,
+      [bool isLast = false]) {
     final int eventType = int.tryParse(log['event_type'].toString()) ?? 0;
     final summ = log['summ']?.toString() ?? '0';
     final parsedSumm = int.tryParse(summ) ?? 0;
@@ -285,81 +301,90 @@ class WalletView extends GetView<WalletController> {
     String createdAtFormatted = '';
     try {
       DateTime first = DateTime.parse(log['created_at']).toLocal();
-      createdAtFormatted = DateFormat('dd.MM.yyyy, HH:mm').format(first);
+      createdAtFormatted = DateFormat('dd MMMM yyyy HH:mm').format(first);
     } catch (_) {}
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                SvgPicture.asset(
+    final displayTitle = columnText.isNotEmpty ? columnText : title;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                height: 52,
+                width: 52,
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: SvgPicture.asset(
                   'assets/icons/toleg.svg',
-                  width: 24,
-                  height: 24,
                   color: iconColor,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (eventType == 2 && columnText.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Text(
-                            columnText,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          title,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                      Text(
-                        createdAtFormatted,
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-          isPositive
-              ? (0 > parsedSumm)
-                  ? Text(
-                      '$summ ŞAÝ',
-                      style: const TextStyle(color: Colors.red, fontSize: 14),
-                    )
-                  : Text(
-                      '+$summ ŞAÝ',
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayTitle,
                       style: const TextStyle(
-                          color: ColorConstants.kPrimaryColor2, fontSize: 14),
-                    )
-              : Text(
-                  '-$summ ŞAÝ',
-                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: ColorConstants.blue,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '$summ ŞAÝ',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: ColorConstants.fonts,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      createdAtFormatted,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
                 ),
-        ],
-      ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isPositive
+                    ? (parsedSumm >= 0 ? 'alyndy'.tr : 'geçdi'.tr)
+                    : 'alyndy'.tr,
+                style: TextStyle(
+                  color: isPositive
+                      ? ColorConstants.kPrimaryColor2
+                      : ColorConstants.kPrimaryColor2,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!isLast)
+          Divider(
+            height: 1,
+            indent: 72,
+            endIndent: 12,
+            color: Colors.grey.shade200,
+          ),
+      ],
     );
   }
 
