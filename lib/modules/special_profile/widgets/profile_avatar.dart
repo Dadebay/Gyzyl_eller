@@ -22,6 +22,7 @@ class ProfileAvatar extends StatelessWidget {
                 Obx(
                   () => CircleAvatar(
                     radius: 50,
+                    backgroundColor: Colors.white,
                     backgroundImage: controller.selectedProfileImage.value !=
                             null
                         ? FileImage(controller.selectedProfileImage.value!)
@@ -30,7 +31,7 @@ class ProfileAvatar extends StatelessWidget {
                             : null),
                     child: controller.selectedProfileImage.value == null &&
                             controller.profile.value.imageUrl == null
-                        ? const Icon(Icons.person, size: 50)
+                        ? const Icon(Icons.person, color: Colors.grey, size: 50)
                         : null,
                   ),
                 ),

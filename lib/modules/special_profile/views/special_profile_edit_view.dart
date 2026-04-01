@@ -20,9 +20,16 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController shortBioController = TextEditingController();
   final TextEditingController longBioController = TextEditingController();
-  final TextEditingController legalizationTypeController =
-      TextEditingController();
   final TextEditingController workTejribeController = TextEditingController();
+
+  String? _selectedLegalizationType;
+
+  static const List<String> _legalizationValues = [
+    'entrepreneur',
+    'individual',
+    'private',
+    'business_entity',
+  ];
 
   @override
   void initState() {
@@ -30,8 +37,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     nameController.text = controller.profile.value.name ?? '';
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
-    legalizationTypeController.text =
-        controller.profile.value.legalizationType ?? '';
+    _selectedLegalizationType = controller.profile.value.legalizationType;
   }
 
   @override
@@ -39,7 +45,6 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     nameController.dispose();
     shortBioController.dispose();
     longBioController.dispose();
-    legalizationTypeController.dispose();
     workTejribeController.dispose();
     super.dispose();
   }
@@ -99,7 +104,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
               name: nameController.text,
               shortBio: shortBioController.text,
               longBio: longBioController.text,
-              legalizationType: legalizationTypeController.text,
+              legalizationType: _selectedLegalizationType ?? '',
               isEdit: true,
             );
           },
@@ -130,11 +135,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
           icon: Icons.person_outline,
         ),
         const SizedBox(height: 8),
-        _buildTextField(
-          controller: legalizationTypeController,
-          hint: "legalization_type_hint".tr,
-          icon: Icons.info_outline,
-        ),
+        _buildLegalizationDropdown(),
         const SizedBox(height: 8),
         _buildTextField(
           controller: workTejribeController,
@@ -185,6 +186,40 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
           const SizedBox(height: 10),
           const FileUploadSection(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLegalizationDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: ColorConstants.whiteColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: _selectedLegalizationType,
+          hint: Text(
+            'legalization_type_hint'.tr,
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
+          ),
+          icon: const Icon(Icons.keyboard_arrow_down,
+              color: ColorConstants.kPrimaryColor2),
+          dropdownColor: Colors.white,
+          items: _legalizationValues.map((value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value.tr),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedLegalizationType = value;
+            });
+          },
+        ),
       ),
     );
   }

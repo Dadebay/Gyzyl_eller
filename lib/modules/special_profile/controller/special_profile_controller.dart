@@ -12,6 +12,7 @@ class SpecialProfileController extends GetxController {
   final ImagePicker _picker = ImagePicker();
   final AuthStorage _authStorage = AuthStorage();
   final RxBool isEditingName = false.obs;
+  final RxBool isChecked = false.obs;
 
   bool get isMyProfile {
     final currentUser = _authStorage.getUser();

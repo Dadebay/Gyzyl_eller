@@ -29,18 +29,20 @@ class AddCashView extends GetView<WalletController> {
                 automaticallyImplyLeading: false,
                 leading: Padding(
                   padding: const EdgeInsets.only(left: 5),
-                  child: IconButton(
-                    onPressed: () => Get.back(),
-                    icon: Container(
-                      height: 45,
-                      width: 45,
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 45,
+                        width: 45,
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.arrow_back_ios_new,
+                            color: ColorConstants.kPrimaryColor2, size: 18),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new,
-                          color: ColorConstants.kPrimaryColor2, size: 18),
                     ),
                   ),
                 ),
@@ -159,7 +161,7 @@ class AddCashView extends GetView<WalletController> {
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: ColorConstants.kPrimaryColor2,
+        color: ColorConstants.whiteColor,
       ),
       child: Padding(
         padding: const EdgeInsets.only(top: 2),
@@ -169,12 +171,12 @@ class AddCashView extends GetView<WalletController> {
                 Text(
                   'your_balance'.tr,
                   style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w300),
+                      color: Colors.black, fontWeight: FontWeight.w300),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${controller.balance.value.toStringAsFixed(0)} ŞAÝ',
-                  style: const TextStyle(color: Colors.white, fontSize: 24),
+                  style: const TextStyle(color: Colors.black, fontSize: 24),
                 ),
               ],
             )),
@@ -188,33 +190,31 @@ class AddCashView extends GetView<WalletController> {
       return Card(
         margin: const EdgeInsets.only(bottom: 12, left: 8, right: 8),
         elevation: 6,
-        child: Opacity(
-          opacity: isEmpty ? 0.8 : 1,
-          child: InkWell(
-            onTap:
-                isEmpty ? null : () => controller.showAddMoneyDialog(context),
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.8,
-              height: 50,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: ColorConstants.kPrimaryColor2,
-              ),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'continue'.tr,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward,
-                          color: Colors.white, size: 20),
-                    ],
-                  ),
+        child: InkWell(
+          onTap: isEmpty ? null : () => controller.showAddMoneyDialog(context),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: 50,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: isEmpty
+                  ? Colors.grey.shade400
+                  : ColorConstants.kPrimaryColor2,
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'continue'.tr,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward,
+                        color: Colors.white, size: 20),
+                  ],
                 ),
               ),
             ),

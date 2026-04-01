@@ -29,11 +29,16 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController shortBioController = TextEditingController();
   final TextEditingController longBioController = TextEditingController();
-  final TextEditingController legalizationTypeController =
-      TextEditingController();
   final TextEditingController workTejribeController = TextEditingController();
 
-  bool _isTermsAgreed = false;
+  String? _selectedLegalizationType;
+
+  static const List<String> _legalizationValues = [
+    'entrepreneur',
+    'individual',
+    'private',
+    'business_entity',
+  ];
 
   String get _langWeb => GetStorage().read('langCode') ?? 'tk';
 
@@ -47,8 +52,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
     nameController.text = controller.profile.value.name ?? '';
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
-    legalizationTypeController.text =
-        controller.profile.value.legalizationType ?? '';
+    _selectedLegalizationType = controller.profile.value.legalizationType;
   }
 
   @override
@@ -56,7 +60,6 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
     nameController.dispose();
     shortBioController.dispose();
     longBioController.dispose();
-    legalizationTypeController.dispose();
     workTejribeController.dispose();
     super.dispose();
   }
@@ -82,11 +85,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
               onChanged: (value) {},
             ),
             const SizedBox(height: 15),
-            BioTextField(
-              controller: legalizationTypeController,
-              hintText: 'legalization_type_hint'.tr,
-              onChanged: (value) {},
-            ),
+            _buildLegalizationDropdown(),
             const SizedBox(height: 15),
             BioTextField(
               controller: longBioController,
@@ -107,6 +106,76 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
               color: ColorConstants.whiteColor,
               textColor: ColorConstants.fonts,
             ),
+            const SizedBox(height: 10),
+            // ── Terms agreement ─────────────────────────────────────────
+            Obx(
+              () => Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        controller.isChecked.value =
+                            !controller.isChecked.value;
+                      },
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: controller.isChecked.value
+                              ? ColorConstants.kPrimaryColor2
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: controller.isChecked.value
+                            ? const Icon(Icons.check,
+                                size: 16, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'with_all_terms'.tr,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'agreement_text'.tr,
+                              style: const TextStyle(
+                                color: ColorConstants.blue,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w400,
+                                decoration: TextDecoration.underline,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  _launchURL(
+                                      '${Api().urlSimple}privacy-police/$_langWeb');
+                                  controller.isChecked.value =
+                                      !controller.isChecked.value;
+                                },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 15),
             Text(
               'my_works_title'.tr,
@@ -120,79 +189,11 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             const FileUploadSection(),
             const SizedBox(height: 10),
             SelectedImages(controller: controller),
-            const SizedBox(height: 25),
-            // ── Terms agreement ─────────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isTermsAgreed = !_isTermsAgreed;
-                      });
-                    },
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: _isTermsAgreed
-                            ? ColorConstants.kPrimaryColor2
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: ColorConstants.greyColor,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: _isTermsAgreed
-                          ? const Icon(Icons.check,
-                              size: 16, color: Colors.white)
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'with_all_terms'.tr,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14.5,
-                            ),
-                          ),
-                          TextSpan(
-                            text: 'agreement_text'.tr,
-                            style: const TextStyle(
-                              color: ColorConstants.blue,
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w400,
-                              decoration: TextDecoration.underline,
-                            ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                _launchURL(
-                                    '${Api().urlSimple}privacy-police/$_langWeb');
-                                setState(() {
-                                  _isTermsAgreed = !_isTermsAgreed;
-                                });
-                              },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+
             const SizedBox(height: 10),
             CustomElevatedButton(
               onPressed: () {
-                if (!_isTermsAgreed) {
+                if (!controller.isChecked.value) {
                   CustomWidgets.showSnackBar(
                     'error_title',
                     'please_agree_privacy',
@@ -204,7 +205,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
                   name: nameController.text,
                   shortBio: shortBioController.text,
                   longBio: longBioController.text,
-                  legalizationType: legalizationTypeController.text,
+                  legalizationType: _selectedLegalizationType ?? '',
                 );
               },
               text: 'create_account_button'.tr,
@@ -213,6 +214,52 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
               fontSize: 16,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegalizationDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: _selectedLegalizationType,
+            hint: Text(
+              'legalization_type_hint'.tr,
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down,
+              color: ColorConstants.kPrimaryColor2,
+            ),
+            dropdownColor: Colors.white,
+            items: _legalizationValues.map((value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value.tr,
+                  style: const TextStyle(color: Colors.black),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedLegalizationType = value;
+              });
+            },
+          ),
         ),
       ),
     );
