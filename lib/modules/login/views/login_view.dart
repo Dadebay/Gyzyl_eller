@@ -1,14 +1,27 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/controllers/login_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginView extends GetView<LoginController> {
   // ignore: use_super_parameters
   const LoginView({Key? key}) : super(key: key);
+
+  String get _langWeb => GetStorage().read('langCode') ?? 'tk';
+
+  void _launchURL(String url) {
+    launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.inAppBrowserView,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,36 +36,17 @@ class LoginView extends GetView<LoginController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32),
-              // Başlık ve açıklama kısmı, ikon ile birlikte
+              const SizedBox(height: 40),
+
               Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: ColorConstants.whiteColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(18),
-                    child: Icon(
-                      Icons.lock_outline,
-                      color: ColorConstants.kPrimaryColor2,
-                      size: 38,
-                    ),
-                  ),
                   const SizedBox(height: 18),
                   Text(
                     'login_instruction'.tr,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 17,
-                      color: Colors.grey,
+                      color: Colors.black,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.1,
                     ),
@@ -79,7 +73,7 @@ class LoginView extends GetView<LoginController> {
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.phone,
+                    prefixIcon: const Icon(Icons.phone,
                         color: ColorConstants.kPrimaryColor2, size: 22),
                     labelText: 'phone_number_label'.tr,
                     prefixText: '+993 ',
@@ -118,7 +112,7 @@ class LoginView extends GetView<LoginController> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w500),
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.lock_outline,
+                        prefixIcon: const Icon(Icons.lock_outline,
                             color: ColorConstants.kPrimaryColor2, size: 22),
                         labelText: 'password_input_label'.tr,
                         border: InputBorder.none,
@@ -145,46 +139,63 @@ class LoginView extends GetView<LoginController> {
               // Şartlar kutusu
               Obx(
                 () => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Transform.scale(
-                        scale: 1.15,
-                        child: Checkbox(
-                          value: controller.isChecked.value,
-                          onChanged: (bool? newValue) {
-                            controller.isChecked.value = newValue ?? false;
-                          },
-                          activeColor: ColorConstants.kPrimaryColor2,
-                          side: const BorderSide(
-                            color: ColorConstants.kPrimaryColor2,
-                            width: 1.5,
+                      GestureDetector(
+                        onTap: () {
+                          controller.isChecked.value =
+                              !controller.isChecked.value;
+                        },
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: controller.isChecked.value
+                                ? ColorConstants.kPrimaryColor2
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 1.5,
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
-                          ),
+                          child: controller.isChecked.value
+                              ? const Icon(Icons.check,
+                                  size: 16, color: Colors.white)
+                              : null,
                         ),
                       ),
+                      const SizedBox(width: 10),
                       Expanded(
-                        child: Text.rich(
-                          TextSpan(
+                        child: RichText(
+                          text: TextSpan(
                             children: [
                               TextSpan(
                                 text: 'with_all_terms'.tr,
-                                style: TextStyle(
-                                  color: Colors.grey[700],
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w400,
                                   fontSize: 14.5,
                                 ),
                               ),
-                              const TextSpan(text: ' '),
                               TextSpan(
                                 text: 'agreement_text'.tr,
                                 style: const TextStyle(
-                                  color: ColorConstants.kPrimaryColor2,
-                                  decoration: TextDecoration.underline,
+                                  color: ColorConstants.blue,
                                   fontSize: 14.5,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
+                                  decoration: TextDecoration.underline,
                                 ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    _launchURL(
+                                        '${Api().urlSimple}privacy-police/$_langWeb');
+                                    controller.isChecked.value =
+                                        !controller.isChecked.value;
+                                  },
                               ),
                             ],
                           ),
@@ -224,9 +235,6 @@ class LoginView extends GetView<LoginController> {
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.login,
-                                    color: Colors.white, size: 22),
-                                const SizedBox(width: 10),
                                 Text(
                                   'continue_button'.tr,
                                   style: const TextStyle(

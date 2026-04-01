@@ -1,5 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/bio_text_field.dart';
@@ -9,6 +12,8 @@ import 'package:gyzyleller/modules/special_profile/widgets/profile_avatar.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/selected_images.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
+import 'package:gyzyleller/shared/widgets/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SpecialProfileAdd extends StatefulWidget {
   const SpecialProfileAdd({super.key});
@@ -24,8 +29,17 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController shortBioController = TextEditingController();
   final TextEditingController longBioController = TextEditingController();
-  final TextEditingController legalizationTypeController = TextEditingController();
+  final TextEditingController legalizationTypeController =
+      TextEditingController();
   final TextEditingController workTejribeController = TextEditingController();
+
+  bool _isTermsAgreed = false;
+
+  String get _langWeb => GetStorage().read('langCode') ?? 'tk';
+
+  void _launchURL(String url) {
+    launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView);
+  }
 
   @override
   void initState() {
@@ -33,7 +47,8 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
     nameController.text = controller.profile.value.name ?? '';
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
-    legalizationTypeController.text = controller.profile.value.legalizationType ?? '';
+    legalizationTypeController.text =
+        controller.profile.value.legalizationType ?? '';
   }
 
   @override
@@ -58,7 +73,8 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProfileAvatar(controller: controller, nameController: nameController),
+            ProfileAvatar(
+                controller: controller, nameController: nameController),
             const SizedBox(height: 15),
             BioTextField(
               controller: shortBioController,
@@ -105,8 +121,85 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             const SizedBox(height: 10),
             SelectedImages(controller: controller),
             const SizedBox(height: 25),
+            // ── Terms agreement ─────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isTermsAgreed = !_isTermsAgreed;
+                      });
+                    },
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: _isTermsAgreed
+                            ? ColorConstants.kPrimaryColor2
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: ColorConstants.greyColor,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: _isTermsAgreed
+                          ? const Icon(Icons.check,
+                              size: 16, color: Colors.white)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'with_all_terms'.tr,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'agreement_text'.tr,
+                            style: const TextStyle(
+                              color: ColorConstants.blue,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w400,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                _launchURL(
+                                    '${Api().urlSimple}privacy-police/$_langWeb');
+                                setState(() {
+                                  _isTermsAgreed = !_isTermsAgreed;
+                                });
+                              },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             CustomElevatedButton(
               onPressed: () {
+                if (!_isTermsAgreed) {
+                  CustomWidgets.showSnackBar(
+                    'error_title',
+                    'please_agree_privacy',
+                    ColorConstants.redColor,
+                  );
+                  return;
+                }
                 controller.saveMasterProfile(
                   name: nameController.text,
                   shortBio: shortBioController.text,

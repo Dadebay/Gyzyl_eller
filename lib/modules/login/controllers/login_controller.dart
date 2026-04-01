@@ -42,6 +42,14 @@ class LoginController extends GetxController {
       );
       return;
     }
+    if (!isChecked.value) {
+      CustomWidgets.showSnackBar(
+        'error_title',
+        'please_agree_privacy',
+        ColorConstants.redColor,
+      );
+      return;
+    }
 
     try {
       isLoading.value = true;

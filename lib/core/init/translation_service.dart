@@ -50,11 +50,13 @@ class TranslationService extends Translations {
           "Ýumuşlarym": "Ýumuşlarym",
           'login_title': 'Içeri gir',
           'login_instruction':
-              'Ulgama girmek we kod almak üçin telefon belgiňizi giriziň',
+              'Ulgama girmek üçin “Aýterekde” registrasiýa eden telefon belgiňizi we açarsözüňizi ulanyp giriziň',
           'phone_number_label': 'Telefon belgiňiz',
           'password_input_label': 'Açar söz',
           'with_all_terms': 'Ähli şertleri bilen ',
-          'agreement_text': 'ylalaşygy',
+          'agreement_text': 'ylalaşýaryn',
+          'please_agree_privacy':
+              'Dowam etmezden ozal gizlinlik syýasatyny kabul ediň.',
           'continue_button': 'Dowam et',
           'onboarding_welcome_title':
               '"Aýterek - ussalar" ulgamy bilen tanyşyň.',
@@ -380,11 +382,13 @@ class TranslationService extends Translations {
           'menu_tab': 'Меню',
           'login_title': 'Войти',
           'login_instruction':
-              'Введите свой номер телефона, чтобы войти и получить код',
+              'Чтобы войти в приложение, используйте номер телефона и пароль, которые вы зарегистрировали в «Aýterek».',
           'phone_number_label': 'Номер телефона',
           'password_input_label': 'Пароль',
           'with_all_terms': 'Со всеми условиями ',
           'agreement_text': 'соглашения',
+          'please_agree_privacy':
+              'Пожалуйста, примите политику конфиденциальности, прежде чем продолжить.',
           'continue_button': 'Продолжить',
           'onboarding_welcome_title':
               'Познакомьтесь с системой "Aýterek - ussalar".',

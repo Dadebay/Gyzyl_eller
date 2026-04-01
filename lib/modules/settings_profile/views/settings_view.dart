@@ -234,27 +234,30 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
+  // Widget _buildEditButton() {
+  //   return GestureDetector(
+  //     onTap: () {
+  //       Get.to(
+  //         () => ProfileEditView(userData: controller.user.value!),
+  //       );
+  //     },
+  //     child: Container(
+  //       decoration: BoxDecoration(
+  //         color: ColorConstants.background,
+  //         borderRadius: BorderRadius.circular(10),
+  //       ),
+  //       padding: const EdgeInsets.all(10),
+  //       child: SvgPicture.asset(
+  //         IconConstants.edit,
+  //         height: 20,
+  //         width: 20,
+  //         color: Colors.black,
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget _buildEditButton() {
-    return GestureDetector(
-      onTap: () {
-        Get.to(
-          () => ProfileEditView(userData: controller.user.value!),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: ColorConstants.background,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        padding: const EdgeInsets.all(10),
-        child: SvgPicture.asset(
-          IconConstants.edit,
-          height: 20,
-          width: 20,
-          color: Colors.black,
-        ),
-      ),
-    );
+    return const SizedBox();
   }
 
   Widget _buildMenuItem(
