@@ -419,6 +419,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 _startDate = tempStart;
                                 _endDate = tempEnd;
                               });
+                              _fetchCount();
                               Navigator.pop(context);
                             },
                             child: Text(
