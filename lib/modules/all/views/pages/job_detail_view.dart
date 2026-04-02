@@ -25,6 +25,8 @@ import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_request_bottom_sheet.dart';
 import 'package:gyzyleller/shared/widgets/full_screen_image_gallery.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
+import 'package:gyzyleller/core/services/auth_storage.dart';
+import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
 import 'package:dio/dio.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -418,12 +420,14 @@ class JobDetailView extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => const JobRequestBottomSheet(),
-                          );
+                          _checkMasterAndExecute(context, "make_offer".tr, () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => const JobRequestBottomSheet(),
+                            );
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: ColorConstants.kPrimaryColor2,
@@ -521,6 +525,53 @@ class JobDetailView extends StatelessWidget {
         );
       }),
     );
+  }
+
+  void _checkMasterAndExecute(BuildContext context, String actionTitle, VoidCallback onExecute) {
+    if (AuthStorage().masterProfileId == null) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            title: Text(
+              actionTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.asset(IconConstants.personwork, height: 70),
+                const SizedBox(height: 16),
+                const Text(
+                  'Teklipleri ugratmak we ýumuşlary almak üçin Siz hünärmenlik profiliňizi doldurmaly.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('ÝAPMAK',
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Get.to(() => const SpecialProfileAdd());
+                },
+                child: const Text('DOLDURMAK',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      onExecute();
+    }
   }
 
   Widget _buildOfferSuccessBox(

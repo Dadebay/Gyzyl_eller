@@ -36,7 +36,7 @@ class AboutView extends StatelessWidget {
         },
         selectedIcons: ListConstants.selectedIcons,
         icons: ListConstants.mainIcons,
-         labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
+        labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
       ),
     );
   }

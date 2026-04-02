@@ -6,6 +6,7 @@ class SpecialProfileModel {
   final String? shortBio;
   final String? longBio;
   final String? legalizationType;
+  final String? experience;
   final int? welayatId;
   final int? etrapId;
   final String welayat;
@@ -25,6 +26,7 @@ class SpecialProfileModel {
     this.shortBio,
     this.longBio,
     this.legalizationType,
+    this.experience,
     this.welayatId,
     this.etrapId,
     this.welayat = '',
@@ -46,6 +48,7 @@ class SpecialProfileModel {
       shortBio: json['short_description'],
       longBio: json['description'],
       legalizationType: json['legalization_type'],
+      experience: json['experience'],
       welayatId: int.tryParse(json['welayat_id']?.toString() ?? ''),
       etrapId: int.tryParse(json['etrap_id']?.toString() ?? ''),
       welayat: json['welayat']?.toString() ?? '',
@@ -68,6 +71,7 @@ class SpecialProfileModel {
       'short_description': shortBio,
       'description': longBio,
       'legalization_type': legalizationType,
+      'experience': experience,
       'welayat_id': welayatId,
       'etrap_id': etrapId,
       'welayat': welayat,
@@ -88,6 +92,7 @@ class SpecialProfileModel {
     String? shortBio,
     String? longBio,
     String? legalizationType,
+    String? experience,
     int? welayatId,
     int? etrapId,
     String? welayat,
@@ -107,6 +112,7 @@ class SpecialProfileModel {
       shortBio: shortBio ?? this.shortBio,
       longBio: longBio ?? this.longBio,
       legalizationType: legalizationType ?? this.legalizationType,
+      experience: experience ?? this.experience,
       welayatId: welayatId ?? this.welayatId,
       etrapId: etrapId ?? this.etrapId,
       welayat: welayat ?? this.welayat,

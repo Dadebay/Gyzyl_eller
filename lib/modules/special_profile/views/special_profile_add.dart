@@ -218,6 +218,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
                   name: nameController.text,
                   shortBio: shortBioController.text,
                   longBio: longBioController.text,
+                  experience: workTejribeController.text,
                   legalizationType: _selectedLegalizationType ?? '',
                   fileMetadata: _fileMetadata,
                 );

@@ -25,8 +25,7 @@ class TranslationService extends Translations {
           'language': 'Programmanyň dili',
           'logout': 'Programmadan çykmak',
           'deleteProfileTitle': 'Profili pozmak',
-          'deleteProfileDescription':
-              'Profiliňizi pozmak isleýändigiňize ynamyňyz barmy? Bu amal yzyna gaýtarylmaz.',
+          'deleteProfileDescription': 'Siz hakykatdanam profiliňizi pozmak isleýärsiňizmi?',
           'cancel': 'Ýatyr',
           'delete': 'Poz',
           'about': 'Umumy şertler we düzgünler',

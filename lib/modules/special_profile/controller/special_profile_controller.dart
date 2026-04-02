@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
@@ -9,6 +10,7 @@ class SpecialProfileController extends GetxController {
   final Rx<SpecialProfileModel> profile = SpecialProfileModel().obs;
   final RxList<File> images = <File>[].obs;
   final Rxn<File> selectedProfileImage = Rxn<File>(null);
+  final RxBool isUploadingProfileImage = false.obs;
 
   final ImagePicker _picker = ImagePicker();
   final AuthStorage _authStorage = AuthStorage();
@@ -134,7 +136,7 @@ class SpecialProfileController extends GetxController {
     final XFile? image = await _picker.pickImage(source: source);
     if (image != null) {
       selectedProfileImage.value = File(image.path);
-      Get.snackbar("Success", "Profile image selected: ${image.name}");
+      await uploadProfileImageAndUsername();
     }
   }
 
@@ -172,11 +174,115 @@ class SpecialProfileController extends GetxController {
     );
   }
 
+  Future<void> uploadProfileImageAndUsername() async {
+    final String lang = GetStorage().read('langCode') ?? 'tk';
+    final String endpoint = 'api/user/$lang/change-profile-image';
+
+    try {
+      if (selectedProfileImage.value == null) {
+        print('⚠️ [uploadProfileImageAndUsername] No image selected');
+        return;
+      }
+
+      isUploadingProfileImage.value = true;
+
+      final String fullUrl = '${ApiConstants.baseUrl}$endpoint';
+      final token = _authStorage.token;
+
+      final request = http.MultipartRequest('POST', Uri.parse(fullUrl));
+      request.headers.addAll({
+        'Accept': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      });
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'picture',
+          selectedProfileImage.value!.path,
+        ),
+      );
+
+      print('------------------------------------------');
+      print('📤 [uploadProfileImageAndUsername] REQUEST');
+      print('Endpoint: $endpoint');
+      print('Body: {}');
+      print('Selected image path: ${selectedProfileImage.value?.path}');
+      print('Files count: ${request.files.length}');
+      print('------------------------------------------');
+
+      final streamedResponse = await request.send();
+      final int statusCode = streamedResponse.statusCode;
+      final String responseBody = await streamedResponse.stream.bytesToString();
+
+      print('📡 [uploadProfileImageAndUsername] STATUS CODE: $statusCode');
+
+      dynamic response;
+      try {
+        response = responseBody.isNotEmpty ? jsonDecode(responseBody) : {};
+      } catch (_) {
+        response = responseBody;
+      }
+
+      print('------------------------------------------');
+      print('📡 [uploadProfileImageAndUsername] RESPONSE');
+      if (response is Map || response is List) {
+        print(const JsonEncoder.withIndent('  ').convert(response));
+      } else {
+        print(response);
+      }
+      print('------------------------------------------');
+
+      if (statusCode >= 200 && statusCode < 300) {
+        final user = _authStorage.getUser();
+        if (user != null) {
+          if (response is Map<String, dynamic> &&
+              response['data'] is Map<String, dynamic>) {
+            final dynamic image = response['data']['image'];
+            if (image != null) {
+              user['image'] = image.toString();
+            }
+          }
+
+          _authStorage.saveUser(user);
+        }
+
+        String? imageUrl = profile.value.imageUrl;
+        if (selectedProfileImage.value != null) {
+          imageUrl = selectedProfileImage.value!.path;
+        }
+
+        if (response is Map<String, dynamic> &&
+            response['data'] is Map<String, dynamic>) {
+          final dynamic image = response['data']['image'];
+          if (image != null && image.toString().isNotEmpty) {
+            final String imagePath = image.toString();
+            imageUrl = imagePath.startsWith('http')
+                ? imagePath
+                : ApiConstants.imageURL + imagePath;
+          }
+        }
+
+        profile.value = profile.value.copyWith(
+          imageUrl: imageUrl,
+        );
+
+        selectedProfileImage.value = null;
+      } else {
+        print('❌ [uploadProfileImageAndUsername] Upload failed');
+      }
+    } catch (e) {
+      print('❌ [uploadProfileImageAndUsername] error: $e');
+    } finally {
+      isUploadingProfileImage.value = false;
+    }
+  }
+
   Future<void> saveMasterProfile({
     required String name,
     required String shortBio,
     required String longBio,
     required String legalizationType,
+    String? experience,
     List<Map<String, dynamic>> fileMetadata = const [],
     List<int> deleteFileIds = const [],
     bool isEdit = false,
@@ -221,6 +327,8 @@ class SpecialProfileController extends GetxController {
         "short_description": shortBio,
         "description": longBio,
         "username": name,
+        if (experience != null && experience.isNotEmpty)
+          "experience": experience,
         "legalization_type": legalizationType,
         if (files.isNotEmpty) "files": files,
         if (isEdit || deleteFiles.isNotEmpty) "delete_files": deleteFiles,
@@ -280,6 +388,74 @@ class SpecialProfileController extends GetxController {
     } catch (e) {
       Get.back();
       Get.snackbar("Error", "Failed to create profile: $e");
+    }
+  }
+
+  Future<bool> deleteMasterProfile() async {
+    try {
+      Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
+
+      const String endpoint = 'api/user/masters/delete';
+      final Map<String, dynamic> body = {};
+
+      print('------------------------------------------');
+      print('📤 [deleteMasterProfile] REQUEST');
+      print('Endpoint: $endpoint');
+      print('Body: {}');
+      print('------------------------------------------');
+
+      final response = await ApiService().handleApiRequest(
+        endpoint,
+        body: body,
+        method: 'POST',
+        requiresToken: true,
+        isForm: false,
+      );
+
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+
+      print('------------------------------------------');
+      print('📡 [deleteMasterProfile] RESPONSE');
+      if (response is Map || response is List) {
+        print(const JsonEncoder.withIndent('  ').convert(response));
+      } else {
+        print(response);
+      }
+      print('------------------------------------------');
+
+      final bool isSuccess = _isSuccessfulSaveResponse(response);
+      if (!isSuccess) {
+        String errorMessage = 'Failed to delete profile';
+        if (response is Map<String, dynamic> &&
+            response['message'] != null &&
+            response['message'].toString().trim().isNotEmpty) {
+          errorMessage = response['message'].toString();
+        }
+        Get.snackbar('Error', errorMessage);
+        return false;
+      }
+
+      _authStorage.clearMasterProfileId();
+      images.clear();
+      selectedProfileImage.value = null;
+      loadInitialProfileData();
+
+      CustomWidgets.showSnackBar(
+        'success_title'.tr,
+        'Profile deleted successfully',
+        ColorConstants.greenColor,
+      );
+
+      return true;
+    } catch (e) {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      print('❌ [deleteMasterProfile] error: $e');
+      Get.snackbar('Error', 'Failed to delete profile: $e');
+      return false;
     }
   }
 

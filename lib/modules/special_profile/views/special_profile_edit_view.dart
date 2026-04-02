@@ -10,9 +10,13 @@ import 'package:gyzyleller/modules/special_profile/widgets/bio_text_field.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/file_upload_area.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/info_card.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_avatar.dart';
+import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
+import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 import 'package:gyzyleller/shared/widgets/widgets.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SpecialProfileEditView extends StatefulWidget {
@@ -48,14 +52,112 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView);
   }
 
+  Future<void> _confirmAndDeleteMasterProfile() async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'deleteProfileTitle'.tr,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.fonts,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 25),
+                SvgPicture.asset(
+                  IconConstants.removeProfile,
+                  width: 100,
+                  height: 100,
+                ),
+                const SizedBox(height: 25),
+                Text(
+                  'deleteProfileDescription'.tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: ColorConstants.fonts,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: Text(
+                        'no'.tr.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.fonts,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: Text(
+                        'yes'.tr.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.kPrimaryColor2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    final bool deleted = await controller.deleteMasterProfile();
+    if (!mounted || !deleted) return;
+
+    if (Get.isRegistered<SettingsController>()) {
+      final settingsController = Get.find<SettingsController>();
+      settingsController.hasSpecialProfile.value = false;
+      settingsController.loadUser();
+    }
+
+    Get.offAll(() => SettingsView());
+  }
+
   @override
   void initState() {
     super.initState();
     nameController.text = controller.profile.value.name ?? '';
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
-    workTejribeController.text = '';
-    _selectedLegalizationType = controller.profile.value.legalizationType;
+    workTejribeController.text = controller.profile.value.experience ?? '';
+    final String? legalizationType = controller.profile.value.legalizationType;
+    _selectedLegalizationType = _legalizationValues.contains(legalizationType)
+        ? legalizationType
+        : null;
   }
 
   @override
@@ -82,7 +184,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: _confirmAndDeleteMasterProfile,
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedDelete02,
               color: ColorConstants.kPrimaryColor2,
@@ -229,6 +331,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
                   name: nameController.text,
                   shortBio: shortBioController.text,
                   longBio: longBioController.text,
+                  experience: workTejribeController.text,
                   legalizationType: _selectedLegalizationType ?? '',
                   fileMetadata: _fileMetadata,
                   isEdit: true,

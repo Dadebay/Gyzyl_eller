@@ -29,10 +29,20 @@ class ProfileAvatar extends StatelessWidget {
                         : (controller.profile.value.imageUrl != null
                             ? NetworkImage(controller.profile.value.imageUrl!)
                             : null),
-                    child: controller.selectedProfileImage.value == null &&
-                            controller.profile.value.imageUrl == null
-                        ? const Icon(Icons.person, color: Colors.grey, size: 50)
-                        : null,
+                    child: controller.isUploadingProfileImage.value
+                        ? const SizedBox(
+                            width: 26,
+                            height: 26,
+                            child: CircularProgressIndicator(strokeWidth: 2.4),
+                          )
+                        : (controller.selectedProfileImage.value == null &&
+                                controller.profile.value.imageUrl == null
+                            ? const Icon(
+                                Icons.person,
+                                color: Colors.grey,
+                                size: 50,
+                              )
+                            : null),
                   ),
                 ),
                 Positioned(
