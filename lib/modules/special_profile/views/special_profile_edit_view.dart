@@ -71,7 +71,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'edit_specialist_profile'.tr,
+        title: 'specialist_profile_title'.tr,
         leading: IconButton(
           icon: const HugeIcon(
             icon: HugeIcons.strokeRoundedArrowLeft01,
@@ -80,6 +80,17 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
           ),
           onPressed: () => Get.back(),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedDelete02,
+              color: ColorConstants.kPrimaryColor2,
+              size: 24.0,
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
       backgroundColor: ColorConstants.background,
       body: SingleChildScrollView(
