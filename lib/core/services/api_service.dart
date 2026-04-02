@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:http/http.dart' as http;
 import 'package:gyzyleller/core/services/api.dart';
 import '../../shared/extensions/packages.dart';
@@ -221,6 +222,48 @@ class ApiService {
     } catch (e) {
       print('❌ [ApiService] getMasterReviews error: $e');
       return [];
+    }
+  }
+
+  /// Uploads a single file to [api/user/upload-file] and returns the server path.
+  Future<String?> uploadFile(
+    String filePath, {
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    try {
+      final token = _auth.token;
+      final fullUrl = '${Api().urlLink}api/user/upload-file';
+
+      final dioClient = dio_pkg.Dio();
+      if (token != null) {
+        dioClient.options.headers['Authorization'] = 'Bearer $token';
+      }
+
+      final formData = dio_pkg.FormData.fromMap({
+        'file': await dio_pkg.MultipartFile.fromFile(filePath),
+      });
+
+      print('📤 [ApiService] uploadFile → $fullUrl');
+
+      final response = await dioClient.post(
+        fullUrl,
+        data: formData,
+        onSendProgress: onSendProgress != null
+            ? (sent, total) => onSendProgress(sent, total)
+            : null,
+      );
+
+      final data = response.data;
+      print('📡 [ApiService] uploadFile response → $data');
+
+      if (data is Map) {
+        if (data['path'] != null) return data['path'].toString();
+        if (data['url'] != null) return data['url'].toString();
+      }
+      return data?.toString();
+    } catch (e) {
+      print('❌ [ApiService] uploadFile failed: $e');
+      rethrow;
     }
   }
 }

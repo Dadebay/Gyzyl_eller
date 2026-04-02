@@ -9,7 +9,6 @@ import 'package:gyzyleller/modules/special_profile/widgets/bio_text_field.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/file_upload_area.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/info_card.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_avatar.dart';
-import 'package:gyzyleller/modules/special_profile/widgets/selected_images.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 import 'package:gyzyleller/shared/widgets/widgets.dart';
@@ -32,12 +31,14 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
   final TextEditingController workTejribeController = TextEditingController();
 
   String? _selectedLegalizationType;
+  List<Map<String, dynamic>> _fileMetadata = [];
 
   static const List<String> _legalizationValues = [
     'entrepreneur',
     'individual',
     'private',
     'business_entity',
+    'other',
   ];
 
   String get _langWeb => GetStorage().read('langCode') ?? 'tk';
@@ -186,10 +187,13 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
               ),
             ),
             const SizedBox(height: 10),
-            const FileUploadSection(),
-            const SizedBox(height: 10),
-            SelectedImages(controller: controller),
-
+            FileUploadSection(
+              onMetadataChanged: (metadata) {
+                setState(() {
+                  _fileMetadata = metadata;
+                });
+              },
+            ),
             const SizedBox(height: 10),
             CustomElevatedButton(
               onPressed: () {
@@ -206,6 +210,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
                   shortBio: shortBioController.text,
                   longBio: longBioController.text,
                   legalizationType: _selectedLegalizationType ?? '',
+                  fileMetadata: _fileMetadata,
                 );
               },
               text: 'create_account_button'.tr,

@@ -632,6 +632,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           categories: _categories,
           selectedCatIds: _selectedCatIds,
           onCategorySelected: _goToSubcategoryPage,
+          onClear: () {
+            setState(() {
+              _selectedCatIds.clear();
+            });
+            _fetchCount();
+          },
         );
       case _FilterPage.subcategory:
         return SubcategoryFilterPage(
@@ -644,6 +650,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               } else {
                 _selectedCatIds.add(id);
               }
+            });
+            _fetchCount();
+          },
+          onClear: () {
+            setState(() {
+              final subcategoryIds =
+                  _activeCategory!.subcategories.map((sub) => sub.id).toSet();
+              _selectedCatIds.removeWhere(subcategoryIds.contains);
             });
             _fetchCount();
           },
@@ -708,6 +722,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               } else {
                 _selectedEtrapIds.add(id);
               }
+            });
+            _fetchCount();
+          },
+          onClear: () {
+            setState(() {
+              final etrapIds = _activeWelayat!.etraps.map((e) => e.id).toSet();
+              _selectedEtrapIds.removeWhere(etrapIds.contains);
             });
             _fetchCount();
           },

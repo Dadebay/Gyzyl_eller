@@ -85,8 +85,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
                   homeController.changePage(index);
                 }
               },
+              icons: ListConstants.mainIcons,
               selectedIcons: ListConstants.selectedIcons,
-              unselectedIcons: ListConstants.mainIcons,
               labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
               badges: [
                 0,

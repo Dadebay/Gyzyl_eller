@@ -1,10 +1,18 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
+import 'package:gyzyleller/modules/special_profile/widgets/bio_text_field.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/file_upload_area.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/info_card.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_avatar.dart';
+import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
+import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
+import 'package:gyzyleller/shared/widgets/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SpecialProfileEditView extends StatefulWidget {
   const SpecialProfileEditView({super.key});
@@ -23,6 +31,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
   final TextEditingController workTejribeController = TextEditingController();
 
   String? _selectedLegalizationType;
+  List<Map<String, dynamic>> _fileMetadata = [];
 
   static const List<String> _legalizationValues = [
     'entrepreneur',
@@ -31,12 +40,19 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     'business_entity',
   ];
 
+  String get _langWeb => GetStorage().read('langCode') ?? 'tk';
+
+  void _launchURL(String url) {
+    launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView);
+  }
+
   @override
   void initState() {
     super.initState();
     nameController.text = controller.profile.value.name ?? '';
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
+    workTejribeController.text = '';
     _selectedLegalizationType = controller.profile.value.legalizationType;
   }
 
@@ -52,140 +68,158 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: ColorConstants.background,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: const Icon(Icons.arrow_back_ios,
-              color: ColorConstants.kPrimaryColor2),
-        ),
-        title: Text(
-          "Hünärmen profilim".tr,
-          style: const TextStyle(
-            color: ColorConstants.fonts,
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Get.snackbar("Delete", "Delete action triggered");
-            },
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-          )
-        ],
+      appBar: CustomAppBar(
+        title: 'edit_specialist_profile'.tr,
       ),
       backgroundColor: ColorConstants.background,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildEditableHeader(),
-          const SizedBox(height: 16),
-          _buildEditableBioSection(),
-          const SizedBox(height: 15),
-          InfoCard(
-            icon: Icons.access_time,
-            text: 'read_the_rules'.tr,
-            color: ColorConstants.whiteColor,
-            textColor: ColorConstants.fonts,
-          ),
-          const SizedBox(height: 16),
-          _buildEditableWorksSection(),
-        ],
-      ),
-      bottomNavigationBar: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: () {
-            controller.saveMasterProfile(
-              name: nameController.text,
-              shortBio: shortBioController.text,
-              longBio: longBioController.text,
-              legalizationType: _selectedLegalizationType ?? '',
-              isEdit: true,
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ColorConstants.kPrimaryColor2,
-            minimumSize: const Size(double.infinity, 50),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          child: Text(
-            "save_changes".tr,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ProfileAvatar(
+                controller: controller, nameController: nameController),
+            const SizedBox(height: 15),
+            BioTextField(
+              controller: shortBioController,
+              hintText: 'short_bio_hint'.tr,
+              onChanged: (value) {},
+            ),
+            const SizedBox(height: 15),
+            _buildLegalizationDropdown(),
+            const SizedBox(height: 15),
+            BioTextField(
+              controller: longBioController,
+              hintText: 'long_bio_hint'.tr,
+              maxLines: 5,
+              onChanged: (value) {},
+            ),
+            const SizedBox(height: 15),
+            BioTextField(
+              controller: workTejribeController,
+              hintText: 'work_tejribe'.tr,
+              onChanged: (String value) {},
+            ),
+            const SizedBox(height: 15),
+            InfoCard(
+              icon: Icons.access_time,
+              text: 'read_the_rules'.tr,
+              color: ColorConstants.whiteColor,
+              textColor: ColorConstants.fonts,
+            ),
+            const SizedBox(height: 10),
+            Obx(
+              () => Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        controller.isChecked.value =
+                            !controller.isChecked.value;
+                      },
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: controller.isChecked.value
+                              ? ColorConstants.kPrimaryColor2
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: controller.isChecked.value
+                            ? const Icon(Icons.check,
+                                size: 16, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'with_all_terms'.tr,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'agreement_text'.tr,
+                              style: const TextStyle(
+                                color: ColorConstants.blue,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w400,
+                                decoration: TextDecoration.underline,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  _launchURL(
+                                      '${Api().urlSimple}privacy-police/$_langWeb');
+                                  controller.isChecked.value =
+                                      !controller.isChecked.value;
+                                },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            Text(
+              'my_works_title'.tr,
+              style: const TextStyle(
+                fontSize: 14,
+                color: ColorConstants.blue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FileUploadSection(
+              onMetadataChanged: (metadata) {
+                setState(() {
+                  _fileMetadata = metadata;
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+            CustomElevatedButton(
+              onPressed: () {
+                if (!controller.isChecked.value) {
+                  CustomWidgets.showSnackBar(
+                    'error_title',
+                    'please_agree_privacy',
+                    ColorConstants.redColor,
+                  );
+                  return;
+                }
+                controller.saveMasterProfile(
+                  name: nameController.text,
+                  shortBio: shortBioController.text,
+                  longBio: longBioController.text,
+                  legalizationType: _selectedLegalizationType ?? '',
+                  fileMetadata: _fileMetadata,
+                  isEdit: true,
+                );
+              },
+              text: 'save_changes'.tr,
+              backgroundColor: ColorConstants.kPrimaryColor2,
+              textColor: Colors.white,
+              fontSize: 16,
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEditableHeader() {
-    return Column(
-      children: [
-        ProfileAvatar(controller: controller, nameController: nameController),
-        const SizedBox(height: 30),
-        _buildTextField(
-          controller: shortBioController,
-          hint: "short_bio_hint".tr,
-          icon: Icons.person_outline,
-        ),
-        const SizedBox(height: 8),
-        _buildLegalizationDropdown(),
-        const SizedBox(height: 8),
-        _buildTextField(
-          controller: workTejribeController,
-          hint: "work_tejribe".tr,
-          icon: Icons.work_outline,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEditableBioSection() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTextField(
-            controller: longBioController,
-            hint: "long_bio_hint".tr,
-            maxLines: 4,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEditableWorksSection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ColorConstants.background,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('works_section_title'.tr,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: ColorConstants.fonts)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const FileUploadSection(),
-        ],
       ),
     );
   }
@@ -194,62 +228,43 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: ColorConstants.whiteColor,
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          value: _selectedLegalizationType,
-          hint: Text(
-            'legalization_type_hint'.tr,
-            style: const TextStyle(color: Colors.grey, fontSize: 14),
-          ),
-          icon: const Icon(Icons.keyboard_arrow_down,
-              color: ColorConstants.kPrimaryColor2),
-          dropdownColor: Colors.white,
-          items: _legalizationValues.map((value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value.tr),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedLegalizationType = value;
-            });
-          },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    IconData? icon,
-    int maxLines = 1,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 12,
-      ),
-      decoration: BoxDecoration(
-        color: ColorConstants.whiteColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          labelText: hint,
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none),
-          filled: true,
-          fillColor: ColorConstants.whiteColor,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: _selectedLegalizationType,
+            hint: Text(
+              'legalization_type_hint'.tr,
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down,
+              color: ColorConstants.kPrimaryColor2,
+            ),
+            dropdownColor: Colors.white,
+            items: _legalizationValues.map((value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value.tr,
+                  style: const TextStyle(color: Colors.black),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedLegalizationType = value;
+              });
+            },
+          ),
         ),
       ),
     );

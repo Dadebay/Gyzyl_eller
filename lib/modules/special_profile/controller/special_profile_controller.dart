@@ -176,6 +176,7 @@ class SpecialProfileController extends GetxController {
     required String shortBio,
     required String longBio,
     required String legalizationType,
+    List<Map<String, dynamic>> fileMetadata = const [],
     bool isEdit = false,
   }) async {
     try {
@@ -186,6 +187,12 @@ class SpecialProfileController extends GetxController {
 
       Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
 
+      final List<String> filesList = [];
+      for (var meta in fileMetadata) {
+        final String? url = meta['url'] as String?;
+        if (url != null) filesList.add(url);
+      }
+
       final Map<String, dynamic> body = {
         "welayat_id": profile.value.welayatId ?? 2,
         "etrap_id": profile.value.etrapId ?? 37,
@@ -193,27 +200,26 @@ class SpecialProfileController extends GetxController {
         "description": longBio,
         "username": name,
         "legalization_type": legalizationType,
+        if (filesList.isNotEmpty) "files": filesList,
       };
 
-      final ApiService apiService = ApiService();
-      dynamic response;
+      print('------------------------------------------');
+      print('📤 [saveMasterProfile] REQUEST BODY:');
+      body.forEach((k, v) => print('  $k: $v'));
+      print('------------------------------------------');
 
-      if (images.isNotEmpty) {
-        response = await apiService.postMultipartRequest(
-          ApiConstants.specialProfileCreate,
-          body,
-          xFiles: images.map((e) => XFile(e.path)).toList(),
-          fileField: 'files[]',
-        );
-      } else {
-        response = await apiService.handleApiRequest(
-          ApiConstants.specialProfileCreate,
-          body: body,
-          method: 'POST',
-          requiresToken: true,
-          isForm: false,
-        );
-      }
+      final ApiService apiService = ApiService();
+      final response = await apiService.handleApiRequest(
+        ApiConstants.specialProfileCreate,
+        body: body,
+        method: 'POST',
+        requiresToken: true,
+        isForm: false,
+      );
+
+      print('------------------------------------------');
+      print('📡 [saveMasterProfile] RESPONSE: $response');
+      print('------------------------------------------');
 
       Get.back();
 

@@ -198,7 +198,7 @@ class AddCashView extends GetView<WalletController> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: isEmpty
-                  ? Colors.grey.shade400
+                  ? ColorConstants.secondary
                   : ColorConstants.kPrimaryColor2,
             ),
             child: Center(

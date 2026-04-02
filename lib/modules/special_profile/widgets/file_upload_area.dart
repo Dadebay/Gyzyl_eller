@@ -1,12 +1,23 @@
-// ignore_for_file: use_build_context_synchronously
+﻿// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 
 class FileUploadSection extends StatefulWidget {
-  const FileUploadSection({super.key});
+  final Function(bool hasFiles)? onFilesChanged;
+  final Function(List<String> urls)? onUrlsUploaded;
+  final Function(List<Map<String, dynamic>> metadata)? onMetadataChanged;
+
+  const FileUploadSection({
+    super.key,
+    this.onFilesChanged,
+    this.onUrlsUploaded,
+    this.onMetadataChanged,
+  });
 
   @override
   State<FileUploadSection> createState() => _FileUploadSectionState();
@@ -14,64 +25,163 @@ class FileUploadSection extends StatefulWidget {
 
 class _FileUploadSectionState extends State<FileUploadSection> {
   final List<Map<String, dynamic>> images = [];
+  final List<Map<String, dynamic>> uploadedFiles = [];
   final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
+  bool _isProcessingQueue = false;
 
-  Future<void> _pickImages() async {
-    final List<XFile> pickedFiles = await _picker.pickMultiImage();
+  Future<void> _processUploadQueue() async {
+    if (_isProcessingQueue) return;
+    _isProcessingQueue = true;
 
-    if (pickedFiles.isNotEmpty) {
-      for (var file in pickedFiles) {
-        final String extension = file.path.split('.').last.toLowerCase();
+    while (true) {
+      Map<String, dynamic>? nextItem;
 
-        if (extension == 'png' || extension == 'jpg' || extension == 'jpeg') {
-          final Map<String, dynamic> newImage = {
-            "name": file.name,
-            "size": "${(await file.length() / 1024).toStringAsFixed(0)} kb",
-            "progress": 0.0,
-            "loading": true,
-            "path": file.path,
-          };
-
-          setState(() {
-            images.add(newImage);
-          });
-
-          _simulateUpload(newImage);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  '${file.name} - diňe PNG we JPG formatlar kabul edilýär'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      final pendingFile =
+          uploadedFiles.cast<Map<String, dynamic>?>().firstWhere(
+                (f) => f != null && f["loading"] == true && f["url"] == null,
+                orElse: () => null,
+              );
+      if (pendingFile != null) {
+        nextItem = pendingFile;
+      } else {
+        final pendingImage = images.cast<Map<String, dynamic>?>().firstWhere(
+              (img) =>
+                  img != null && img["loading"] == true && img["url"] == null,
+              orElse: () => null,
+            );
+        if (pendingImage != null) nextItem = pendingImage;
       }
+
+      if (nextItem == null) break;
+      await _uploadFile(nextItem);
+    }
+
+    _isProcessingQueue = false;
+  }
+
+  Future<void> _uploadFile(Map<String, dynamic> fileMap) async {
+    try {
+      final String path = fileMap["path"] as String;
+      final url = await _apiService.uploadFile(
+        path,
+        onSendProgress: (sent, total) {
+          if (!mounted) return;
+          setState(() {
+            fileMap["progress"] = total > 0 ? sent / total : 0.0;
+          });
+        },
+      );
+
+      if (!mounted) return;
+      setState(() {
+        fileMap["loading"] = false;
+        fileMap["progress"] = 1.0;
+        fileMap["url"] = url;
+      });
+      _notifyParent();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        uploadedFiles.remove(fileMap);
+        images.remove(fileMap);
+      });
+      _notifyParent();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${fileMap["name"]} - ГЅГјklenip bilinmedi'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  void _simulateUpload(Map<String, dynamic> image) {
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
+  void _notifyParent() {
+    final bool hasAny = uploadedFiles.isNotEmpty || images.isNotEmpty;
+    widget.onFilesChanged?.call(hasAny);
 
-      setState(() {
-        if (image["progress"] < 1.0) {
-          image["progress"] += 0.1;
-        } else {
-          image["loading"] = false;
-          timer.cancel();
-        }
-      });
-    });
+    if (widget.onUrlsUploaded != null) {
+      final List<String> urls = [];
+      for (var f in uploadedFiles) {
+        if (f["url"] != null) urls.add(f["url"] as String);
+      }
+      for (var img in images) {
+        if (img["url"] != null) urls.add(img["url"] as String);
+      }
+      widget.onUrlsUploaded!(urls);
+    }
+
+    if (widget.onMetadataChanged != null) {
+      final List<Map<String, dynamic>> metadata = [];
+      metadata.addAll(uploadedFiles);
+      metadata.addAll(images);
+      widget.onMetadataChanged!(metadata);
+    }
+  }
+
+  Future<void> _pickImages() async {
+    final List<XFile> pickedFiles = await _picker.pickMultiImage(
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
+    if (pickedFiles.isEmpty) return;
+    for (var file in pickedFiles) {
+      final int bytes = await file.length();
+      final Map<String, dynamic> newImage = {
+        "name": file.name,
+        "size": "${(bytes / 1024).toStringAsFixed(0)} kb",
+        "progress": 0.0,
+        "loading": true,
+        "path": file.path,
+        "url": null,
+      };
+      setState(() => images.add(newImage));
+    }
+    _processUploadQueue();
+  }
+
+  Future<void> _pickFiles() async {
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: true,
+    );
+    if (result == null) return;
+    for (var file in result.files) {
+      if (file.path == null) continue;
+      final String ext = file.extension?.toLowerCase() ?? '';
+      final List<String> allowed = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
+      if (!allowed.contains(ext)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${file.name} - geГ§ersiz format'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        continue;
+      }
+      final Map<String, dynamic> newFile = {
+        "name": file.name,
+        "size": "${(file.size / 1024).toStringAsFixed(0)} kb",
+        "type": ext,
+        "progress": 0.0,
+        "loading": true,
+        "path": file.path,
+        "url": null,
+      };
+      setState(() => uploadedFiles.add(newFile));
+    }
+    _processUploadQueue();
   }
 
   void _removeImage(Map<String, dynamic> image) {
-    setState(() {
-      images.remove(image);
-    });
+    setState(() => images.remove(image));
+    _notifyParent();
+  }
+
+  void _removeFile(Map<String, dynamic> file) {
+    setState(() => uploadedFiles.remove(file));
+    _notifyParent();
   }
 
   @override
@@ -81,7 +191,37 @@ class _FileUploadSectionState extends State<FileUploadSection> {
       children: [
         // ---------------- Upload Box ----------------
         GestureDetector(
-          onTap: _pickImages,
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (ctx) => Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.image,
+                          color: ColorConstants.kPrimaryColor2),
+                      title: Text('pick_image'.tr),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _pickImages();
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.insert_drive_file,
+                          color: ColorConstants.kPrimaryColor2),
+                      title: Text('pick_file'.tr),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _pickFiles();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
           child: DottedBorder(
             color: ColorConstants.greyColor,
             strokeWidth: 1.5,
@@ -107,13 +247,8 @@ class _FileUploadSectionState extends State<FileUploadSection> {
                   ),
                   const SizedBox(height: 5),
                   const Text(
-                    'PNG, JPG',
+                    'PNG, JPG, PDF, DOC',
                     style: TextStyle(
-                        color: ColorConstants.secondary, fontSize: 12),
-                  ),
-                  Text(
-                    '${'max_file_size'.tr} 2/8',
-                    style: const TextStyle(
                         color: ColorConstants.secondary, fontSize: 12),
                   ),
                 ],
@@ -123,6 +258,77 @@ class _FileUploadSectionState extends State<FileUploadSection> {
         ),
 
         const SizedBox(height: 16),
+
+        // ---------------- Files List ----------------
+        if (uploadedFiles.isNotEmpty) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 10,
+            children: uploadedFiles.map((file) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.insert_drive_file,
+                            size: 22, color: ColorConstants.kPrimaryColor2),
+                        const SizedBox(width: 6),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 140),
+                          child: Text(
+                            file["name"],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => _removeFile(file),
+                          child: const Icon(Icons.close, size: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (file["loading"] == true) ...[
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: 100,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: file["progress"],
+                          minHeight: 3,
+                          backgroundColor: Colors.grey.shade100,
+                          valueColor: const AlwaysStoppedAnimation(
+                              ColorConstants.kPrimaryColor2),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+        ],
 
         // ---------------- Images List ----------------
         if (images.isNotEmpty)
@@ -136,7 +342,7 @@ class _FileUploadSectionState extends State<FileUploadSection> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.file(
-                        File(img["path"]),
+                        File(img["path"] as String),
                         width: 70,
                         height: 70,
                         fit: BoxFit.cover,
@@ -163,8 +369,7 @@ class _FileUploadSectionState extends State<FileUploadSection> {
                             ),
                           ),
                           Text(
-                            img["size"] +
-                                (img["loading"] ? " / loading" : " / complete"),
+                            '${img["size"]} / ${img["loading"] ? "loading" : "complete"}',
                             style: const TextStyle(
                               color: ColorConstants.greyColor,
                               fontSize: 12,
@@ -178,9 +383,9 @@ class _FileUploadSectionState extends State<FileUploadSection> {
                               minHeight: 5,
                               backgroundColor: Colors.grey.shade300,
                               valueColor: AlwaysStoppedAnimation(
-                                img["loading"]
+                                img["loading"] == true
                                     ? ColorConstants.kPrimaryColor2
-                                    : ColorConstants.background,
+                                    : Colors.green,
                               ),
                             ),
                           ),
