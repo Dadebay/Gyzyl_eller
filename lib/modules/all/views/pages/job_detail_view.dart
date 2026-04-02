@@ -12,6 +12,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/core/models/job_model.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:gyzyleller/modules/all/controllers/job_detail_controller.dart';
 import 'package:gyzyleller/modules/all/views/pages/info_row.dart';
 import 'package:gyzyleller/modules/all/views/pages/new_tag.dart';
@@ -27,6 +28,8 @@ import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:dio/dio.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:gyzyleller/shared/widgets/custom_flutter_map.dart';
 import 'package:gyzyleller/shared/widgets/services_map_screen.dart';
 import 'package:gyzyleller/core/models/location_model.dart';
@@ -46,8 +49,11 @@ class JobDetailView extends StatelessWidget {
         elevation: 0,
         leading: InkWell(
           onTap: () => Get.back(),
-          child: const Icon(Icons.arrow_back_ios,
-              size: 20, color: ColorConstants.kPrimaryColor2),
+          child: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            size: 26,
+            color: ColorConstants.kPrimaryColor2,
+          ),
         ),
         centerTitle: true,
         title: Text(
@@ -150,6 +156,21 @@ class JobDetailView extends StatelessWidget {
         final job = controller.job.value;
         if (job == null) return Center(child: Text("no_data_found".tr));
 
+        final List<String> images = [];
+        if (job.images.isNotEmpty) {
+          for (final img in job.images) {
+            images.add(_resolveMediaUrl(img));
+          }
+        }
+
+        for (final answer in job.answers) {
+          if ((answer.type == 'image' || answer.type == 'file') &&
+              answer.value != null &&
+              answer.value!.isNotEmpty) {
+            images.add(_resolveMediaUrl(answer.value!));
+          }
+        }
+
         final position = controller.parsePosition(job.position);
         final jobStatusEnum = MyTasksStatus.fromApiValue(job.status);
 
@@ -205,8 +226,7 @@ class JobDetailView extends StatelessWidget {
               const SizedBox(height: 16),
               ..._buildGroupedAnswers(job),
               const SizedBox(height: 8),
-              if (job.images.isNotEmpty ||
-                  (job.image != null && job.image!.isNotEmpty))
+              if (images.isNotEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -219,43 +239,7 @@ class JobDetailView extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     _buildImageGallery(
-                      [
-                        if (job.images.isNotEmpty)
-                          ...job.images.map((img) {
-                            String path = img;
-                            if (path.startsWith('/')) path = path.substring(1);
-                            final url = path.startsWith('http')
-                                ? path
-                                : "${Api().urlImage}$path";
-                            debugPrint("🖼️ [Gallery URL]: $url");
-                            return url;
-                          })
-                        else if (job.image != null && job.image!.isNotEmpty)
-                          () {
-                            String path = job.image!;
-                            if (path.startsWith('/')) path = path.substring(1);
-                            final url = path.startsWith('http')
-                                ? path
-                                : "${Api().urlImage}$path";
-                            debugPrint("🖼️ [Cover URL]: $url");
-                            return url;
-                          }(),
-                        for (final answer in job.answers)
-                          if ((answer.type == 'image' ||
-                                  answer.type == 'file') &&
-                              answer.value != null &&
-                              answer.value!.isNotEmpty)
-                            () {
-                              String path = answer.value!;
-                              if (path.startsWith('/'))
-                                path = path.substring(1);
-                              final url = path.startsWith('http')
-                                  ? path
-                                  : "${Api().urlImage}$path";
-                              debugPrint("🖼️ [Answer URL]: $url");
-                              return url;
-                            }()
-                      ].whereType<String>().toList(),
+                      images,
                       controller.currentPage.value,
                       controller,
                       context,
@@ -775,9 +759,8 @@ class JobDetailView extends StatelessWidget {
                                 imageUrl: images[firstIndex],
                                 fit: BoxFit.cover,
                                 height: 120,
-                                placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
+                                placeholder: (context, url) =>
+                                    _buildImageShimmer(),
                                 errorWidget: (context, url, error) => Container(
                                   color: Colors.grey[200],
                                   child: const Icon(Icons.broken_image,
@@ -817,9 +800,8 @@ class JobDetailView extends StatelessWidget {
                                   imageUrl: images[secondIndex],
                                   fit: BoxFit.cover,
                                   height: 120,
-                                  placeholder: (context, url) => const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
+                                  placeholder: (context, url) =>
+                                      _buildImageShimmer(),
                                   errorWidget: (context, url, error) =>
                                       Container(
                                     color: Colors.grey[200],
@@ -1169,17 +1151,13 @@ class JobDetailView extends StatelessWidget {
   }
 
   Widget _buildFileCard(JobFileModel file) {
+    debugPrint('📄 [job_detail] FILE PATH: "${file.file}"');
     String fileName = file.file.split('/').last;
+    final String fullUrl = _resolveMediaUrl(file.file);
+
     return InkWell(
       onTap: () async {
-        String path = file.file;
-        if (path.startsWith('/')) path = path.substring(1);
-        final String fullUrl =
-            path.startsWith('http') ? path : "${Api().urlImage}$path";
-        try {
-          await launchUrl(Uri.parse(fullUrl),
-              mode: LaunchMode.externalApplication);
-        } catch (_) {}
+        await _openInExternalBrowser(fullUrl);
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -1213,11 +1191,34 @@ class JobDetailView extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(Icons.download_rounded,
-                color: ColorConstants.kPrimaryColor2),
+            InkWell(
+              onTap: () async {
+                await _downloadFile(fullUrl);
+              },
+              child: const Padding(
+                padding: EdgeInsets.all(4.0),
+                child: Icon(Icons.download_rounded,
+                    color: ColorConstants.kPrimaryColor2),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImageShimmer() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.25, end: 0.45),
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Container(
+          height: 120,
+          color: Colors.grey.withOpacity(value),
+        );
+      },
+      onEnd: () {},
     );
   }
 
@@ -1282,10 +1283,11 @@ class JobDetailView extends StatelessWidget {
   Future<void> _downloadImage(String url) async {
     try {
       if (Platform.isAndroid) {
-        if (!(await Permission.storage.request().isGranted) &&
-            !(await Permission.photos.request().isGranted)) {}
+        await Permission.photos.request();
+        await Permission.storage.request();
       } else if (Platform.isIOS) {
         if (!(await Permission.photos.request().isGranted)) {
+          _showDownloadSnackBar(isSuccess: false);
           return;
         }
       }
@@ -1304,12 +1306,102 @@ class JobDetailView extends StatelessWidget {
       );
 
       if (result.isSuccess) {
-        Get.snackbar("OK", "Fotoýurat ýüklendi".tr,
-            snackPosition: SnackPosition.BOTTOM);
+        _showDownloadSnackBar(isSuccess: true);
+      } else {
+        _showDownloadSnackBar(isSuccess: false);
       }
     } catch (e) {
       debugPrint("Download error: $e");
+      _showDownloadSnackBar(isSuccess: false);
     }
+  }
+
+  void _showDownloadSnackBar({required bool isSuccess, String? message}) {
+    final String text = message ??
+        (isSuccess
+            ? "${'download'.tr} ${'success_title'.tr}"
+            : "${'error_title'.tr}: ${'download'.tr}");
+
+    Get.closeAllSnackbars();
+    Get.snackbar(
+      '',
+      text,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: isSuccess ? Colors.green.withOpacity(0.85) : Colors.red,
+      colorText: Colors.white,
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+      borderRadius: 12,
+      titleText: const SizedBox.shrink(),
+    );
+  }
+
+  Future<void> _openInExternalBrowser(String url) async {
+    try {
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _downloadFile(String url) async {
+    final lowerUrl = url.toLowerCase();
+    final isImage = lowerUrl.endsWith('.jpg') ||
+        lowerUrl.endsWith('.jpeg') ||
+        lowerUrl.endsWith('.png') ||
+        lowerUrl.endsWith('.webp') ||
+        lowerUrl.endsWith('.gif');
+
+    if (isImage) {
+      await _downloadImage(url);
+      return;
+    }
+
+    try {
+      String fileName = Uri.parse(url).pathSegments.isNotEmpty
+          ? Uri.parse(url).pathSegments.last
+          : 'file_${DateTime.now().millisecondsSinceEpoch}';
+      if (fileName.trim().isEmpty) {
+        fileName = 'file_${DateTime.now().millisecondsSinceEpoch}';
+      }
+      fileName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+
+      Directory saveDir;
+
+      if (Platform.isAndroid) {
+        final bool granted =
+            await Permission.manageExternalStorage.request().isGranted ||
+                await Permission.storage.request().isGranted;
+
+        if (granted) {
+          saveDir = Directory('/storage/emulated/0/Download/Gyzyleller');
+        } else {
+          saveDir = await getApplicationDocumentsDirectory();
+        }
+      } else if (Platform.isIOS) {
+        saveDir = await getApplicationDocumentsDirectory();
+      } else {
+        saveDir = await getTemporaryDirectory();
+      }
+
+      await saveDir.create(recursive: true);
+      final String savePath = p.join(saveDir.path, fileName);
+
+      await Dio().download(url, savePath);
+      _showDownloadSnackBar(isSuccess: true);
+    } catch (_) {
+      _showDownloadSnackBar(isSuccess: false);
+    }
+  }
+
+  String _resolveMediaUrl(String path) {
+    String normalized = path.trim();
+    if (normalized.startsWith('/')) {
+      normalized = normalized.substring(1);
+    }
+    return normalized.startsWith('http')
+        ? normalized
+        : "${Api().urlImage}$normalized";
   }
 
   void _showDownloadOption(BuildContext context, String url) {

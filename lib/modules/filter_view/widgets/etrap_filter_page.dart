@@ -8,6 +8,7 @@ class EtrapFilterPage extends StatefulWidget {
   final LocationModel welayat;
   final List<int> selectedEtrapIds;
   final ValueChanged<int> onEtrapChanged;
+  final VoidCallback onSelectAll;
   final VoidCallback onClear;
 
   const EtrapFilterPage({
@@ -15,6 +16,7 @@ class EtrapFilterPage extends StatefulWidget {
     required this.welayat,
     required this.selectedEtrapIds,
     required this.onEtrapChanged,
+    required this.onSelectAll,
     required this.onClear,
   });
 
@@ -39,10 +41,16 @@ class _EtrapFilterPageState extends State<EtrapFilterPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "etrap".tr,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              GestureDetector(
+                onTap: widget.onSelectAll,
+                child: const Text(
+                  "Hemmesi",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: ColorConstants.blue,
+                  ),
+                ),
               ),
               GestureDetector(
                 onTap: widget.onClear,

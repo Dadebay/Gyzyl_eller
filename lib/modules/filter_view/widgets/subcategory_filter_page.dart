@@ -8,6 +8,7 @@ class SubcategoryFilterPage extends StatefulWidget {
   final CategoryModel category;
   final List<int> selectedCatIds;
   final ValueChanged<int> onSubcategoryChanged;
+  final VoidCallback onSelectAll;
   final VoidCallback onClear;
 
   const SubcategoryFilterPage({
@@ -15,6 +16,7 @@ class SubcategoryFilterPage extends StatefulWidget {
     required this.category,
     required this.selectedCatIds,
     required this.onSubcategoryChanged,
+    required this.onSelectAll,
     required this.onClear,
   });
 
@@ -39,10 +41,16 @@ class _SubcategoryFilterPageState extends State<SubcategoryFilterPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "subcategory".tr,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              GestureDetector(
+                onTap: widget.onSelectAll,
+                child: const Text(
+                  "Hemmesi",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: ColorConstants.blue,
+                  ),
+                ),
               ),
               GestureDetector(
                 onTap: widget.onClear,

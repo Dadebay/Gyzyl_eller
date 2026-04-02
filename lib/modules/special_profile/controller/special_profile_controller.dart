@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
@@ -177,6 +178,7 @@ class SpecialProfileController extends GetxController {
     required String longBio,
     required String legalizationType,
     List<Map<String, dynamic>> fileMetadata = const [],
+    List<int> deleteFileIds = const [],
     bool isEdit = false,
   }) async {
     try {
@@ -187,11 +189,31 @@ class SpecialProfileController extends GetxController {
 
       Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
 
-      final List<String> filesList = [];
+      final List<Map<String, dynamic>> files = [];
+      final Set<int> deleteFilesSet = {...deleteFileIds};
+
       for (var meta in fileMetadata) {
-        final String? url = meta['url'] as String?;
-        if (url != null) filesList.add(url);
+        final String? filePath = _resolveServerFilePath(meta);
+
+        final dynamic deleteFlag = meta['deleted'];
+        if (deleteFlag == true && meta['id'] != null) {
+          final int? parsedId = int.tryParse(meta['id'].toString());
+          if (parsedId != null) deleteFilesSet.add(parsedId);
+          continue;
+        }
+
+        if (filePath != null && filePath.isNotEmpty) {
+          final String filename =
+              (meta['filename'] ?? meta['name'] ?? _extractFileName(filePath))
+                  .toString();
+          files.add({
+            'path': filePath,
+            'filename': filename,
+          });
+        }
       }
+
+      final List<int> deleteFiles = deleteFilesSet.toList();
 
       final Map<String, dynamic> body = {
         "welayat_id": profile.value.welayatId ?? 2,
@@ -200,12 +222,13 @@ class SpecialProfileController extends GetxController {
         "description": longBio,
         "username": name,
         "legalization_type": legalizationType,
-        if (filesList.isNotEmpty) "files": filesList,
+        if (files.isNotEmpty) "files": files,
+        if (isEdit || deleteFiles.isNotEmpty) "delete_files": deleteFiles,
       };
 
       print('------------------------------------------');
-      print('📤 [saveMasterProfile] REQUEST BODY:');
-      body.forEach((k, v) => print('  $k: $v'));
+      print('📤 [saveMasterProfile] REQUEST BODY JSON:');
+      print(const JsonEncoder.withIndent('  ').convert(body));
       print('------------------------------------------');
 
       final ApiService apiService = ApiService();
@@ -218,14 +241,17 @@ class SpecialProfileController extends GetxController {
       );
 
       print('------------------------------------------');
-      print('📡 [saveMasterProfile] RESPONSE: $response');
+      print('📡 [saveMasterProfile] RESPONSE:');
+      if (response is Map || response is List) {
+        print(const JsonEncoder.withIndent('  ').convert(response));
+      } else {
+        print(response);
+      }
       print('------------------------------------------');
 
       Get.back();
 
-      final bool isSuccess =
-          (response is int && response >= 200 && response < 300) ||
-              response is Map<String, dynamic>;
+      final bool isSuccess = _isSuccessfulSaveResponse(response);
 
       if (isSuccess) {
         // Save master profile ID if returned
@@ -243,11 +269,77 @@ class SpecialProfileController extends GetxController {
           Get.off(() => const SpecialProfile());
         }
       } else {
-        Get.snackbar("Error", "Failed to save profile");
+        String errorMessage = 'Failed to save profile';
+        if (response is Map<String, dynamic> &&
+            response['message'] != null &&
+            response['message'].toString().trim().isNotEmpty) {
+          errorMessage = response['message'].toString();
+        }
+        Get.snackbar("Error", errorMessage);
       }
     } catch (e) {
       Get.back();
       Get.snackbar("Error", "Failed to create profile: $e");
     }
+  }
+
+  String _extractFileName(String path) {
+    final normalized = path.replaceAll('\\', '/');
+    final parts = normalized.split('/');
+    return parts.isNotEmpty ? parts.last : path;
+  }
+
+  String? _resolveServerFilePath(Map<String, dynamic> meta) {
+    final String? url = meta['url']?.toString().trim();
+    if (url != null && url.isNotEmpty) return url;
+
+    final String? path = meta['path']?.toString().trim();
+    if (path == null || path.isEmpty) return null;
+
+    final normalized = path.replaceAll('\\', '/').toLowerCase();
+    final bool looksLikeServerPath = normalized.startsWith('http') ||
+        normalized.startsWith('local/uploads/') ||
+        normalized.startsWith('uploads/');
+
+    return looksLikeServerPath ? path : null;
+  }
+
+  bool _isSuccessfulSaveResponse(dynamic response) {
+    if (response is bool) {
+      return response;
+    }
+
+    if (response is String) {
+      final normalized = response.trim().toLowerCase();
+      return normalized == 'true' || normalized == 'success';
+    }
+
+    if (response is int) {
+      return response >= 200 && response < 300;
+    }
+
+    if (response is Map<String, dynamic>) {
+      final dynamic success = response['success'];
+      final dynamic status = response['status'];
+      final dynamic code = response['code'];
+
+      final bool successTrue = success == true ||
+          success?.toString().toLowerCase() == 'true' ||
+          success?.toString().toLowerCase() == 'success';
+
+      final int? statusCode = int.tryParse(status?.toString() ?? '');
+      final int? codeValue = int.tryParse(code?.toString() ?? '');
+      final bool has2xxStatus =
+          (statusCode != null && statusCode >= 200 && statusCode < 300) ||
+              (codeValue != null && codeValue >= 200 && codeValue < 300);
+
+      // For legacy API shapes where explicit status/success keys are absent,
+      // data payload still indicates a successful save.
+      final bool hasDataPayload = response['data'] != null;
+
+      return successTrue || has2xxStatus || hasDataPayload;
+    }
+
+    return false;
   }
 }

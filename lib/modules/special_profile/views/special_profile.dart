@@ -11,6 +11,7 @@ import 'package:gyzyleller/modules/special_profile/widgets/profile_header.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 /// Professional profile screen shown when masters API returns data.
 /// Matches the design of `HunarmenScreen` (ayterek/service_profile_screen.dart)
@@ -185,17 +186,22 @@ class _SpecialProfileState extends State<SpecialProfile> {
       elevation: 0,
       leading: IconButton(
         onPressed: () => Get.back(),
-        iconSize: 20,
+        iconSize: 26,
         padding: EdgeInsets.zero,
-        icon: const Icon(Icons.arrow_back_ios,
-            color: ColorConstants.kPrimaryColor2),
+        icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            color: ColorConstants.kPrimaryColor2,
+            size: 26.0),
       ),
       actions: [
         IconButton(
           onPressed: () => Get.to(() => const SpecialProfileEditView()),
           iconSize: 20,
           padding: EdgeInsets.zero,
-          icon: SvgPicture.asset(IconConstants.edit, width: 24, height: 24),
+          icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedEdit02,
+              color: ColorConstants.kPrimaryColor2,
+              size: 24.0),
         ),
       ],
     );
@@ -460,7 +466,10 @@ class _ImageGalleryScreenState extends State<_ImageGalleryScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowLeft01,
+              color: Colors.white,
+              size: 26.0),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(

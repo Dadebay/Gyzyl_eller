@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
@@ -71,6 +72,14 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'edit_specialist_profile'.tr,
+        leading: IconButton(
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            color: ColorConstants.kPrimaryColor2,
+            size: 26.0,
+          ),
+          onPressed: () => Get.back(),
+        ),
       ),
       backgroundColor: ColorConstants.background,
       body: SingleChildScrollView(

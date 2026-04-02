@@ -654,6 +654,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             });
             _fetchCount();
           },
+          onSelectAll: () {
+            setState(() {
+              final subcategoryIds =
+                  _activeCategory!.subcategories.map((sub) => sub.id);
+              final updated = {..._selectedCatIds, ...subcategoryIds};
+              _selectedCatIds
+                ..clear()
+                ..addAll(updated);
+            });
+            _fetchCount();
+          },
           onClear: () {
             setState(() {
               final subcategoryIds =
@@ -723,6 +734,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               } else {
                 _selectedEtrapIds.add(id);
               }
+            });
+            _fetchCount();
+          },
+          onSelectAll: () {
+            setState(() {
+              final etrapIds = _activeWelayat!.etraps.map((e) => e.id);
+              final updated = {..._selectedEtrapIds, ...etrapIds};
+              _selectedEtrapIds
+                ..clear()
+                ..addAll(updated);
             });
             _fetchCount();
           },

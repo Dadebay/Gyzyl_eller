@@ -4,6 +4,7 @@ import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 enum ReviewSorting {
   newest('created_at', 'desc'),
@@ -144,16 +145,20 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
         centerTitle: true,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            size: 22,
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            size: 26,
             color: ColorConstants.kPrimaryColor2,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.sort, size: 24),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedSorting05,
+              size: 24,
+              color: Colors.black,
+            ),
             onPressed: _showSortBottomSheet,
           ),
           const SizedBox(width: 8),
