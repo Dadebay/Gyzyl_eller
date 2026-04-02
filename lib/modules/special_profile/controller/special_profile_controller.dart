@@ -223,7 +223,11 @@ class SpecialProfileController extends GetxController {
 
       Get.back();
 
-      if (response != null) {
+      final bool isSuccess =
+          (response is int && response >= 200 && response < 300) ||
+              response is Map<String, dynamic>;
+
+      if (isSuccess) {
         // Save master profile ID if returned
         if (response is Map<String, dynamic> &&
             response['data'] != null &&
@@ -238,6 +242,8 @@ class SpecialProfileController extends GetxController {
         } else {
           Get.off(() => const SpecialProfile());
         }
+      } else {
+        Get.snackbar("Error", "Failed to save profile");
       }
     } catch (e) {
       Get.back();

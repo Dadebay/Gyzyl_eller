@@ -38,6 +38,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     'individual',
     'private',
     'business_entity',
+    'other',
   ];
 
   String get _langWeb => GetStorage().read('langCode') ?? 'tk';
