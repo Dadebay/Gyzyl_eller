@@ -78,16 +78,9 @@ class SpecialProfileController extends GetxController {
     }
   }
 
-  /// Merges master-profile API data with the user info from local storage.
-  ///
-  /// When called with data from `get-master-by-id/{id}`, the response already
-  /// includes username, image, rating, welayat/etrap names, etc.
-  /// Falls back to local user storage for any missing fields.
   void setProfileFromData(Map<String, dynamic> data) {
-    // 1. Parse all available API fields.
     final fromApi = SpecialProfileModel.fromJson(data);
 
-    // 2. Fill in any missing fields from local user storage.
     final user = _authStorage.getUser();
     final name = (fromApi.name != null && fromApi.name!.isNotEmpty)
         ? fromApi.name
@@ -100,12 +93,6 @@ class SpecialProfileController extends GetxController {
             ? ApiConstants.imageURL + (user!['image'] as String)
             : null);
     final userId = fromApi.userId ?? user?['id']?.toString();
-
-    print('🔑 [SpecialProfileController] setProfileFromData →\n'
-        '   masterId=${fromApi.id}, userId=$userId\n'
-        '   welayatId=${fromApi.welayatId}, etrapId=${fromApi.etrapId}\n'
-        '   rating=${fromApi.rating}, reviewCount=${fromApi.reviewCount}\n'
-        '   createdAt=${fromApi.createdAt}, files=${fromApi.serverImages.length}');
 
     profile.value = fromApi.copyWith(
       userId: userId,
@@ -226,33 +213,9 @@ class SpecialProfileController extends GetxController {
         ),
       );
 
-      final Map<String, dynamic> requestBodyPreview = {
-        'fields': request.fields,
-        'files': request.files
-            .map((f) => {
-                  'field': f.field,
-                  'filename': f.filename,
-                  'length': f.length,
-                  'contentType': f.contentType.toString(),
-                })
-            .toList(),
-      };
-
-      print('------------------------------------------');
-      print('📤 [uploadProfileImageAndUsername] REQUEST');
-      print('Endpoint: $endpoint');
-      print(
-          'Body: ${const JsonEncoder.withIndent('  ').convert(requestBodyPreview)}');
-      print('Selected image path: ${selectedProfileImage.value?.path}');
-      print('Files count: ${request.files.length}');
-      print('------------------------------------------');
-
       final streamedResponse = await request.send();
       final int statusCode = streamedResponse.statusCode;
-      final Map<String, String> responseHeaders = streamedResponse.headers;
       final String responseBody = await streamedResponse.stream.bytesToString();
-
-      print('📡 [uploadProfileImageAndUsername] STATUS CODE: $statusCode');
 
       dynamic response;
       try {
@@ -260,19 +223,6 @@ class SpecialProfileController extends GetxController {
       } catch (_) {
         response = responseBody;
       }
-
-      print('------------------------------------------');
-      print('📡 [uploadProfileImageAndUsername] RESPONSE');
-      print(
-          'Headers: ${const JsonEncoder.withIndent('  ').convert(responseHeaders)}');
-      print('Raw body: $responseBody');
-      print('Decoded body:');
-      if (response is Map || response is List) {
-        print(const JsonEncoder.withIndent('  ').convert(response));
-      } else {
-        print(response);
-      }
-      print('------------------------------------------');
 
       if (statusCode >= 200 && statusCode < 300) {
         final user = _authStorage.getUser();
@@ -378,11 +328,6 @@ class SpecialProfileController extends GetxController {
         if (isEdit || deleteFiles.isNotEmpty) "delete_files": deleteFiles,
       };
 
-      print('------------------------------------------');
-      print('📤 [saveMasterProfile] REQUEST BODY JSON:');
-      print(const JsonEncoder.withIndent('  ').convert(body));
-      print('------------------------------------------');
-
       final ApiService apiService = ApiService();
       final response = await apiService.handleApiRequest(
         ApiConstants.specialProfileCreate,
@@ -391,15 +336,6 @@ class SpecialProfileController extends GetxController {
         requiresToken: true,
         isForm: false,
       );
-
-      print('------------------------------------------');
-      print('📡 [saveMasterProfile] RESPONSE:');
-      if (response is Map || response is List) {
-        print(const JsonEncoder.withIndent('  ').convert(response));
-      } else {
-        print(response);
-      }
-      print('------------------------------------------');
 
       Get.back();
 
@@ -437,12 +373,6 @@ class SpecialProfileController extends GetxController {
       const String endpoint = 'api/user/masters/delete';
       final Map<String, dynamic> body = {};
 
-      print('------------------------------------------');
-      print('📤 [deleteMasterProfile] REQUEST');
-      print('Endpoint: $endpoint');
-      print('Body: {}');
-      print('------------------------------------------');
-
       final response = await ApiService().handleApiRequest(
         endpoint,
         body: body,
@@ -454,15 +384,6 @@ class SpecialProfileController extends GetxController {
       if (Get.isDialogOpen == true) {
         Get.back();
       }
-
-      print('------------------------------------------');
-      print('📡 [deleteMasterProfile] RESPONSE');
-      if (response is Map || response is List) {
-        print(const JsonEncoder.withIndent('  ').convert(response));
-      } else {
-        print(response);
-      }
-      print('------------------------------------------');
 
       final bool isSuccess = _isSuccessfulSaveResponse(response);
       if (!isSuccess) {
