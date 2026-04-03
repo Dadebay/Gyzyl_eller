@@ -61,8 +61,6 @@ class AuthService {
         Get.find<HomeController>().refreshData();
         Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
       } else if (responseData is int) {
-        CustomWidgets.showSnackBar(
-            'error_title'.tr, 'login_failed'.tr, ColorConstants.redColor);
         throw Exception('Login başarısız oldu');
       } else {
         CustomWidgets.showSnackBar(

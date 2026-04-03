@@ -410,7 +410,7 @@ class SpecialProfileController extends GetxController {
       if (Get.isDialogOpen == true) {
         Get.back();
       }
-      print('❌ [deleteMasterProfile] error: $e');
+
       _showConnectionSnackBar();
 
       return false;
