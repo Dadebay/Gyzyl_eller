@@ -5,13 +5,15 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:gyzyleller/modules/bottomnavbar/bindings/home_binding.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
+import 'package:gyzyleller/modules/bottomnavbar/views/bottom_nav_bar_view.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/bio_text_field.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/file_upload_area.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/info_card.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_avatar.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
-import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 import 'package:gyzyleller/shared/widgets/widgets.dart';
@@ -144,7 +146,12 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
       settingsController.loadUser();
     }
 
-    Get.offAll(() => SettingsView());
+    final HomeController homeController = Get.isRegistered<HomeController>()
+        ? Get.find<HomeController>()
+        : Get.put(HomeController());
+    homeController.changePage(3);
+
+    Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
   }
 
   @override
