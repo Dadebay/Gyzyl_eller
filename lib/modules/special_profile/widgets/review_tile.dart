@@ -1,14 +1,24 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 /// A single review card displayed in the professional profile review section.
-class ReviewTile extends StatelessWidget {
+class ReviewTile extends StatefulWidget {
   final ReviewModel review;
 
   const ReviewTile({super.key, required this.review});
+
+  @override
+  State<ReviewTile> createState() => _ReviewTileState();
+}
+
+class _ReviewTileState extends State<ReviewTile> {
+  bool _isExpanded = false;
+
+  ReviewModel get review => widget.review;
 
   String get _formattedDate {
     try {
@@ -37,9 +47,10 @@ class ReviewTile extends StatelessWidget {
               CircleAvatar(
                 radius: 18,
                 backgroundColor: Colors.grey[200],
-                backgroundImage: (review.image != null && review.image!.isNotEmpty)
-                    ? NetworkImage(review.image!) as ImageProvider
-                    : null,
+                backgroundImage:
+                    (review.image != null && review.image!.isNotEmpty)
+                        ? NetworkImage(review.image!) as ImageProvider
+                        : null,
                 child: (review.image == null || review.image!.isEmpty)
                     ? Icon(Icons.person, color: Colors.grey.shade400, size: 20)
                     : null,
@@ -48,8 +59,10 @@ class ReviewTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   review.username,
-                  style: const TextStyle(fontWeight: FontWeight.bold,
-                      fontSize: 14, color: ColorConstants.fonts),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: ColorConstants.fonts),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -68,9 +81,54 @@ class ReviewTile extends StatelessWidget {
           const SizedBox(height: 8),
 
           // ── Review text ───────────────────────────────────────────────
-          Text(
-            review.review,
-            style: const TextStyle(fontSize: 14, color: ColorConstants.fonts),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final span = TextSpan(
+                text: review.review,
+                style: const TextStyle(
+                    fontSize: 14, color: ColorConstants.fonts, height: 1.4),
+              );
+              final tp = TextPainter(
+                text: span,
+                maxLines: 3,
+                textDirection: TextDirection.ltr,
+              );
+              tp.layout(maxWidth: constraints.maxWidth);
+
+              if (tp.didExceedMaxLines) {
+                return RichText(
+                  text: TextSpan(children: [
+                    TextSpan(
+                      text: _isExpanded
+                          ? review.review
+                          : "${review.review.substring(0, tp.getPositionForOffset(Offset(constraints.maxWidth, tp.height)).offset - 12)}...",
+                      style: const TextStyle(
+                          fontSize: 14,
+                          color: ColorConstants.fonts,
+                          height: 1.4),
+                    ),
+                    const WidgetSpan(child: SizedBox(width: 5)),
+                    TextSpan(
+                      text: " ${_isExpanded ? "gizle".tr : "dolyac".tr}",
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: ColorConstants.blue,
+                          fontWeight: FontWeight.w500),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          setState(() => _isExpanded = !_isExpanded);
+                        },
+                    ),
+                  ]),
+                );
+              } else {
+                return Text(
+                  review.review,
+                  style: const TextStyle(
+                      fontSize: 14, color: ColorConstants.fonts, height: 1.4),
+                );
+              }
+            },
           ),
 
           const SizedBox(height: 4),
@@ -188,4 +246,3 @@ class ReviewTileShimmer extends StatelessWidget {
     );
   }
 }
-

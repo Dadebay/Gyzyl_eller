@@ -182,7 +182,7 @@ class JobCard extends StatelessWidget {
               InfoRow(
                 icon: IconConstants.locationHouse,
                 text:
-                    "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
+                    "${job.welayat}, ${job.etrap}",
               ),
               const SizedBox(height: 6),
               const Divider(height: 2, color: ColorConstants.background),
