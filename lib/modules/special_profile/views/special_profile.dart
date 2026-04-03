@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/models/review_model.dart';
@@ -9,13 +10,8 @@ import 'package:gyzyleller/modules/special_profile/views/special_profile_edit_vi
 import 'package:gyzyleller/modules/special_profile/views/all_reviews_screen.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_header.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-/// Professional profile screen shown when masters API returns data.
-/// Matches the design of `HunarmenScreen` (ayterek/service_profile_screen.dart)
-/// with real API data for reviews, images, rating, bio, etc.
 class SpecialProfile extends StatefulWidget {
   const SpecialProfile({super.key});
 
@@ -84,16 +80,16 @@ class _SpecialProfileState extends State<SpecialProfile> {
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
-  /// The short (3-line) version of the bio text.
+  /// The short version used in the ProfileHeader (strictly shortBio).
   String get _shortText {
     final p = _controller.profile.value;
-    return p.shortBio?.isNotEmpty == true ? p.shortBio! : (p.longBio ?? '');
+    return p.shortBio ?? '';
   }
 
-  /// The full bio text used when expanded.
+  /// The full bio text used in the BioCard (strictly longBio).
   String get _fullText {
     final p = _controller.profile.value;
-    return p.longBio?.isNotEmpty == true ? p.longBio! : _shortText;
+    return p.longBio ?? '';
   }
 
   // ── Build ────────────────────────────────────────────────────────────────
@@ -112,7 +108,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
             children: [
               const SizedBox(height: 8),
 
-              // ── Profile header ─────────────────────────────────────────
               ProfileHeader(
                 name: profile.name ?? '',
                 imageUrl: profile.imageUrl,
@@ -124,27 +119,26 @@ class _SpecialProfileState extends State<SpecialProfile> {
                 totalJobsCount: profile.totalJobsCount,
               ),
 
-              // ── Location badge ────────────────────────────────────────
-              if (profile.welayat.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.location_on,
-                        size: 16, color: ColorConstants.greyColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      profile.etrap.isNotEmpty
-                          ? '${profile.welayat}, ${profile.etrap}'
-                          : profile.welayat,
-                      style: const TextStyle(
-                          fontSize: 14, color: ColorConstants.greyColor),
-                    ),
-                  ],
-                ),
-              ],
+              // if (profile.welayat.isNotEmpty) ...[
+              //   const SizedBox(height: 12),
+              //   Row(
+              //     mainAxisAlignment: MainAxisAlignment.center,
+              //     children: [
+              //       const Icon(Icons.location_on,
+              //           size: 16, color: ColorConstants.greyColor),
+              //       const SizedBox(width: 4),
+              //       Text(
+              //         profile.etrap.isNotEmpty
+              //             ? '${profile.welayat}, ${profile.etrap}'
+              //             : profile.welayat,
+              //         style: const TextStyle(
+              //             fontSize: 14, color: ColorConstants.greyColor),
+              //       ),
+              //     ],
+              //   ),
+              // ],
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
 
               // ── Bio section ───────────────────────────────────────────
               _buildBioCard(context),
@@ -211,8 +205,8 @@ class _SpecialProfileState extends State<SpecialProfile> {
 
   /// Bio card with expand / collapse behaviour.
   Widget _buildBioCard(BuildContext context) {
-    final text = _fullText;
-    if (text.isEmpty) return const SizedBox.shrink();
+    final content = _fullText;
+    if (content.isEmpty) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
@@ -222,9 +216,9 @@ class _SpecialProfileState extends State<SpecialProfile> {
         borderRadius: BorderRadius.circular(14),
       ),
       child: LayoutBuilder(
-        builder: (ctx, constraints) {
+        builder: (context, constraints) {
           final span = TextSpan(
-            text: 'Bio: $text',
+            text: content,
             style: const TextStyle(
               fontSize: 14,
               color: ColorConstants.blackColor,
@@ -235,10 +229,52 @@ class _SpecialProfileState extends State<SpecialProfile> {
             text: span,
             maxLines: 3,
             textDirection: TextDirection.ltr,
-          )..layout(maxWidth: constraints.maxWidth);
+          );
+          tp.layout(maxWidth: constraints.maxWidth);
 
-          if (!tp.didExceedMaxLines) {
-            // Short text – render as-is without toggle.
+          if (tp.didExceedMaxLines) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'Bio: ',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: ColorConstants.blackColor),
+                      ),
+                      TextSpan(
+                        text: _isExpanded
+                            ? content
+                            : "${content.substring(0, tp.getPositionForOffset(Offset(constraints.maxWidth, tp.height)).offset - 15)}...",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: ColorConstants.blackColor,
+                          height: 1.4,
+                        ),
+                      ),
+                      const WidgetSpan(child: SizedBox(width: 5)),
+                      TextSpan(
+                        text: " ${_isExpanded ? "gizle".tr : "dolyac".tr}",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: ColorConstants.blue,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            setState(() => _isExpanded = !_isExpanded);
+                          },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          } else {
             return RichText(
               text: TextSpan(
                 children: [
@@ -250,53 +286,16 @@ class _SpecialProfileState extends State<SpecialProfile> {
                         color: ColorConstants.blackColor),
                   ),
                   TextSpan(
-                    text: text,
+                    text: content,
                     style: const TextStyle(
-                        fontSize: 14, color: ColorConstants.blackColor),
+                        fontSize: 14,
+                        color: ColorConstants.blackColor,
+                        height: 1.4),
                   ),
                 ],
               ),
             );
           }
-
-          // Long text – show collapse / expand toggle.
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(
-                text: TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'Bio: ',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: ColorConstants.blackColor),
-                    ),
-                    TextSpan(
-                      text: _fullText,
-                      style: const TextStyle(
-                          fontSize: 14, color: ColorConstants.blackColor),
-                    ),
-                  ],
-                ),
-                maxLines: _isExpanded ? null : 3,
-                overflow:
-                    _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              GestureDetector(
-                onTap: () => setState(() => _isExpanded = !_isExpanded),
-                child: Text(
-                  _isExpanded ? 'gizle'.tr : 'dolyac'.tr,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: ColorConstants.blue,
-                      fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          );
         },
       ),
     );

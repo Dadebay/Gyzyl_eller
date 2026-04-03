@@ -6,9 +6,6 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'stat_box.dart';
 
-/// Profile header widget for the professional profile view.
-/// Displays avatar, stats (total jobs / done jobs), name, short bio,
-/// registration date and star rating — matching the ayterek HunarmenScreen design.
 class ProfileHeader extends StatelessWidget {
   final String name;
   final String? imageUrl;
@@ -31,11 +28,11 @@ class ProfileHeader extends StatelessWidget {
     this.totalJobsCount = 0,
   });
 
-  /// Parses the ISO date string and formats it as dd.MM.yyyy.
   String get _formattedDate {
     if (createdAt.isEmpty) return '';
     try {
-      return DateFormat('dd.MM.yyyy').format(DateTime.parse(createdAt).toLocal());
+      return DateFormat('dd.MM.yyyy')
+          .format(DateTime.parse(createdAt).toLocal());
     } catch (_) {
       return createdAt;
     }
@@ -45,7 +42,6 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Stats row + avatar ───────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -59,9 +55,9 @@ class ProfileHeader extends StatelessWidget {
             Container(
               width: 100,
               height: 100,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.grey[200],
+                color: Colors.white,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(50),
@@ -86,27 +82,18 @@ class ProfileHeader extends StatelessWidget {
             ),
           ],
         ),
-
         const SizedBox(height: 10),
-
-        // ── Name ────────────────────────────────────────────────────────
         Text(
           name,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-
         const SizedBox(height: 3),
-
-        // ── Short bio / speciality ───────────────────────────────────────
         Text(
           shortBio,
           style: const TextStyle(fontSize: 14, color: ColorConstants.fonts),
           textAlign: TextAlign.center,
         ),
-
         const SizedBox(height: 5),
-
-        // ── Registration date ────────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -119,10 +106,7 @@ class ProfileHeader extends StatelessWidget {
             ),
           ],
         ),
-
         const SizedBox(height: 8),
-
-        // ── Star rating + numeric score ──────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

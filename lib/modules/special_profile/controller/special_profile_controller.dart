@@ -17,6 +17,30 @@ class SpecialProfileController extends GetxController {
   final RxBool isEditingName = false.obs;
   final RxBool isChecked = false.obs;
 
+  void _showSuccessSnackBar(String messageKey) {
+    CustomWidgets.showSnackBar(
+      'success_title',
+      messageKey,
+      ColorConstants.greenColor,
+    );
+  }
+
+  void _showConnectionSnackBar() {
+    CustomWidgets.showSnackBar(
+      'error_title',
+      'connection_error',
+      ColorConstants.redColor,
+    );
+  }
+
+  void _showErrorSnackBar(String messageKey) {
+    CustomWidgets.showSnackBar(
+      'error_title',
+      messageKey,
+      ColorConstants.redColor,
+    );
+  }
+
   bool get isMyProfile {
     final currentUser = _authStorage.getUser();
     if (currentUser == null) return false;
@@ -117,7 +141,7 @@ class SpecialProfileController extends GetxController {
 
   Future<void> pickWorkImage() async {
     if (images.length >= 8) {
-      Get.snackbar("Limit Reached", "You can only add up to 8 images.");
+      _showErrorSnackBar('special_profile_images_limit');
       return;
     }
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -202,16 +226,30 @@ class SpecialProfileController extends GetxController {
         ),
       );
 
+      final Map<String, dynamic> requestBodyPreview = {
+        'fields': request.fields,
+        'files': request.files
+            .map((f) => {
+                  'field': f.field,
+                  'filename': f.filename,
+                  'length': f.length,
+                  'contentType': f.contentType.toString(),
+                })
+            .toList(),
+      };
+
       print('------------------------------------------');
       print('📤 [uploadProfileImageAndUsername] REQUEST');
       print('Endpoint: $endpoint');
-      print('Body: {}');
+      print(
+          'Body: ${const JsonEncoder.withIndent('  ').convert(requestBodyPreview)}');
       print('Selected image path: ${selectedProfileImage.value?.path}');
       print('Files count: ${request.files.length}');
       print('------------------------------------------');
 
       final streamedResponse = await request.send();
       final int statusCode = streamedResponse.statusCode;
+      final Map<String, String> responseHeaders = streamedResponse.headers;
       final String responseBody = await streamedResponse.stream.bytesToString();
 
       print('📡 [uploadProfileImageAndUsername] STATUS CODE: $statusCode');
@@ -225,6 +263,10 @@ class SpecialProfileController extends GetxController {
 
       print('------------------------------------------');
       print('📡 [uploadProfileImageAndUsername] RESPONSE');
+      print(
+          'Headers: ${const JsonEncoder.withIndent('  ').convert(responseHeaders)}');
+      print('Raw body: $responseBody');
+      print('Decoded body:');
       if (response is Map || response is List) {
         print(const JsonEncoder.withIndent('  ').convert(response));
       } else {
@@ -269,9 +311,11 @@ class SpecialProfileController extends GetxController {
         selectedProfileImage.value = null;
       } else {
         print('❌ [uploadProfileImageAndUsername] Upload failed');
+        _showConnectionSnackBar();
       }
     } catch (e) {
       print('❌ [uploadProfileImageAndUsername] error: $e');
+      _showConnectionSnackBar();
     } finally {
       isUploadingProfileImage.value = false;
     }
@@ -289,7 +333,7 @@ class SpecialProfileController extends GetxController {
   }) async {
     try {
       if (name.isEmpty) {
-        Get.snackbar("Error", "Username is required");
+        _showErrorSnackBar('special_profile_username_required');
         return;
       }
 
@@ -368,8 +412,7 @@ class SpecialProfileController extends GetxController {
             response['data']['id'] != null) {
           _authStorage.saveMasterProfileId(response['data']['id'].toString());
         }
-        CustomWidgets.showSnackBar('success_title'.tr, 'success_subtitle'.tr,
-            ColorConstants.greenColor);
+        _showSuccessSnackBar('success_subtitle');
         await fetchProfileData();
         if (isEdit) {
           Get.back();
@@ -377,17 +420,19 @@ class SpecialProfileController extends GetxController {
           Get.off(() => const SpecialProfile());
         }
       } else {
-        String errorMessage = 'Failed to save profile';
         if (response is Map<String, dynamic> &&
             response['message'] != null &&
             response['message'].toString().trim().isNotEmpty) {
-          errorMessage = response['message'].toString();
+          _showConnectionSnackBar();
+        } else {
+          _showConnectionSnackBar();
         }
-        Get.snackbar("Error", errorMessage);
       }
     } catch (e) {
-      Get.back();
-      Get.snackbar("Error", "Failed to create profile: $e");
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      _showConnectionSnackBar();
     }
   }
 
@@ -427,13 +472,14 @@ class SpecialProfileController extends GetxController {
 
       final bool isSuccess = _isSuccessfulSaveResponse(response);
       if (!isSuccess) {
-        String errorMessage = 'Failed to delete profile';
         if (response is Map<String, dynamic> &&
             response['message'] != null &&
             response['message'].toString().trim().isNotEmpty) {
-          errorMessage = response['message'].toString();
+          _showConnectionSnackBar();
+        } else {
+          _showConnectionSnackBar();
         }
-        Get.snackbar('Error', errorMessage);
+
         return false;
       }
 
@@ -442,11 +488,7 @@ class SpecialProfileController extends GetxController {
       selectedProfileImage.value = null;
       loadInitialProfileData();
 
-      CustomWidgets.showSnackBar(
-        'success_title'.tr,
-        'Profile deleted successfully',
-        ColorConstants.greenColor,
-      );
+      _showSuccessSnackBar('success_subtitle');
 
       return true;
     } catch (e) {
@@ -454,7 +496,8 @@ class SpecialProfileController extends GetxController {
         Get.back();
       }
       print('❌ [deleteMasterProfile] error: $e');
-      Get.snackbar('Error', 'Failed to delete profile: $e');
+      _showConnectionSnackBar();
+
       return false;
     }
   }

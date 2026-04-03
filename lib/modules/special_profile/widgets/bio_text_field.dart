@@ -27,8 +27,13 @@ class BioTextField extends StatelessWidget {
         maxLines: maxLines,
         onChanged: onChanged,
         decoration: InputDecoration(
+          labelText: hintText,
           hintText: hintText,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          floatingLabelBehavior: FloatingLabelBehavior.auto,
+          labelStyle: const TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           border: InputBorder.none,
         ),
       ),

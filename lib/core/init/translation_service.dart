@@ -25,7 +25,8 @@ class TranslationService extends Translations {
           'language': 'Programmanyň dili',
           'logout': 'Programmadan çykmak',
           'deleteProfileTitle': 'Profili pozmak',
-          'deleteProfileDescription': 'Siz hakykatdanam profiliňizi pozmak isleýärsiňizmi?',
+          'deleteProfileDescription':
+              'Siz hakykatdanam profiliňizi pozmak isleýärsiňizmi?',
           'cancel': 'Ýatyr',
           'delete': 'Poz',
           'about': 'Umumy şertler we düzgünler',
@@ -152,6 +153,10 @@ class TranslationService extends Translations {
           'other': 'Beýlekiler',
           'company': 'Kompaniýa',
           'long_bio_hint': 'Ginişleyin özüňiz hakda ýazyň',
+          'special_profile_images_limit':
+              'Iň köp 8 sany surat goşup bilersiňiz',
+          'special_profile_username_required':
+              'Ulanyjy adyny girizmegiňiz zerur',
           'read_the_rules': 'Düzgünnamany hökman okap tanyşyň',
           'i_agree_with': 'Ähli şertleri bilen ',
           'all_the_terms': 'ylalaşýan',
@@ -361,6 +366,8 @@ class TranslationService extends Translations {
           'business_entity': 'Business Entity',
           'other': 'Other',
           'company': 'Company',
+          'special_profile_images_limit': 'You can only add up to 8 images',
+          'special_profile_username_required': 'Username is required',
           'connection_error': 'Sorry, Gyzyl eller cannot work without internet',
           'splash_vpn_error': '(Or turn off VPN if it is on)',
           'to_try_again': 'Try again',
@@ -457,6 +464,9 @@ class TranslationService extends Translations {
           'other': 'Другое',
           'company': 'Компания',
           'long_bio_hint': 'Подробно о себе',
+          'special_profile_images_limit':
+              'Можно добавить не более 8 изображений',
+          'special_profile_username_required': 'Требуется имя пользователя',
           'read_the_rules': 'Обязательно прочтите правила',
           'i_agree_with': 'Я согласен с ',
           'all_the_terms': 'всеми условиями',
