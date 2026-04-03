@@ -412,21 +412,15 @@ class SpecialProfileController extends GetxController {
             response['data']['id'] != null) {
           _authStorage.saveMasterProfileId(response['data']['id'].toString());
         }
-        _showSuccessSnackBar('success_subtitle');
         await fetchProfileData();
         if (isEdit) {
           Get.back();
         } else {
           Get.off(() => const SpecialProfile());
         }
+        _showSuccessSnackBar('success_subtitle');
       } else {
-        if (response is Map<String, dynamic> &&
-            response['message'] != null &&
-            response['message'].toString().trim().isNotEmpty) {
-          _showConnectionSnackBar();
-        } else {
-          _showConnectionSnackBar();
-        }
+        _showConnectionSnackBar();
       }
     } catch (e) {
       if (Get.isDialogOpen == true) {
