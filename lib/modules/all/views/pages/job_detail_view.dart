@@ -1278,7 +1278,7 @@ class JobDetailView extends StatelessWidget {
       builder: (context, value, child) {
         return Container(
           height: 120,
-        color: Colors.grey[400]!.withOpacity(value),
+          color: Colors.grey[400]!.withOpacity(value),
         );
       },
       onEnd: () {},

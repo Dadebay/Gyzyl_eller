@@ -45,7 +45,7 @@ class TranslationService extends Translations {
           'save_changes': 'Ýatda sakla',
           'my_tab': 'Meniňki',
           'all_tab': 'Hemmesi',
-          'tasks_tab': 'Yumuşlar',
+          'tasks_tab': 'Ýumuşlar',
           'menu_tab': 'Menýu',
           "Ýumuşlarym": "Ýumuşlarym",
           'login_title': 'Içeri gir',
@@ -129,7 +129,7 @@ class TranslationService extends Translations {
           'bottom_nav_profile': 'Profil',
           'bottom_nav_my': 'Meniňki',
           'bottom_nav_all': 'Hemmesi',
-          'bottom_nav_tasks_tab': 'Yumuşlar',
+          'bottom_nav_tasks_tab': 'Ýumuşlar',
           'bottom_nav_menu': 'Menýu',
           "my_account_title": "Meň hasabym",
           'specialist_profile_title': 'Hünärmen profilim',
@@ -352,6 +352,7 @@ class TranslationService extends Translations {
           'template_not_saved': 'Şablon ýatda saklanmady',
           'template_not_deleted': 'Şablon öçürilmedi',
           "navigate_to_place": "Ýoly çyzyp görkezmek",
+          'phone_not_available': 'Telefon belgisi elýeterli däl',
         },
         'en': {
           'jobs_found': 'Jobs found (@count)',
@@ -385,6 +386,7 @@ class TranslationService extends Translations {
           'connection_error': 'Sorry, Gyzyl eller cannot work without internet',
           'splash_vpn_error': '(Or turn off VPN if it is on)',
           'to_try_again': 'Try again',
+          'phone_not_available': 'Phone number not available',
         },
         'ru': {
           "navigate_to_place": "Показать маршрут",
@@ -715,6 +717,7 @@ class TranslationService extends Translations {
           'offer_not_sent': 'Предложение не отправлено',
           'template_not_saved': 'Шаблон не сохранен',
           'template_not_deleted': 'Шаблон не удален',
+          'phone_not_available': 'Номер телефона недоступен',
         },
       };
 }
