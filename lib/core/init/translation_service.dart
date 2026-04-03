@@ -351,6 +351,7 @@ class TranslationService extends Translations {
           'offer_not_sent': 'Teklip ugradylmady',
           'template_not_saved': 'Şablon ýatda saklanmady',
           'template_not_deleted': 'Şablon öçürilmedi',
+          "navigate_to_place": "Ýoly çyzyp görkezmek",
         },
         'en': {
           'jobs_found': 'Jobs found (@count)',
@@ -386,6 +387,7 @@ class TranslationService extends Translations {
           'to_try_again': 'Try again',
         },
         'ru': {
+          "navigate_to_place": "Показать маршрут",
           'clear': 'Очистить',
           'jobs_found': 'Заданий найдено (@count)',
           'my_offers_tab': 'Мои предложения (@count)',

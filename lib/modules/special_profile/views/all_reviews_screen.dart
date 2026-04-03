@@ -69,6 +69,7 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
 
   void _showSortBottomSheet() {
     showModalBottomSheet(
+      backgroundColor: Colors.white, //
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
