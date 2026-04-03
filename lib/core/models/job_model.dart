@@ -128,24 +128,36 @@ class JobModel {
           ? json['category_name']
           : (json['cat_name']?.toString().isNotEmpty == true
               ? json['cat_name']
-              : (json['category'] != null && json['category'] is Map && json['category']['name'] != null
+              : (json['category'] != null &&
+                      json['category'] is Map &&
+                      json['category']['name'] != null
                   ? json['category']['name']
-                  : (json['cat_path'] is List && (json['cat_path'] as List).isNotEmpty
+                  : (json['cat_path'] is List &&
+                          (json['cat_path'] as List).isNotEmpty
                       ? (json['cat_path'] as List).last.toString()
                       : ''))),
       welayat: json['welayat'] ?? '',
       etrap: json['etrap'] ?? '',
       username: json['username'] ?? '',
       image: json['image']?.toString(),
-      images: (json['images'] as List? ?? []).map((e) => e.toString()).toList(),
+      images: (json['images'] as List? ?? [])
+          .map((e) => e is Map ? (e['image']?.toString() ?? '') : e.toString())
+          .where((e) => e.isNotEmpty)
+          .toList(),
       files: (json['files'] as List? ?? [])
           .map((item) => JobFileModel.fromJson(item))
           .toList(),
-      catPath: (json['cat_path'] as List? ?? []).map((e) => e.toString()).toList(),
+      catPath:
+          (json['cat_path'] as List? ?? []).map((e) => e.toString()).toList(),
       answers: (json['answers'] as List? ?? [])
           .map((item) => JobAnswer.fromJson(item))
           .toList(),
-      responsesCount: int.tryParse((json['responses_count'] ?? json['request_count'] ?? json['responses'])?.toString() ?? '0') ?? 0,
+      responsesCount: int.tryParse((json['responses_count'] ??
+                      json['request_count'] ??
+                      json['responses'])
+                  ?.toString() ??
+              '0') ??
+          0,
       viewCount: int.tryParse(json['view_count']?.toString() ?? '0') ?? 0,
       position: json['position']?.toString(),
       requestId: json['request_id'] != null
@@ -221,6 +233,7 @@ class JobAnswerOption {
     );
   }
 }
+
 class JobFileModel {
   final int id;
   final String file;

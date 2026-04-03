@@ -20,7 +20,6 @@ class SpecialProfile extends StatefulWidget {
 }
 
 class _SpecialProfileState extends State<SpecialProfile> {
-  // ── Controller ──────────────────────────────────────────────────────────
   final SpecialProfileController _controller =
       Get.put(SpecialProfileController(), permanent: true);
 
@@ -30,8 +29,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
   bool _isLoadingReviews = false;
   final ApiService _apiService = ApiService();
 
-  // ── Computed image list (full absolute URLs) ─────────────────────────────
-  /// Converts raw server file paths to absolute image URLs.
   List<String> _buildAbsoluteUrls(List<String> rawPaths) {
     return rawPaths.map((path) {
       if (path.startsWith('http')) return path;
@@ -79,14 +76,11 @@ class _SpecialProfileState extends State<SpecialProfile> {
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-  /// The short version used in the ProfileHeader (strictly shortBio).
   String get _shortText {
     final p = _controller.profile.value;
     return p.shortBio ?? '';
   }
 
-  /// The full bio text used in the BioCard (strictly longBio).
   String get _fullText {
     final p = _controller.profile.value;
     return p.longBio ?? '';

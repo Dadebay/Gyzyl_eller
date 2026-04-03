@@ -173,6 +173,13 @@ class JobDetailView extends StatelessWidget {
           }
         }
 
+        if (images.isNotEmpty) {
+          print('📸 [JOB_DETAIL] Total Images Loaded: ${images.length}');
+          for (int i = 0; i < images.length; i++) {
+            print('📸 [JOB_DETAIL] Image[$i]: ${images[i]}');
+          }
+        }
+
         final position = controller.parsePosition(job.position);
         final jobStatusEnum = MyTasksStatus.fromApiValue(job.status);
 
@@ -425,7 +432,8 @@ class JobDetailView extends StatelessWidget {
                               context: context,
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
-                              builder: (context) => const JobRequestBottomSheet(),
+                              builder: (context) =>
+                                  const JobRequestBottomSheet(),
                             );
                           });
                         },
@@ -527,14 +535,16 @@ class JobDetailView extends StatelessWidget {
     );
   }
 
-  void _checkMasterAndExecute(BuildContext context, String actionTitle, VoidCallback onExecute) {
+  void _checkMasterAndExecute(
+      BuildContext context, String actionTitle, VoidCallback onExecute) {
     if (AuthStorage().masterProfileId == null) {
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
             backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             title: Text(
               actionTitle,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -555,7 +565,8 @@ class JobDetailView extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('ÝAPMAK',
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold)),
               ),
               TextButton(
                 onPressed: () {
@@ -563,7 +574,8 @@ class JobDetailView extends StatelessWidget {
                   Get.to(() => const SpecialProfileAdd());
                 },
                 child: const Text('DOLDURMAK',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -1261,12 +1273,12 @@ class JobDetailView extends StatelessWidget {
   Widget _buildImageShimmer() {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.25, end: 0.45),
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 600),
       curve: Curves.easeInOut,
       builder: (context, value, child) {
         return Container(
           height: 120,
-          color: Colors.grey.withOpacity(value),
+        color: Colors.grey[400]!.withOpacity(value),
         );
       },
       onEnd: () {},
@@ -1333,6 +1345,8 @@ class JobDetailView extends StatelessWidget {
 
   Future<void> _downloadImage(String url) async {
     try {
+      print('📥 [JOB_DETAIL] Starting Download Image URL: $url');
+
       if (Platform.isAndroid) {
         await Permission.photos.request();
         await Permission.storage.request();
@@ -1357,11 +1371,14 @@ class JobDetailView extends StatelessWidget {
       );
 
       if (result.isSuccess) {
+        print('✅ [JOB_DETAIL] Image Downloaded Successfully: $url');
         _showDownloadSnackBar(isSuccess: true);
       } else {
+        print('❌ [JOB_DETAIL] Image Download Failed: $url');
         _showDownloadSnackBar(isSuccess: false);
       }
     } catch (e) {
+      print('❌ [JOB_DETAIL] Download Error for URL: $url - Error: $e');
       debugPrint("Download error: $e");
       _showDownloadSnackBar(isSuccess: false);
     }
@@ -1450,9 +1467,11 @@ class JobDetailView extends StatelessWidget {
     if (normalized.startsWith('/')) {
       normalized = normalized.substring(1);
     }
-    return normalized.startsWith('http')
+    final result = normalized.startsWith('http')
         ? normalized
         : "${Api().urlImage}$normalized";
+    print('📸 [JOB_DETAIL] Resolved URL: $result');
+    return result;
   }
 
   void _showDownloadOption(BuildContext context, String url) {
