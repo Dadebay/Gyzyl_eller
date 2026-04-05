@@ -1,8 +1,11 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 /// A single review card displayed in the professional profile review section.
@@ -31,11 +34,18 @@ class _ReviewTileState extends State<ReviewTile> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: ColorConstants.whiteColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +62,11 @@ class _ReviewTileState extends State<ReviewTile> {
                         ? NetworkImage(review.image!) as ImageProvider
                         : null,
                 child: (review.image == null || review.image!.isEmpty)
-                    ? Icon(Icons.person, color: Colors.grey.shade400, size: 20)
+                    ? const HugeIcon(
+                        icon: HugeIcons.strokeRoundedUser,
+                        color: ColorConstants.greyColor,
+                        size: 20,
+                      )
                     : null,
               ),
               const SizedBox(width: 8),
@@ -70,9 +84,12 @@ class _ReviewTileState extends State<ReviewTile> {
               Row(
                 children: List.generate(
                   5,
-                  (i) => Icon(Icons.star,
-                      color: i < review.rating ? Colors.amber : Colors.grey,
-                      size: 14),
+                  (i) => Icon(
+                    Icons.star,
+                    color:
+                        i < review.rating ? Colors.amber : Colors.grey.shade300,
+                    size: 14,
+                  ),
                 ),
               ),
             ],

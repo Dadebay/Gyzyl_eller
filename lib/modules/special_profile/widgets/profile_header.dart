@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:gyzyleller/shared/constants/icon_constants.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'stat_box.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -65,13 +66,17 @@ class ProfileHeader extends StatelessWidget {
                     ? Image.network(
                         imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.person,
-                          color: Colors.grey.shade400,
+                        errorBuilder: (_, __, ___) => const HugeIcon(
+                          icon: HugeIcons.strokeRoundedUser,
+                          color: ColorConstants.greyColor,
                           size: 60,
                         ),
                       )
-                    : Icon(Icons.person, color: Colors.grey.shade400, size: 60),
+                    : const HugeIcon(
+                        icon: HugeIcons.strokeRoundedUser,
+                        color: ColorConstants.greyColor,
+                        size: 60,
+                      ),
               ),
             ),
             StatBox(
@@ -97,7 +102,11 @@ class ProfileHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(IconConstants.calendar),
+            const HugeIcon(
+              icon: HugeIcons.strokeRoundedCalendar01,
+              size: 18,
+              color: ColorConstants.kPrimaryColor2,
+            ),
             const SizedBox(width: 5),
             Text(
               _formattedDate,
