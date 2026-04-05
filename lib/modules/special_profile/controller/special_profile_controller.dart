@@ -316,6 +316,15 @@ class SpecialProfileController extends GetxController {
 
       final List<int> deleteFiles = deleteFilesSet.toList();
 
+      String? imageUrl;
+      if (imageFile != null) {
+        try {
+          imageUrl = await ApiService().uploadFile(imageFile.path);
+        } catch (e) {
+          print(
+              '❌ [saveMasterProfile] Profil fotoğrafı preload/upload hatası: $e');
+        }
+      }
       final Map<String, dynamic> body = {
         "welayat_id": profile.value.welayatId ?? 2,
         "etrap_id": profile.value.etrapId ?? 37,
@@ -327,7 +336,7 @@ class SpecialProfileController extends GetxController {
         "legalization_type": legalizationType,
         if (files.isNotEmpty) "files": files,
         if (isEdit || deleteFiles.isNotEmpty) "delete_files": deleteFiles,
-        if (imageFile != null) "image": imageFile.path,
+        if (imageUrl != null) "image": imageUrl,
       };
 
       // Body içeriğini ekrana yazdır
