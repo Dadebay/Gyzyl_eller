@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -8,7 +10,6 @@ import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
 import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
-import 'package:gyzyleller/shared/widgets/empty_state_widget.dart';
 
 class TaskView extends StatefulWidget {
   const TaskView({super.key});
@@ -199,19 +200,63 @@ class _TaskViewState extends State<TaskView>
               onRefresh: () => controller.fetchRequestedJobs(isRefresh: true),
               onLoading: () => controller.fetchRequestedJobs(),
               child: controller.requestedJobs.isEmpty
-                  ? EmptyStateWidget(
-                      title: "no_tasks_found".tr,
-                      subtitle: "no_offers_subtitle".tr,
-                      onActionPressed: () => controller.clearFilters(),
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const HugeIcon(
+                            icon: HugeIcons.strokeRoundedJobSearch,
+                            size: 80,
+                            color: ColorConstants.greyColor,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            "no_tasks_found".tr,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "no_offers_subtitle".tr,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey.shade600,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 14),
                       itemCount: controller.requestedJobs.length,
                       itemBuilder: (context, index) {
                         final job = controller.requestedJobs[index];
-                        return JobCard(
-                          job: job,
-                          isNew: false,
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: JobCard(
+                            job: job,
+                            isNew: false,
+                          ),
                         );
                       },
                     ),
@@ -239,19 +284,62 @@ class _TaskViewState extends State<TaskView>
               onRefresh: () => controller.fetchProcessingJobs(isRefresh: true),
               onLoading: () => controller.fetchProcessingJobs(),
               child: controller.processingJobs.isEmpty
-                  ? EmptyStateWidget(
-                      title: "no_tasks_found".tr,
-                      subtitle: "no_jobs_subtitle".tr,
-                      onActionPressed: () => controller.clearFilters(),
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const HugeIcon(
+                            icon: HugeIcons.strokeRoundedJobSearch,
+                            size: 80,
+                            color: ColorConstants.greyColor,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            "no_tasks_found".tr,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "no_jobs_subtitle".tr,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey.shade600,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 14),
                       itemCount: controller.processingJobs.length,
                       itemBuilder: (context, index) {
                         final job = controller.processingJobs[index];
-                        return JobCard(
-                          job: job,
-                          isNew: false,
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: JobCard(
+                            job: job,
+                            isNew: false,
+                          ),
                         );
                       },
                     ),
