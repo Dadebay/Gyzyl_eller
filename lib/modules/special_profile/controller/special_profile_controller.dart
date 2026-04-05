@@ -147,7 +147,7 @@ class SpecialProfileController extends GetxController {
     final XFile? image = await _picker.pickImage(source: source);
     if (image != null) {
       selectedProfileImage.value = File(image.path);
-      await uploadProfileImageAndUsername();
+      // uploadProfileImageAndUsername çağrılmıyor, sadece kaydet ile birlikte gönderilecek
     }
   }
 
@@ -280,6 +280,7 @@ class SpecialProfileController extends GetxController {
     List<Map<String, dynamic>> fileMetadata = const [],
     List<int> deleteFileIds = const [],
     bool isEdit = false,
+    File? imageFile,
   }) async {
     try {
       if (name.isEmpty) {
@@ -326,7 +327,12 @@ class SpecialProfileController extends GetxController {
         "legalization_type": legalizationType,
         if (files.isNotEmpty) "files": files,
         if (isEdit || deleteFiles.isNotEmpty) "delete_files": deleteFiles,
+        if (imageFile != null) "image": imageFile.path,
       };
+
+      // Body içeriğini ekrana yazdır
+      print('🟢 [saveMasterProfile] Gonderilen body:');
+      print(body);
 
       final ApiService apiService = ApiService();
       final response = await apiService.handleApiRequest(

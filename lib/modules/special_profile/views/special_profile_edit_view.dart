@@ -327,7 +327,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
             ),
             const SizedBox(height: 10),
             CustomElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (!controller.isChecked.value) {
                   CustomWidgets.showSnackBar(
                     'error_title',
@@ -336,13 +336,14 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
                   );
                   return;
                 }
-                controller.saveMasterProfile(
+                await controller.saveMasterProfile(
                   name: nameController.text,
                   shortBio: shortBioController.text,
                   longBio: longBioController.text,
                   experience: workTejribeController.text,
                   legalizationType: _selectedLegalizationType ?? '',
                   fileMetadata: _fileMetadata,
+                  imageFile: controller.selectedProfileImage.value,
                   isEdit: true,
                 );
               },

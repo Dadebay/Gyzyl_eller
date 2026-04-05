@@ -205,7 +205,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             ),
             const SizedBox(height: 10),
             CustomElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (!controller.isChecked.value) {
                   CustomWidgets.showSnackBar(
                     'error_title',
@@ -214,13 +214,14 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
                   );
                   return;
                 }
-                controller.saveMasterProfile(
+                await controller.saveMasterProfile(
                   name: nameController.text,
                   shortBio: shortBioController.text,
                   longBio: longBioController.text,
                   experience: workTejribeController.text,
                   legalizationType: _selectedLegalizationType ?? '',
                   fileMetadata: _fileMetadata,
+                  imageFile: controller.selectedProfileImage.value,
                 );
               },
               text: 'create_account_button'.tr,
