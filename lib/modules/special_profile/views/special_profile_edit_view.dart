@@ -264,8 +264,10 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
                           ),
                         ),
                         child: controller.isChecked.value
-                            ? const Icon(Icons.check,
-                                size: 16, color: Colors.white)
+                            ? const HugeIcon(
+                                icon: HugeIcons.strokeRoundedTick02,
+                                size: 16,
+                                color: Colors.white)
                             : null,
                       ),
                     ),

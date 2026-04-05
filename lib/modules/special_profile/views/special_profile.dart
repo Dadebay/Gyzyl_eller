@@ -49,12 +49,8 @@ class _SpecialProfileState extends State<SpecialProfile> {
   Future<void> _fetchReviews() async {
     final userId = _controller.profile.value.userId;
     if (userId == null || userId.isEmpty) {
-      print(
-          '⚠️ [SpecialProfile] _fetchReviews → userId is null/empty, skipping review fetch');
       return;
     }
-
-    print('📡 [SpecialProfile] _fetchReviews → userId: $userId');
 
     setState(() => _isLoadingReviews = true);
     try {
@@ -63,15 +59,12 @@ class _SpecialProfileState extends State<SpecialProfile> {
         final reviews = rawList
             .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
             .toList();
-        print(
-            '✅ [SpecialProfile] _fetchReviews → ${reviews.length} reviews parsed');
         setState(() {
           _reviews = reviews;
           _isLoadingReviews = false;
         });
       }
     } catch (e) {
-      print('❌ [SpecialProfile] _fetchReviews error: $e');
       if (mounted) setState(() => _isLoadingReviews = false);
     }
   }
@@ -101,7 +94,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
           child: Column(
             children: [
               const SizedBox(height: 8),
-
               ProfileHeader(
                 name: profile.name ?? '',
                 imageUrl: profile.imageUrl,
@@ -112,43 +104,16 @@ class _SpecialProfileState extends State<SpecialProfile> {
                 doneJobsCount: profile.doneJobsCount,
                 totalJobsCount: profile.totalJobsCount,
               ),
-
-              // if (profile.welayat.isNotEmpty) ...[
-              //   const SizedBox(height: 12),
-              //   Row(
-              //     mainAxisAlignment: MainAxisAlignment.center,
-              //     children: [
-              //       const Icon(Icons.location_on,
-              //           size: 16, color: ColorConstants.greyColor),
-              //       const SizedBox(width: 4),
-              //       Text(
-              //         profile.etrap.isNotEmpty
-              //             ? '${profile.welayat}, ${profile.etrap}'
-              //             : profile.welayat,
-              //         style: const TextStyle(
-              //             fontSize: 14, color: ColorConstants.greyColor),
-              //       ),
-              //     ],
-              //   ),
-              // ],
-
               const SizedBox(height: 15),
-
-              // ── Bio section ───────────────────────────────────────────
               _buildBioCard(context),
-
-              // ── Images / works grid ────────────────────────────────────
               if (serverImages.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 _buildImagesSection(serverImages),
               ],
-
-              // ── Reviews section ────────────────────────────────────────
               if (profile.reviewCount > 0 || _reviews.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 _buildReviewsSection(profile),
               ],
-
               const SizedBox(height: 20),
             ],
           ),
@@ -157,9 +122,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
     );
   }
 
-  // ── Widgets ──────────────────────────────────────────────────────────────
-
-  /// AppBar with title and edit action button.
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: ColorConstants.background,
@@ -195,9 +157,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
     );
   }
 
-  /// Floating edit button at the bottom that navigates to the edit screen.
-
-  /// Bio card with expand / collapse behaviour.
   Widget _buildBioCard(BuildContext context) {
     final content = _fullText;
     if (content.isEmpty) return const SizedBox.shrink();
