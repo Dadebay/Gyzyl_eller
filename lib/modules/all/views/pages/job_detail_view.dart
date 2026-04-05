@@ -23,6 +23,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_request_bottom_sheet.dart';
+import 'package:gyzyleller/modules/chats/views/chat_detail_view.dart';
 import 'package:gyzyleller/shared/widgets/full_screen_image_gallery.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
@@ -367,6 +368,90 @@ class JobDetailView extends StatelessWidget {
                                 ],
                               ),
                             ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    final phone = job.phone;
+                                    if (phone != null && phone.isNotEmpty) {
+                                      launchUrl(
+                                          Uri(scheme: 'tel', path: phone));
+                                    }
+                                  },
+                                  icon: const Icon(Icons.call,
+                                      color: Colors.white, size: 20),
+                                  label: Text(
+                                    "jan".tr,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        ColorConstants.kPrimaryColor2,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    if (job.userId != null) {
+                                      Get.to(
+                                        () => ChatDetailView(
+                                          chatId: '',
+                                          userId: job.userId.toString(),
+                                          userName: job.username,
+                                          userPicture: job.image != null &&
+                                                  job.image!.isNotEmpty
+                                              ? (job.image!.startsWith('http')
+                                                  ? job.image!
+                                                  : '${Api().urlImage}${job.image}')
+                                              : '',
+                                          productId: job.id.toString(),
+                                          productImage: '',
+                                          productPrice:
+                                              '${job.minPrice} - ${job.maxPrice} TMT',
+                                          productTitle: job.name,
+                                          productStatus: job.status.toString(),
+                                          lastSeen: '',
+                                          blocked: false,
+                                          notification: true,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.chat_bubble,
+                                      color: Colors.white, size: 20),
+                                  label: Text(
+                                    "yazmak".tr,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: ColorConstants.blue,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 16),
                           if (job.selected)
                             if (controller.isCompleteRequestSent.value)

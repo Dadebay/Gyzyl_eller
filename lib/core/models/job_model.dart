@@ -44,6 +44,7 @@ class JobDetailResponseModel {
 
 class JobModel {
   final int id;
+  final int? userId;
   final int catId;
   final String name;
   final String desc;
@@ -76,6 +77,7 @@ class JobModel {
 
   JobModel({
     required this.id,
+    this.userId,
     required this.catId,
     required this.name,
     required this.desc,
@@ -110,6 +112,9 @@ class JobModel {
   factory JobModel.fromJson(Map<String, dynamic> json) {
     return JobModel(
       id: json['id'] ?? 0,
+      userId: json['user_id'] != null
+          ? int.tryParse(json['user_id'].toString())
+          : null,
       catId: json['cat_id'] ?? 0,
       name: json['name'] ?? '',
       desc: json['desc'] ?? '',
