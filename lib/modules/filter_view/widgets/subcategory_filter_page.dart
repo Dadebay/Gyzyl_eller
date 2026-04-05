@@ -4,7 +4,7 @@ import 'package:gyzyleller/core/models/metadata_models.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/filter_view/widgets/filter_checkbox_tile.dart';
 
-class SubcategoryFilterPage extends StatefulWidget {
+class SubcategoryFilterPage extends StatelessWidget {
   final CategoryModel category;
   final List<int> selectedCatIds;
   final ValueChanged<int> onSubcategoryChanged;
@@ -21,41 +21,30 @@ class SubcategoryFilterPage extends StatefulWidget {
   });
 
   @override
-  State<SubcategoryFilterPage> createState() => _SubcategoryFilterPageState();
-}
-
-class _SubcategoryFilterPageState extends State<SubcategoryFilterPage> {
-  String _searchQuery = '';
-
-  @override
   Widget build(BuildContext context) {
-    final filtered = widget.category.subcategories
-        .where((s) => s.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
-                onTap: widget.onSelectAll,
-                child: const Text(
-                  "Hemmesi",
-                  style: TextStyle(
+                onTap: onSelectAll,
+                child: Text(
+                  'all_selected'.tr,
+                  style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                     color: ColorConstants.blue,
                   ),
                 ),
               ),
               GestureDetector(
-                onTap: widget.onClear,
+                onTap: onClear,
                 child: Text(
-                  "clear".tr,
+                  'clear_all'.tr,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
@@ -69,13 +58,13 @@ class _SubcategoryFilterPageState extends State<SubcategoryFilterPage> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: filtered.length,
+            itemCount: category.subcategories.length,
             itemBuilder: (context, i) {
-              final sub = filtered[i];
+              final sub = category.subcategories[i];
               return FilterCheckboxTile(
                 title: sub.name,
-                value: widget.selectedCatIds.contains(sub.id),
-                onChanged: (_) => widget.onSubcategoryChanged(sub.id),
+                value: selectedCatIds.contains(sub.id),
+                onChanged: (_) => onSubcategoryChanged(sub.id),
               );
             },
           ),

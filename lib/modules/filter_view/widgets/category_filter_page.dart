@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/core/models/metadata_models.dart';
 
-class CategoryFilterPage extends StatefulWidget {
+class CategoryFilterPage extends StatelessWidget {
   final List<CategoryModel> categories;
   final List<int> selectedCatIds;
   final Function(CategoryModel) onCategorySelected;
@@ -18,100 +19,77 @@ class CategoryFilterPage extends StatefulWidget {
   });
 
   @override
-  State<CategoryFilterPage> createState() => _CategoryFilterPageState();
-}
-
-class _CategoryFilterPageState extends State<CategoryFilterPage> {
-  String _searchQuery = '';
-
-  @override
   Widget build(BuildContext context) {
-    final query = _searchQuery.trim().toLowerCase();
-    final filtered = widget.categories
-        .where(
-          (c) =>
-              query.isEmpty ||
-              c.name.toLowerCase().contains(query) ||
-              c.subcategories.any(
-                (sub) => sub.name.toLowerCase().contains(query),
-              ),
-        )
-        .toList();
-
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "category".tr,
+                'category'.tr,
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               GestureDetector(
-                onTap: widget.onClear,
+                onTap: onClear,
                 child: Text(
-                  "clear".tr,
+                  'clear_all'.tr,
                   style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: ColorConstants.kPrimaryColor2),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: ColorConstants.kPrimaryColor2,
+                  ),
                 ),
               ),
             ],
           ),
         ),
         Expanded(
-          child: filtered.isEmpty
-              ? Center(child: Text('no_data_found'.tr))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, i) {
-                    final item = filtered[i];
-                    final selectedSubCount = item.subcategories
-                        .where((sub) => widget.selectedCatIds.contains(sub.id))
-                        .length;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: InkWell(
-                        onTap: () => widget.onCategorySelected(item),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  if (selectedSubCount > 0)
-                                    Text(
-                                      "subcategory_selected_count".trParams({
-                                        'count': selectedSubCount.toString()
-                                      }),
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: ColorConstants.blue,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward_ios,
-                                color: ColorConstants.greyColor, size: 18),
-                          ],
+          child: ListView.builder(
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              int selectedSubCount = 0;
+              selectedSubCount = category.subcategories
+                  .where((sub) => selectedCatIds.contains(sub.id))
+                  .length;
+
+              return InkWell(
+                onTap: () => onCategorySelected(category),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          category.name,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w500),
                         ),
                       ),
-                    );
-                  },
+                      if (selectedSubCount > 0)
+                        Text(
+                          selectedSubCount.toString(),
+                          style: const TextStyle(
+                            color: ColorConstants.kPrimaryColor2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      const HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        color: ColorConstants.greyColor,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
+              );
+            },
+          ),
         ),
       ],
     );

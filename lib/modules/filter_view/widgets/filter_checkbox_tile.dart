@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 
-/// Gaýtalanýan checkbox list tile — [EtrapFilterPage] we [SubcategoryFilterPage]
-/// ikisinde hem birmeňzeş ulanylýar.
 class FilterCheckboxTile extends StatelessWidget {
   final String title;
   final bool value;
@@ -23,14 +22,12 @@ class FilterCheckboxTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
           children: [
-            // Checkbox box
             Container(
               width: 24,
               height: 24,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color:
-                      value ? ColorConstants.kPrimaryColor2 : Colors.grey,
+                  color: value ? ColorConstants.kPrimaryColor2 : Colors.grey,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(5),
@@ -38,11 +35,14 @@ class FilterCheckboxTile extends StatelessWidget {
                     value ? ColorConstants.kPrimaryColor2 : Colors.transparent,
               ),
               child: value
-                  ? const Icon(Icons.check, color: Colors.white, size: 18)
+                  ? const HugeIcon(
+                      icon: HugeIcons.strokeRoundedTick02,
+                      color: Colors.white,
+                      size: 18,
+                    )
                   : null,
             ),
             const SizedBox(width: 16),
-            // Label
             Expanded(
               child: Text(
                 title,

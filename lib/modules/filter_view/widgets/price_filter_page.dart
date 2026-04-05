@@ -8,6 +8,7 @@ class PriceFilterPage extends StatelessWidget {
   final double maxPrice;
   final ValueChanged<RangeValues> onPriceChanged;
   final VoidCallback onClear;
+  final VoidCallback onApply;
 
   const PriceFilterPage({
     super.key,
@@ -16,22 +17,23 @@ class PriceFilterPage extends StatelessWidget {
     required this.maxPrice,
     required this.onPriceChanged,
     required this.onClear,
+    required this.onApply,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Başlık + Arassala
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 "price".tr,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               GestureDetector(
                 onTap: onClear,
@@ -45,35 +47,33 @@ class PriceFilterPage extends StatelessWidget {
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          // Dan / Çenli kutuları
-          Row(
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
             children: [
               _priceBox("from".tr, priceRange.start.toInt()),
               const SizedBox(width: 12),
               _priceBox("to".tr, priceRange.end.toInt()),
             ],
           ),
-
-          const SizedBox(height: 30),
-
-          RangeSlider(
-            values: priceRange,
-            min: minPrice,
-            max: maxPrice,
-            divisions: 100,
-            activeColor: ColorConstants.kPrimaryColor2,
-            inactiveColor: ColorConstants.background,
-            labels: RangeLabels(
-              "${priceRange.start.toInt()}",
-              "${priceRange.end.toInt()}",
-            ),
-            onChanged: onPriceChanged,
+        ),
+        const SizedBox(height: 30),
+        RangeSlider(
+          values: priceRange,
+          min: minPrice,
+          max: maxPrice,
+          divisions: 100,
+          activeColor: ColorConstants.kPrimaryColor2,
+          inactiveColor: ColorConstants.background,
+          labels: RangeLabels(
+            "${priceRange.start.toInt()}",
+            "${priceRange.end.toInt()}",
           ),
-        ],
-      ),
+          onChanged: onPriceChanged,
+        ),
+      ],
     );
   }
 

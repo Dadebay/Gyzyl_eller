@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
 
 class MainFilterPage extends StatelessWidget {
   final VoidCallback onCategoryTap;
@@ -32,25 +31,25 @@ class MainFilterPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
         _buildFilterItem(
-          svgIcon: IconConstants.categoryFilled,
+          iconData: HugeIcons.strokeRoundedGridView,
           title: "category".tr,
           value: categoryValue,
           onTap: onCategoryTap,
         ),
         _buildFilterItem(
-          svgIcon: IconConstants.locationHouse,
+          iconData: HugeIcons.strokeRoundedLocation04,
           title: "location".tr,
           value: locationValue,
           onTap: onLocationTap,
         ),
         _buildFilterItem(
-          svgIcon: IconConstants.payment,
+          iconData: HugeIcons.strokeRoundedMoney03,
           title: "price".tr,
           value: priceValue,
           onTap: onPriceTap,
         ),
         _buildFilterItem(
-          svgIcon: IconConstants.calendar,
+          iconData: HugeIcons.strokeRoundedCalendar01,
           title: "job_date_label".tr,
           value: selectedYear != null && selectedYear!.isNotEmpty
               ? selectedYear!
@@ -63,7 +62,7 @@ class MainFilterPage extends StatelessWidget {
   }
 
   Widget _buildFilterItem({
-    required String svgIcon,
+    required IconData iconData,
     required String title,
     required String value,
     VoidCallback? onTap,
@@ -80,11 +79,10 @@ class MainFilterPage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            SvgPicture.asset(
-              svgIcon,
-              width: 26,
-              height: 26,
-              colorFilter: const ColorFilter.mode(Colors.red, BlendMode.srcIn),
+            HugeIcon(
+              icon: iconData,
+              color: Colors.red,
+              size: 26,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -109,7 +107,11 @@ class MainFilterPage extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 18),
+            const HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowRight01,
+              color: Colors.black,
+              size: 18,
+            ),
           ],
         ),
       ),
