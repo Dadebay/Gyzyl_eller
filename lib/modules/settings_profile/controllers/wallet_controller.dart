@@ -217,7 +217,12 @@ class WalletController extends GetxController {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Text(bank['name']?[lang]?.toString() ?? ''),
+                              Flexible(
+                                child: Text(
+                                  bank['name']?[lang]?.toString() ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         ),

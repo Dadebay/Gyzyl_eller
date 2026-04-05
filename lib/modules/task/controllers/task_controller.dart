@@ -37,14 +37,26 @@ class TaskController extends GetxController {
   final Rx<MyTasksOrderBy> orderBy = MyTasksOrderBy.sene.obs;
   final RxnInt status = RxnInt(null);
 
-  // Filter state
-  final RxList<int> catIds = <int>[].obs;
-  final RxList<int> welayatIds = <int>[].obs;
-  final RxList<int> etrapIds = <int>[].obs;
-  final RxnDouble minPrice = RxnDouble(null);
-  final RxnDouble maxPrice = RxnDouble(null);
-  final RxList<DateTime> selectedDates = <DateTime>[].obs;
-  final RxString search = "".obs;
+  // Track active tab index
+  final RxInt activeTabIndex = 0.obs;
+
+  // Filter state for tab 1 (requested / Tekliplerim)
+  final RxList<int> reqCatIds = <int>[].obs;
+  final RxList<int> reqWelayatIds = <int>[].obs;
+  final RxList<int> reqEtrapIds = <int>[].obs;
+  final RxnDouble reqMinPrice = RxnDouble(null);
+  final RxnDouble reqMaxPrice = RxnDouble(null);
+  final RxList<DateTime> reqSelectedDates = <DateTime>[].obs;
+  final RxString reqSearch = "".obs;
+
+  // Filter state for tab 2 (processing / Işlerim)
+  final RxList<int> procCatIds = <int>[].obs;
+  final RxList<int> procWelayatIds = <int>[].obs;
+  final RxList<int> procEtrapIds = <int>[].obs;
+  final RxnDouble procMinPrice = RxnDouble(null);
+  final RxnDouble procMaxPrice = RxnDouble(null);
+  final RxList<DateTime> procSelectedDates = <DateTime>[].obs;
+  final RxString procSearch = "".obs;
 
   // Metadata
   final RxList<CategoryModel> allCategories = <CategoryModel>[].obs;
@@ -58,7 +70,7 @@ class TaskController extends GetxController {
     fetchMetadata();
     isLoggedIn.value = AuthStorage().isLoggedIn;
     fetchBalance();
-    
+
     // Auto load the first tab initially. Let the View call the second tab if needed.
     fetchRequestedJobs(isRefresh: true);
     fetchProcessingJobs(isRefresh: true);
@@ -99,13 +111,13 @@ class TaskController extends GetxController {
         sort: orderBy.value.apiValue,
         requestedInput: true,
         requiresToken: true,
-        catIds: catIds,
-        welayatIds: welayatIds,
-        etrapIds: etrapIds,
-        dates: selectedDates,
-        minPrice: minPrice.value,
-        maxPrice: maxPrice.value,
-        search: search.value,
+        catIds: reqCatIds,
+        welayatIds: reqWelayatIds,
+        etrapIds: reqEtrapIds,
+        dates: reqSelectedDates,
+        minPrice: reqMinPrice.value,
+        maxPrice: reqMaxPrice.value,
+        search: reqSearch.value,
       );
 
       if (isRefresh) {
@@ -160,13 +172,13 @@ class TaskController extends GetxController {
         sort: orderBy.value.apiValue,
         processingInput: true,
         requiresToken: true,
-        catIds: catIds,
-        welayatIds: welayatIds,
-        etrapIds: etrapIds,
-        dates: selectedDates,
-        minPrice: minPrice.value,
-        maxPrice: maxPrice.value,
-        search: search.value,
+        catIds: procCatIds,
+        welayatIds: procWelayatIds,
+        etrapIds: procEtrapIds,
+        dates: procSelectedDates,
+        minPrice: procMinPrice.value,
+        maxPrice: procMaxPrice.value,
+        search: procSearch.value,
       );
 
       if (isRefresh) {
@@ -175,7 +187,8 @@ class TaskController extends GetxController {
 
       processingJobs.addAll(response.data.jobs);
       processingTotalCount.value = response.data.count;
-      hasProcessingMore.value = processingJobs.length < processingTotalCount.value;
+      hasProcessingMore.value =
+          processingJobs.length < processingTotalCount.value;
       _processingPage++;
 
       isProcessingFirstLoad.value = false;
@@ -214,6 +227,7 @@ class TaskController extends GetxController {
   }
 
   void applyFilters({
+    required int tabIndex,
     List<int>? newCatIds,
     List<int>? newWelayatIds,
     List<int>? newEtrapIds,
@@ -222,48 +236,88 @@ class TaskController extends GetxController {
     List<DateTime>? newDates,
     String? newSearch,
   }) {
-    if (newCatIds != null) {
-      catIds.assignAll(newCatIds);
+    if (tabIndex == 0) {
+      // Requested tab
+      if (newCatIds != null) {
+        reqCatIds.assignAll(newCatIds);
+      } else {
+        reqCatIds.clear();
+      }
+      if (newWelayatIds != null) {
+        reqWelayatIds.assignAll(newWelayatIds);
+      } else {
+        reqWelayatIds.clear();
+      }
+      if (newEtrapIds != null) {
+        reqEtrapIds.assignAll(newEtrapIds);
+      } else {
+        reqEtrapIds.clear();
+      }
+      reqMinPrice.value = newMinPrice;
+      reqMaxPrice.value = newMaxPrice;
+      if (newDates != null) {
+        reqSelectedDates.assignAll(newDates);
+      } else {
+        reqSelectedDates.clear();
+      }
+      if (newSearch != null) {
+        reqSearch.value = newSearch;
+      } else {
+        reqSearch.value = "";
+      }
+      fetchRequestedJobs(isRefresh: true);
     } else {
-      catIds.clear();
+      // Processing tab
+      if (newCatIds != null) {
+        procCatIds.assignAll(newCatIds);
+      } else {
+        procCatIds.clear();
+      }
+      if (newWelayatIds != null) {
+        procWelayatIds.assignAll(newWelayatIds);
+      } else {
+        procWelayatIds.clear();
+      }
+      if (newEtrapIds != null) {
+        procEtrapIds.assignAll(newEtrapIds);
+      } else {
+        procEtrapIds.clear();
+      }
+      procMinPrice.value = newMinPrice;
+      procMaxPrice.value = newMaxPrice;
+      if (newDates != null) {
+        procSelectedDates.assignAll(newDates);
+      } else {
+        procSelectedDates.clear();
+      }
+      if (newSearch != null) {
+        procSearch.value = newSearch;
+      } else {
+        procSearch.value = "";
+      }
+      fetchProcessingJobs(isRefresh: true);
     }
-    if (newWelayatIds != null) {
-      welayatIds.assignAll(newWelayatIds);
-    } else {
-      welayatIds.clear();
-    }
-    if (newEtrapIds != null) {
-      etrapIds.assignAll(newEtrapIds);
-    } else {
-      etrapIds.clear();
-    }
-    minPrice.value = newMinPrice;
-    maxPrice.value = newMaxPrice;
-    if (newDates != null) {
-      selectedDates.assignAll(newDates);
-    } else {
-      selectedDates.clear();
-    }
-    if (newSearch != null) {
-      search.value = newSearch;
-    } else {
-      search.value = "";
-    }
-
-    fetchRequestedJobs(isRefresh: true);
-    fetchProcessingJobs(isRefresh: true);
   }
 
   void clearFilters() {
-    catIds.clear();
-    welayatIds.clear();
-    etrapIds.clear();
-    minPrice.value = null;
-    maxPrice.value = null;
-    selectedDates.clear();
-    search.value = "";
-
-    fetchRequestedJobs(isRefresh: true);
-    fetchProcessingJobs(isRefresh: true);
+    if (activeTabIndex.value == 0) {
+      reqCatIds.clear();
+      reqWelayatIds.clear();
+      reqEtrapIds.clear();
+      reqMinPrice.value = null;
+      reqMaxPrice.value = null;
+      reqSelectedDates.clear();
+      reqSearch.value = "";
+      fetchRequestedJobs(isRefresh: true);
+    } else {
+      procCatIds.clear();
+      procWelayatIds.clear();
+      procEtrapIds.clear();
+      procMinPrice.value = null;
+      procMaxPrice.value = null;
+      procSelectedDates.clear();
+      procSearch.value = "";
+      fetchProcessingJobs(isRefresh: true);
+    }
   }
 }
