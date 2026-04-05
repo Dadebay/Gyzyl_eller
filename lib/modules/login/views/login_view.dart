@@ -8,6 +8,7 @@ import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/controllers/login_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LoginView extends GetView<LoginController> {
@@ -28,6 +29,14 @@ class LoginView extends GetView<LoginController> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'login_title'.tr,
+        leading: IconButton(
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            size: 24,
+            color: ColorConstants.kPrimaryColor2,
+          ),
+          onPressed: () => Get.back(),
+        ),
       ),
       backgroundColor: ColorConstants.background,
       body: SingleChildScrollView(
@@ -73,8 +82,10 @@ class LoginView extends GetView<LoginController> {
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.phone,
-                        color: ColorConstants.kPrimaryColor2, size: 22),
+                    prefixIcon: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedCall,
+                        color: ColorConstants.kPrimaryColor2,
+                        size: 22),
                     labelText: 'phone_number_label'.tr,
                     prefixText: '+993 ',
                     prefixStyle: const TextStyle(
@@ -112,8 +123,10 @@ class LoginView extends GetView<LoginController> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w500),
                       decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.lock_outline,
-                            color: ColorConstants.kPrimaryColor2, size: 22),
+                        prefixIcon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedLockPassword,
+                            color: ColorConstants.kPrimaryColor2,
+                            size: 22),
                         labelText: 'password_input_label'.tr,
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -123,10 +136,10 @@ class LoginView extends GetView<LoginController> {
                           fontWeight: FontWeight.w500,
                         ),
                         suffixIcon: IconButton(
-                          icon: Icon(
-                            controller.obscureText.value
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
+                          icon: HugeIcon(
+                            icon: controller.obscureText.value
+                                ? HugeIcons.strokeRoundedViewOffSlash
+                                : HugeIcons.strokeRoundedView,
                             color: ColorConstants.kPrimaryColor2,
                             size: 22,
                           ),
@@ -163,8 +176,10 @@ class LoginView extends GetView<LoginController> {
                             ),
                           ),
                           child: controller.isChecked.value
-                              ? const Icon(Icons.check,
-                                  size: 16, color: Colors.white)
+                              ? const HugeIcon(
+                                  icon: HugeIcons.strokeRoundedTick02,
+                                  size: 16,
+                                  color: Colors.white)
                               : null,
                         ),
                       ),

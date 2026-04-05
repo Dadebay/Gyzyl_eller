@@ -129,14 +129,6 @@ class _TaskViewState extends State<TaskView>
             ),
           ],
         ),
-        // actions: [
-        //   IconButton(
-        //     icon: SvgPicture.asset(IconConstants.notifications),
-        //     onPressed: () {
-        //       Get.to(const NotificationsScreen());
-        //     },
-        //   ),
-        // ],
         bottom: PreferredSize(
             preferredSize: const Size.fromHeight(75),
             child: Container(
