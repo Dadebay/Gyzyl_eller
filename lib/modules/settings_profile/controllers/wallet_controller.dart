@@ -5,8 +5,11 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/settings_profile/views/add_cash_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class WalletController extends GetxController {
+  final RefreshController walletRefreshController = RefreshController(initialRefresh: false);
+  final RefreshController addCashRefreshController = RefreshController(initialRefresh: false);
   final MyJobsService _jobsService = MyJobsService();
 
   final RxDouble balance = 0.0.obs;
@@ -35,6 +38,8 @@ class WalletController extends GetxController {
       fetchLogs(),
     ]);
     isLoading.value = false;
+    walletRefreshController.refreshCompleted();
+    addCashRefreshController.refreshCompleted();
   }
 
   Future<void> fetchBalance() async {

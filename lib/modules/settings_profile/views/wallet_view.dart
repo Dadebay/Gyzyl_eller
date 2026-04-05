@@ -7,6 +7,7 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/wallet_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/views/add_cash_view.dart';
 import 'package:intl/intl.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class WalletView extends GetView<WalletController> {
   const WalletView({super.key});
@@ -79,8 +80,14 @@ class WalletView extends GetView<WalletController> {
               ),
             );
           }
-          return RefreshIndicator(
-            onRefresh: controller.refreshData,
+          return SmartRefresher(
+            header: const MaterialClassicHeader(
+              color: ColorConstants.greyColor,
+              backgroundColor: ColorConstants.background,
+            ),
+            controller: controller.walletRefreshController,
+            enablePullDown: true,
+            onRefresh: () => controller.refreshData(),
             child: SingleChildScrollView(
               child: Column(
                 children: [
