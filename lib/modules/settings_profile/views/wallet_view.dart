@@ -117,7 +117,7 @@ class WalletView extends GetView<WalletController> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
@@ -132,7 +132,7 @@ class WalletView extends GetView<WalletController> {
                     );
                   }
                   return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         'your_balance'.tr,
@@ -148,22 +148,6 @@ class WalletView extends GetView<WalletController> {
                     ],
                   );
                 }),
-              ),
-              GestureDetector(
-                onTap: () {
-                  controller.showWalletInfoAlert(context);
-                },
-                child: Container(
-                  height: 48,
-                  width: 48,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: ColorConstants.kPrimaryColor2,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child:
-                      const Icon(Icons.add, color: ColorConstants.whiteColor),
-                ),
               ),
             ],
           ),
@@ -300,7 +284,9 @@ class WalletView extends GetView<WalletController> {
       _ => 'unknown_transaction'.tr,
     };
 
-    final mainColor = isPositive ? ColorConstants.kSecondaryColor : ColorConstants.kPrimaryColor2;
+    final mainColor = isPositive
+        ? ColorConstants.kSecondaryColor
+        : ColorConstants.kPrimaryColor2;
 
     String createdAtFormatted = '';
     try {
@@ -366,17 +352,17 @@ class WalletView extends GetView<WalletController> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                isPositive
-                    ? (parsedSumm >= 0 ? 'alyndy'.tr : 'geçdi'.tr)
-                    : 'alyndy'.tr,
-                style: TextStyle(
-                  color: mainColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              // const SizedBox(width: 8),
+              // Text(
+              //   isPositive
+              //       ? (parsedSumm >= 0 ? 'alyndy'.tr : 'geçdi'.tr)
+              //       : 'alyndy'.tr,
+              //   style: TextStyle(
+              //     color: mainColor,
+              //     fontSize: 13,
+              //     fontWeight: FontWeight.w500,
+              //   ),
+              // ),
             ],
           ),
         ),
