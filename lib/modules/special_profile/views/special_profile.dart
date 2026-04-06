@@ -29,19 +29,22 @@ class _SpecialProfileState extends State<SpecialProfile> {
   final ApiService _apiService = ApiService();
 
   List<String> _buildAbsoluteUrls(List<dynamic> rawFiles) {
-    return rawFiles.map((e) {
-      String? path;
-      if (e is Map && e["destination"] != null) {
-        path = e["destination"].toString();
-      } else if (e is String) {
-        path = e;
-      }
+    return rawFiles
+        .map((e) {
+          String? path;
+          if (e is Map) {
+            path = (e["path"] ?? e["destination"])?.toString();
+          } else if (e is String) {
+            path = e;
+          }
 
-      if (path == null || path.isEmpty) return '';
-      if (path.startsWith('http')) return path;
-      String cleanPath = path.startsWith('/') ? path.substring(1) : path;
-      return '${ApiConstants.imageURL}$cleanPath';
-    }).where((element) => element.isNotEmpty).toList();
+          if (path == null || path.isEmpty) return '';
+          if (path.startsWith('http')) return path;
+          String cleanPath = path.startsWith('/') ? path.substring(1) : path;
+          return '${ApiConstants.imageURL}$cleanPath';
+        })
+        .where((element) => element.isNotEmpty)
+        .toList();
   }
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -71,33 +74,39 @@ class _SpecialProfileState extends State<SpecialProfile> {
         final profile = _controller.profile.value;
         final serverImages = profile.serverImages;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
-              ProfileHeader(
-                name: profile.name ?? '',
-                imageUrl: profile.imageUrl,
-                shortBio: _shortText,
-                rating: profile.rating,
-                reviewCount: profile.reviewCount,
-                createdAt: profile.createdAt,
-                doneJobsCount: profile.doneJobsCount,
-                totalJobsCount: profile.totalJobsCount,
-              ),
-              const SizedBox(height: 15),
-              _buildBioCard(context),
-              if (serverImages.isNotEmpty) ...[
+        return RefreshIndicator(
+          onRefresh: () => _controller.refreshProfile(),
+          color: ColorConstants.kPrimaryColor2,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                ProfileHeader(
+                  name: profile.name ?? '',
+                  imageUrl: profile.imageUrl,
+                  shortBio: _shortText,
+                  rating: profile.rating,
+                  reviewCount: profile.reviewCount,
+                  createdAt: profile.createdAt,
+                  doneJobsCount: profile.doneJobsCount,
+                  totalJobsCount: profile.totalJobsCount,
+                ),
+                const SizedBox(height: 15),
+                _buildBioCard(context),
+                if (serverImages.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _buildImagesSection(serverImages),
+                ],
+                if (profile.reviewCount > 0 ||
+                    _controller.reviews.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _buildReviewsSection(profile),
+                ],
                 const SizedBox(height: 20),
-                _buildImagesSection(serverImages),
               ],
-              if (profile.reviewCount > 0 || _controller.reviews.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                _buildReviewsSection(profile),
-              ],
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         );
       }),
@@ -270,7 +279,8 @@ class _SpecialProfileState extends State<SpecialProfile> {
                   errorWidget: (context, url, _) => Container(
                     color: Colors.grey[200],
                     child: const Center(
-                      child: Icon(Icons.image_not_supported, color: Colors.grey),
+                      child:
+                          Icon(Icons.image_not_supported, color: Colors.grey),
                     ),
                   ),
                 ),
@@ -311,8 +321,9 @@ class _SpecialProfileState extends State<SpecialProfile> {
 
   /// Reviews section with AnimatedSwitcher + shimmer loading.
   Widget _buildReviewsSection(profile) {
-    final totalReviews =
-        profile.reviewCount > 0 ? profile.reviewCount : _controller.reviews.length;
+    final totalReviews = profile.reviewCount > 0
+        ? profile.reviewCount
+        : _controller.reviews.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,23 +337,23 @@ class _SpecialProfileState extends State<SpecialProfile> {
 
         // AnimatedSwitcher: shimmer ↔ loaded reviews
         Obx(() => AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: _controller.isLoadingReviews.value
-              ? const Column(
-                  key: ValueKey('loading'),
-                  children: [
-                    ReviewTileShimmer(),
-                    ReviewTileShimmer(),
-                  ],
-                )
-              : Column(
-                  key: const ValueKey('loaded'),
-                  children: _controller.reviews
-                      .take(2) // show first 2, rest via "see all"
-                      .map((r) => ReviewTile(review: r))
-                      .toList(),
-                ),
-        )),
+              duration: const Duration(milliseconds: 300),
+              child: _controller.isLoadingReviews.value
+                  ? const Column(
+                      key: ValueKey('loading'),
+                      children: [
+                        ReviewTileShimmer(),
+                        ReviewTileShimmer(),
+                      ],
+                    )
+                  : Column(
+                      key: const ValueKey('loaded'),
+                      children: _controller.reviews
+                          .take(2)
+                          .map((r) => ReviewTile(review: r))
+                          .toList(),
+                    ),
+            )),
 
         // "See all" link
         if (_controller.reviews.length > 2) ...[

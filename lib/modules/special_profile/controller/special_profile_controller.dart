@@ -156,7 +156,7 @@ class SpecialProfileController extends GetxController {
 
     // Refresh Settings Header if available
     if (Get.isRegistered<SettingsController>()) {
-      Get.find<SettingsController>().fetchMasterProfileHeader();
+      await Get.find<SettingsController>().fetchMasterProfileHeader();
     }
   }
 
@@ -343,7 +343,7 @@ class SpecialProfileController extends GetxController {
                   .toString();
           files.add({
             if (meta['id'] != null) 'id': meta['id'],
-            'destination': _cleanFilePath(filePath),
+            'path': _cleanFilePath(filePath),
             'filename': filename,
           });
         }

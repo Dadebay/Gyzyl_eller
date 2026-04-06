@@ -34,6 +34,9 @@ class SettingsController extends GetxController {
     try {
       if (!isLoggedIn) return;
 
+      // 0. Reload user data from storage just in case it changed
+      loadUser();
+
       // 1. Get Master ID from storage
       String? masterId = _authStorage.masterProfileId;
 

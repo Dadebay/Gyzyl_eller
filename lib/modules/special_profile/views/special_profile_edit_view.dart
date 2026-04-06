@@ -177,8 +177,8 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
       _existingFiles = controller.profile.value.serverImages
           .map((e) {
             String? rawPath;
-            if (e is Map && e["destination"] != null) {
-              rawPath = e["destination"].toString();
+            if (e is Map) {
+              rawPath = (e["path"] ?? e["destination"])?.toString();
             } else if (e is String) {
               rawPath = e;
             }
