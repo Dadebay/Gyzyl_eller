@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -110,6 +112,7 @@ class _SpecialProfileState extends State<SpecialProfile> {
                   createdAt: profile.createdAt,
                   doneJobsCount: profile.doneJobsCount,
                   totalJobsCount: profile.totalJobsCount,
+                  experience: profile.experience,
                 ),
                 const SizedBox(height: 15),
                 _buildBioCard(context),

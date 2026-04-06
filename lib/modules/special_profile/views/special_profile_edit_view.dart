@@ -286,8 +286,8 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
                             !controller.isChecked.value;
                       },
                       child: Container(
-                        width: 22,
-                        height: 22,
+                        width: 26,
+                        height: 26,
                         decoration: BoxDecoration(
                           color: controller.isChecked.value
                               ? ColorConstants.kPrimaryColor2

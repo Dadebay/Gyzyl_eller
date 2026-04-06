@@ -401,77 +401,125 @@ class _FileUploadSectionState extends State<FileUploadSection> {
           Column(
             children: images.map((img) {
               return Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                margin: const EdgeInsets.only(bottom: 20),
+                child: Column(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: img["path"] != null
-                          ? Image.file(
-                              File(img["path"] as String),
-                              width: 70,
-                              height: 70,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildImageError();
-                              },
-                            )
-                          : CachedNetworkImage(
-                              imageUrl: img["url"] ?? "",
-                              width: 70,
-                              height: 70,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                width: 70,
-                                height: 70,
-                                color: Colors.grey[200],
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: img["path"] != null
+                              ? Image.file(
+                                  File(img["path"] as String),
+                                  width: 70,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _buildImageError();
+                                  },
+                                )
+                              : CachedNetworkImage(
+                                  imageUrl: img["url"] ?? "",
+                                  width: 70,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    width: 70,
+                                    height: 70,
+                                    color: Colors.grey[200],
+                                  ),
+                                  errorWidget: (context, url, _) =>
+                                      _buildImageError(),
+                                ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                img["name"],
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                              errorWidget: (context, url, _) =>
-                                  _buildImageError(),
-                            ),
+                              const SizedBox(height: 4),
+                              (() {
+                                final size = img["size"];
+                                final sizeStr = (size != null &&
+                                        size.toString().trim().isNotEmpty &&
+                                        size != '-')
+                                    ? size.toString()
+                                    : null;
+                                final status = img["loading"] == true
+                                    ? "status_loading".tr
+                                    : "status_completed".tr;
+                                final statusStr =
+                                    (status.toString().trim().isNotEmpty &&
+                                            status != '-')
+                                        ? status.toString()
+                                        : null;
+                                if (sizeStr == null && statusStr == null) {
+                                  return const SizedBox.shrink();
+                                } else if (sizeStr != null &&
+                                    statusStr != null) {
+                                  return Text(
+                                    "$sizeStr / $statusStr",
+                                    style: TextStyle(
+                                      color: ColorConstants.blackColor
+                                          .withOpacity(0.5),
+                                      fontSize: 13,
+                                    ),
+                                  );
+                                } else if (sizeStr != null) {
+                                  return Text(
+                                    sizeStr,
+                                    style: TextStyle(
+                                      color: ColorConstants.blackColor
+                                          .withOpacity(0.5),
+                                      fontSize: 13,
+                                    ),
+                                  );
+                                } else {
+                                  return Text(
+                                    statusStr!,
+                                    style: TextStyle(
+                                      color: ColorConstants.blackColor
+                                          .withOpacity(0.5),
+                                      fontSize: 13,
+                                    ),
+                                  );
+                                }
+                              })(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _removeImage(img),
+                          child: const Icon(Icons.close, size: 24),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            img["name"],
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            img["size"] ?? '',
-                            style: TextStyle(
-                              color: ColorConstants.blackColor.withOpacity(0.4),
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: img["progress"],
-                              minHeight: 5,
-                              backgroundColor: Colors.grey.shade300,
-                              valueColor: AlwaysStoppedAnimation(
-                                img["loading"] == true
-                                    ? ColorConstants.kPrimaryColor2
-                                    : Colors.green,
-                              ),
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 12),
+                    if (img["loading"] == true)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: img["progress"],
+                          minHeight: 4,
+                          backgroundColor: Colors.grey.shade100,
+                          valueColor: const AlwaysStoppedAnimation(
+                              ColorConstants.kPrimaryColor2),
+                        ),
+                      )
+                    else
+                      Container(
+                        height: 1,
+                        color: Colors.grey.shade100,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _removeImage(img),
-                      child: const Icon(Icons.close, size: 22),
-                    ),
                   ],
                 ),
               );

@@ -18,6 +18,8 @@ class ProfileHeader extends StatelessWidget {
   final int doneJobsCount;
   final int totalJobsCount;
 
+  final String? experience;
+
   const ProfileHeader({
     super.key,
     required this.name,
@@ -28,6 +30,7 @@ class ProfileHeader extends StatelessWidget {
     this.createdAt = '',
     this.doneJobsCount = 0,
     this.totalJobsCount = 0,
+    this.experience,
   });
 
   String get _formattedDate {
@@ -143,6 +146,47 @@ class ProfileHeader extends StatelessWidget {
             ),
           ],
         ),
+        if (experience != null && experience!.isNotEmpty) ...[
+          const SizedBox(height: 25),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const HugeIcon(
+                      icon: HugeIcons.strokeRoundedWorkHistory,
+                      color: ColorConstants.blackColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'work_tejribe'.tr,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: ColorConstants.blackColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 28.0),
+                  child: Text(
+                    experience!,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: ColorConstants.fonts,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

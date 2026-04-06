@@ -162,25 +162,31 @@ class LoginView extends GetView<LoginController> {
                           controller.isChecked.value =
                               !controller.isChecked.value;
                         },
+                        behavior: HitTestBehavior.translucent,
                         child: Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: controller.isChecked.value
-                                ? ColorConstants.kPrimaryColor2
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 1.5,
+                          width: 38, // Increased size for easier tap
+                          height: 38,
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: controller.isChecked.value
+                                  ? ColorConstants.kPrimaryColor2
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
                             ),
+                            child: controller.isChecked.value
+                                ? const HugeIcon(
+                                    icon: HugeIcons.strokeRoundedTick02,
+                                    size: 18,
+                                    color: Colors.white)
+                                : null,
                           ),
-                          child: controller.isChecked.value
-                              ? const HugeIcon(
-                                  icon: HugeIcons.strokeRoundedTick02,
-                                  size: 16,
-                                  color: Colors.white)
-                              : null,
                         ),
                       ),
                       const SizedBox(width: 10),
