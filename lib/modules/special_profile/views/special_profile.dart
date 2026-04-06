@@ -270,16 +270,35 @@ class _SpecialProfileState extends State<SpecialProfile> {
     );
   }
 
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        HugeIcon(
+          icon: icon,
+          color: ColorConstants.blackColor,
+          size: 22,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: ColorConstants.blackColor,
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Works / diplomas / certificates image grid.
   Widget _buildImagesSection(List<String> images) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${'works_section_title'.tr} ${images.length}',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        const SizedBox(height: 12),
+        _buildSectionHeader(
+            'works_section_title'.tr, HugeIcons.strokeRoundedFiles01),
+        const SizedBox(height: 15),
         GridView.builder(
           shrinkWrap: true,
           itemCount: images.length,
@@ -408,11 +427,9 @@ class _SpecialProfileState extends State<SpecialProfile> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section header
-        Text(
-          '${'reviews_section_title'.tr} $totalReviews',
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        ),
-        const SizedBox(height: 12),
+        _buildSectionHeader(
+            'reviews_section_title'.tr, HugeIcons.strokeRoundedComment01),
+        const SizedBox(height: 15),
 
         // AnimatedSwitcher: shimmer ↔ loaded reviews
         Obx(() => AnimatedSwitcher(
