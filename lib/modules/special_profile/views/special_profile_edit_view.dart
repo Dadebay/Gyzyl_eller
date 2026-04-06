@@ -358,7 +358,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
               onMetadataChanged: (metadata) {
                 setState(() {
                   _fileMetadata = metadata;
-                  // Extract deleted IDs to sync with controller expectations if needed
+
                   _deletedFileIds = metadata
                       .where((m) => m['deleted'] == true && m['id'] != null)
                       .map((m) => int.tryParse(m['id'].toString()) ?? 0)

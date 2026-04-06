@@ -12,6 +12,8 @@ import 'package:gyzyleller/modules/special_profile/views/all_reviews_screen.dart
 import 'package:gyzyleller/modules/special_profile/widgets/profile_header.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:path/path.dart' as p;
 
 class SpecialProfile extends StatefulWidget {
   const SpecialProfile({super.key});
@@ -64,6 +66,23 @@ class _SpecialProfileState extends State<SpecialProfile> {
     return p.longBio ?? '';
   }
 
+  bool _isImage(String path) {
+    final String ext = p.extension(path).toLowerCase();
+    return ext == '.jpg' ||
+        ext == '.jpeg' ||
+        ext == '.png' ||
+        ext == '.gif' ||
+        ext == '.webp';
+  }
+
+  Future<void> _openFile(String url) async {
+    try {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Error opening file: $e');
+    }
+  }
+
   // ── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -72,7 +91,9 @@ class _SpecialProfileState extends State<SpecialProfile> {
       appBar: _buildAppBar(),
       body: Obx(() {
         final profile = _controller.profile.value;
-        final serverImages = profile.serverImages;
+        final allFiles = _buildAbsoluteUrls(profile.serverImages);
+        final images = allFiles.where((f) => _isImage(f)).toList();
+        final documents = allFiles.where((f) => !_isImage(f)).toList();
 
         return RefreshIndicator(
           onRefresh: () => _controller.refreshProfile(),
@@ -95,9 +116,13 @@ class _SpecialProfileState extends State<SpecialProfile> {
                 ),
                 const SizedBox(height: 15),
                 _buildBioCard(context),
-                if (serverImages.isNotEmpty) ...[
+                if (images.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  _buildImagesSection(serverImages),
+                  _buildImagesSection(images),
+                ],
+                if (documents.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _buildDocumentsSection(documents),
                 ],
                 if (profile.reviewCount > 0 ||
                     _controller.reviews.isNotEmpty) ...[
@@ -246,9 +271,7 @@ class _SpecialProfileState extends State<SpecialProfile> {
   }
 
   /// Works / diplomas / certificates image grid.
-  Widget _buildImagesSection(List<dynamic> rawPaths) {
-    final images = _buildAbsoluteUrls(rawPaths);
-
+  Widget _buildImagesSection(List<String> images) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -289,6 +312,62 @@ class _SpecialProfileState extends State<SpecialProfile> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildDocumentsSection(List<String> documents) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...documents.map((docUrl) => _buildDocumentCard(docUrl)),
+      ],
+    );
+  }
+
+  Widget _buildDocumentCard(String docUrl) {
+    String fileName = p.basename(docUrl);
+    if (fileName.contains('?')) {
+      fileName = fileName.split('?').first;
+    }
+
+    return InkWell(
+      onTap: () => _openFile(docUrl),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.05),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.insert_drive_file,
+                size: 32, color: ColorConstants.kPrimaryColor2),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            const Icon(Icons.open_in_new, size: 20, color: Colors.grey),
+          ],
+        ),
+      ),
     );
   }
 
