@@ -308,7 +308,8 @@ class SpecialProfileController extends GetxController {
               (meta['filename'] ?? meta['name'] ?? _extractFileName(filePath))
                   .toString();
           files.add({
-            'path': filePath,
+            if (meta['id'] != null) 'id': meta['id'],
+            'destination': _cleanFilePath(filePath),
             'filename': filename,
           });
         }
@@ -438,7 +439,18 @@ class SpecialProfileController extends GetxController {
     return parts.isNotEmpty ? parts.last : path;
   }
 
+  String _cleanFilePath(String path) {
+    // If it's a full URL, we need to extract the relative path
+    final String baseUrl = ApiConstants.imageURL;
+    if (path.startsWith(baseUrl)) {
+      return path.substring(baseUrl.length);
+    }
+    return path;
+  }
+
   String? _resolveServerFilePath(Map<String, dynamic> meta) {
+    // If it's a new upload, 'url' contains the relative path returned by server
+    // If it's an initial file, 'url' contains the full URL (prepended in the view)
     final String? url = meta['url']?.toString().trim();
     if (url != null && url.isNotEmpty) return url;
 

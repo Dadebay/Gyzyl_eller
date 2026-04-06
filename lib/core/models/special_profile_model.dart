@@ -11,7 +11,7 @@ class SpecialProfileModel {
   final int? etrapId;
   final String welayat;
   final String etrap;
-  final List<String> serverImages;
+  final List<dynamic> serverImages;
   final num rating;
   final int reviewCount;
   final String createdAt;
@@ -53,7 +53,7 @@ class SpecialProfileModel {
       etrapId: int.tryParse(json['etrap_id']?.toString() ?? ''),
       welayat: json['welayat']?.toString() ?? '',
       etrap: json['etrap']?.toString() ?? '',
-      serverImages: (json['files'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      serverImages: (json['files'] as List?) ?? [],
       rating: num.tryParse(json['rating']?.toString() ?? '0') ?? 0,
       reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
       createdAt: json['created_at']?.toString() ?? '',
@@ -97,7 +97,7 @@ class SpecialProfileModel {
     int? etrapId,
     String? welayat,
     String? etrap,
-    List<String>? serverImages,
+    List<dynamic>? serverImages,
     num? rating,
     int? reviewCount,
     String? createdAt,

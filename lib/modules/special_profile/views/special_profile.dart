@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -29,12 +30,20 @@ class _SpecialProfileState extends State<SpecialProfile> {
   bool _isLoadingReviews = false;
   final ApiService _apiService = ApiService();
 
-  List<String> _buildAbsoluteUrls(List<String> rawPaths) {
-    return rawPaths.map((path) {
+  List<String> _buildAbsoluteUrls(List<dynamic> rawFiles) {
+    return rawFiles.map((e) {
+      String? path;
+      if (e is Map && e["destination"] != null) {
+        path = e["destination"].toString();
+      } else if (e is String) {
+        path = e;
+      }
+
+      if (path == null || path.isEmpty) return '';
       if (path.startsWith('http')) return path;
-      if (path.startsWith('/')) path = path.substring(1);
-      return '${ApiConstants.imageURL}$path';
-    }).toList();
+      String cleanPath = path.startsWith('/') ? path.substring(1) : path;
+      return '${ApiConstants.imageURL}$cleanPath';
+    }).where((element) => element.isNotEmpty).toList();
   }
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -255,7 +264,7 @@ class _SpecialProfileState extends State<SpecialProfile> {
   }
 
   /// Works / diplomas / certificates image grid.
-  Widget _buildImagesSection(List<String> rawPaths) {
+  Widget _buildImagesSection(List<dynamic> rawPaths) {
     final images = _buildAbsoluteUrls(rawPaths);
 
     return Column(
@@ -281,17 +290,36 @@ class _SpecialProfileState extends State<SpecialProfile> {
               onTap: () => _openImageGallery(images, index),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  images[index],
+                child: CachedNetworkImage(
+                  imageUrl: images[index],
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      Container(color: Colors.grey[200]),
+                  placeholder: (context, url) => _buildImageShimmer(),
+                  errorWidget: (context, url, _) => Container(
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, color: Colors.grey),
+                    ),
+                  ),
                 ),
               ),
             );
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildImageShimmer() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 0.6),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Container(
+          color: Colors.grey[200]!.withOpacity(value),
+        );
+      },
+      onEnd: () {},
     );
   }
 

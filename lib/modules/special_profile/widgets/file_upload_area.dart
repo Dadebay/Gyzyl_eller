@@ -1,19 +1,27 @@
-﻿// ignore_for_file: use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
-import 'package:gyzyleller/shared/extensions/packages.dart';
+import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:dotted_border/dotted_border.dart';
 
 class FileUploadSection extends StatefulWidget {
+  final List<Map<String, dynamic>>? initialFiles;
   final Function(bool hasFiles)? onFilesChanged;
   final Function(List<String> urls)? onUrlsUploaded;
   final Function(List<Map<String, dynamic>> metadata)? onMetadataChanged;
 
   const FileUploadSection({
     super.key,
+    this.initialFiles,
     this.onFilesChanged,
     this.onUrlsUploaded,
     this.onMetadataChanged,
@@ -28,7 +36,39 @@ class _FileUploadSectionState extends State<FileUploadSection> {
   final List<Map<String, dynamic>> uploadedFiles = [];
   final ImagePicker _picker = ImagePicker();
   final ApiService _apiService = ApiService();
+  final List<Map<String, dynamic>> allDeletedFiles = [];
   bool _isProcessingQueue = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialFiles != null) {
+      for (var f in widget.initialFiles!) {
+        final String name = f["filename"] ?? f["name"] ?? "file";
+        final String? url = f["url"];
+        final bool isImage = _isImageFile(name);
+
+        final Map<String, dynamic> item = {
+          ...f,
+          "name": name,
+          "loading": false,
+          "progress": 1.0,
+          "isInitial": true,
+        };
+
+        if (isImage) {
+          images.add(item);
+        } else {
+          uploadedFiles.add(item);
+        }
+      }
+    }
+  }
+
+  bool _isImageFile(String filename) {
+    final String ext = filename.split('.').last.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'webp', 'gif'].contains(ext);
+  }
 
   Future<void> _processUploadQueue() async {
     if (_isProcessingQueue) return;
@@ -115,6 +155,7 @@ class _FileUploadSectionState extends State<FileUploadSection> {
       final List<Map<String, dynamic>> metadata = [];
       metadata.addAll(uploadedFiles);
       metadata.addAll(images);
+      metadata.addAll(allDeletedFiles);
       widget.onMetadataChanged!(metadata);
     }
   }
@@ -175,12 +216,22 @@ class _FileUploadSectionState extends State<FileUploadSection> {
   }
 
   void _removeImage(Map<String, dynamic> image) {
-    setState(() => images.remove(image));
+    setState(() {
+      images.remove(image);
+      if (image["isInitial"] == true) {
+        allDeletedFiles.add({...image, "deleted": true});
+      }
+    });
     _notifyParent();
   }
 
   void _removeFile(Map<String, dynamic> file) {
-    setState(() => uploadedFiles.remove(file));
+    setState(() {
+      uploadedFiles.remove(file);
+      if (file["isInitial"] == true) {
+        allDeletedFiles.add({...file, "deleted": true});
+      }
+    });
     _notifyParent();
   }
 
@@ -341,20 +392,29 @@ class _FileUploadSectionState extends State<FileUploadSection> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        File(img["path"] as String),
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 70,
-                            height: 70,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image, color: Colors.grey),
-                          );
-                        },
-                      ),
+                      child: img["path"] != null
+                          ? Image.file(
+                              File(img["path"] as String),
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildImageError();
+                              },
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: img["url"] ?? "",
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                width: 70,
+                                height: 70,
+                                color: Colors.grey[200],
+                              ),
+                              errorWidget: (context, url, _) =>
+                                  _buildImageError(),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -403,6 +463,15 @@ class _FileUploadSectionState extends State<FileUploadSection> {
             }).toList(),
           ),
       ],
+    );
+  }
+
+  Widget _buildImageError() {
+    return Container(
+      width: 70,
+      height: 70,
+      color: Colors.grey[300],
+      child: const Icon(Icons.image, color: Colors.grey),
     );
   }
 }

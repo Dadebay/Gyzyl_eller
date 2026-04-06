@@ -17,12 +17,55 @@ class SettingsController extends GetxController {
   final RxBool hasSpecialProfile = false.obs;
   final RxDouble userBalance = 0.0.obs;
 
+  // Masters API'den gelen username ve image
+  final RxString masterUsername = ''.obs;
+  final RxString masterImage = ''.obs;
+
   @override
   void onInit() {
     super.onInit();
     loadUser();
     checkSpecialProfile();
     fetchBalance();
+    fetchMasterProfileHeader();
+  }
+
+  Future<void> fetchMasterProfileHeader() async {
+    try {
+      if (!isLoggedIn) return;
+
+      // 1. Get Master ID from storage
+      String? masterId = _authStorage.masterProfileId;
+
+      // 2. If not in storage, fetch from /api/user/masters/profile
+      if (masterId == null) {
+        final profileResponse =
+            await _apiService.getRequest(ApiConstants.specialProfile);
+        if (profileResponse != null && profileResponse['data'] != null) {
+          masterId = profileResponse['data']['id']?.toString();
+          if (masterId != null) {
+            _authStorage.saveMasterProfileId(masterId);
+            hasSpecialProfile.value = true;
+          }
+        }
+      }
+
+      if (masterId == null) return;
+
+      // 3. Fetch full master details from /api/get-master-by-id/{id}
+      final response =
+          await _apiService.getRequest(ApiConstants.getMasterById(masterId));
+      if (response != null && response['data'] != null) {
+        final data = response['data'];
+        masterUsername.value = data['username']?.toString() ?? '';
+        masterImage.value = data['image']?.toString() ?? '';
+
+        // Optional: Prepend image URL if needed (already handled by the getter, but good to check)
+        print('📡 [SettingsController] Master profile fetched: ${masterUsername.value}');
+      }
+    } catch (e) {
+      print('❌ [SettingsController] fetchMasterProfileHeader error: $e');
+    }
   }
 
   Future<void> fetchBalance() async {
@@ -38,9 +81,14 @@ class SettingsController extends GetxController {
     user.value = _authStorage.getUser();
   }
 
-  String get username => user.value?['username'] ?? 'your_name'.tr;
+  String get username => masterUsername.value.isNotEmpty
+      ? masterUsername.value
+      : (user.value?['username'] ?? 'your_name'.tr);
   String get phone => user.value?['phone'] ?? '';
   String? get imageUrl {
+    if (masterImage.value.isNotEmpty) {
+      return ApiConstants.imageURL + masterImage.value;
+    }
     if (user.value != null && user.value!['image'] != null) {
       return ApiConstants.imageURL + user.value!['image'];
     }

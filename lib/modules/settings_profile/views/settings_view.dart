@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -15,7 +16,6 @@ import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dar
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/user_profile_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/views/language_page.dart';
-import 'package:gyzyleller/modules/settings_profile/views/profile_edit_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:gyzyleller/modules/onboarding/views/onboarding_view.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
@@ -181,19 +181,36 @@ class SettingsView extends GetView<SettingsController> {
       ),
       child: Row(
         children: <Widget>[
-          CircleAvatar(
-            radius: 37,
-            backgroundColor: ColorConstants.background,
-            backgroundImage: controller.imageUrl != null
-                ? NetworkImage(controller.imageUrl!)
-                : null,
-            child: controller.imageUrl == null
-                ? SvgPicture.asset(
-                    IconConstants.person,
-                    width: 53,
-                    height: 54,
-                  )
-                : null,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(37),
+            child: Container(
+              width: 74,
+              height: 74,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: ColorConstants.background,
+              ),
+              child: (controller.imageUrl != null &&
+                      controller.imageUrl!.startsWith('http'))
+                  ? CachedNetworkImage(
+                      imageUrl: controller.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => _buildImageShimmer(),
+                      errorWidget: (context, url, _) => SvgPicture.asset(
+                        IconConstants.person,
+                        width: 53,
+                        height: 54,
+                      ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: SvgPicture.asset(
+                        IconConstants.person,
+                        width: 53,
+                        height: 54,
+                      ),
+                    ),
+            ),
           ),
           const SizedBox(width: 16.0),
           Expanded(
@@ -369,6 +386,20 @@ class SettingsView extends GetView<SettingsController> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImageShimmer() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 0.6),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Container(
+          color: Colors.grey[200]!.withOpacity(value),
+        );
+      },
+      onEnd: () {},
     );
   }
 }

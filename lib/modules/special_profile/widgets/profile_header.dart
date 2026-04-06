@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -63,10 +64,11 @@ class ProfileHeader extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(50),
                 child: (imageUrl != null && imageUrl!.startsWith('http'))
-                    ? Image.network(
-                        imageUrl!,
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const HugeIcon(
+                        placeholder: (context, url) => _buildShimmer(),
+                        errorWidget: (context, url, error) => const HugeIcon(
                           icon: HugeIcons.strokeRoundedUser,
                           color: ColorConstants.greyColor,
                           size: 60,
@@ -142,6 +144,20 @@ class ProfileHeader extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildShimmer() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 0.6),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Container(
+          color: Colors.grey[200]!.withOpacity(value),
+        );
+      },
+      onEnd: () {},
     );
   }
 }

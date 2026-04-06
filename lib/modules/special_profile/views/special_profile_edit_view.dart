@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gyzyleller/core/services/api_constants.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:gyzyleller/core/services/api.dart';
@@ -39,6 +40,11 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
 
   String? _selectedLegalizationType;
   List<Map<String, dynamic>> _fileMetadata = [];
+
+  // Mevcut dosyalar (API'den gelenler)
+  List<Map<String, dynamic>> _existingFiles = [];
+  // Silinen dosyaların id'leri
+  List<int> _deletedFileIds = [];
 
   static const List<String> _legalizationValues = [
     'entrepreneur',
@@ -165,6 +171,35 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     _selectedLegalizationType = _legalizationValues.contains(legalizationType)
         ? legalizationType
         : null;
+
+    // API'den gelen mevcut dosyaları yükle
+    if (controller.profile.value.serverImages.isNotEmpty) {
+      _existingFiles = controller.profile.value.serverImages
+          .map((e) {
+            String? rawPath;
+            if (e is Map && e["destination"] != null) {
+              rawPath = e["destination"].toString();
+            } else if (e is String) {
+              rawPath = e;
+            }
+
+            String? fullUrl;
+            if (rawPath != null) {
+              fullUrl = rawPath.startsWith('http')
+                  ? rawPath
+                  : '${ApiConstants.imageURL}${rawPath.startsWith('/') ? rawPath.substring(1) : rawPath}';
+            }
+
+            return {
+              "id": e is Map && e["id"] != null ? e["id"] : null,
+              "url": fullUrl,
+              "filename":
+                  e is Map && e["filename"] != null ? e["filename"] : null,
+            };
+          })
+          .where((f) => f["url"] != null)
+          .toList();
+    }
   }
 
   @override
@@ -319,9 +354,16 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
             ),
             const SizedBox(height: 10),
             FileUploadSection(
+              initialFiles: _existingFiles,
               onMetadataChanged: (metadata) {
                 setState(() {
                   _fileMetadata = metadata;
+                  // Extract deleted IDs to sync with controller expectations if needed
+                  _deletedFileIds = metadata
+                      .where((m) => m['deleted'] == true && m['id'] != null)
+                      .map((m) => int.tryParse(m['id'].toString()) ?? 0)
+                      .where((id) => id != 0)
+                      .toList();
                 });
               },
             ),
@@ -345,6 +387,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
                   fileMetadata: _fileMetadata,
                   imageFile: controller.selectedProfileImage.value,
                   isEdit: true,
+                  deleteFileIds: _deletedFileIds,
                 );
               },
               text: 'save_changes'.tr,
