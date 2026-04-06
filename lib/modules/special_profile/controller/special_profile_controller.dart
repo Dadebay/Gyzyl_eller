@@ -7,7 +7,7 @@ import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
 import 'package:gyzyleller/core/models/special_profile_model.dart';
 import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
-
+import 'package:hugeicons/hugeicons.dart';
 
 class SpecialProfileController extends GetxController {
   final Rx<SpecialProfileModel> profile = SpecialProfileModel().obs;
@@ -17,11 +17,79 @@ class SpecialProfileController extends GetxController {
   final RxList<ReviewModel> reviews = <ReviewModel>[].obs;
   final RxBool isLoadingReviews = false.obs;
 
-
   final ImagePicker _picker = ImagePicker();
   final AuthStorage _authStorage = AuthStorage();
   final RxBool isEditingName = false.obs;
   final RxBool isChecked = false.obs;
+
+  void _showLoadingDialog(String messageKey) {
+    Get.dialog(
+      barrierDismissible: false,
+      WillPopScope(
+        onWillPop: () async => false,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 80,
+                  width: 80,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const SizedBox(
+                        height: 80,
+                        width: 80,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: ColorConstants.kPrimaryColor2,
+                        ),
+                      ),
+                      HugeIcon(
+                        icon: messageKey.contains('edit')
+                            ? HugeIcons.strokeRoundedUserEdit01
+                            : HugeIcons.strokeRoundedUserAdd01,
+                        color: ColorConstants.kPrimaryColor2,
+                        size: 32,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 25),
+                Text(
+                  messageKey.tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: ColorConstants.fonts,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   void _showSuccessSnackBar(String messageKey) {
     CustomWidgets.showSnackBar(
@@ -322,7 +390,8 @@ class SpecialProfileController extends GetxController {
         return;
       }
 
-      Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
+      _showLoadingDialog(
+          isEdit ? 'edit_profile_loading' : 'create_profile_loading');
 
       final List<Map<String, dynamic>> files = [];
       final Set<int> deleteFilesSet = {...deleteFileIds};
@@ -387,7 +456,9 @@ class SpecialProfileController extends GetxController {
         isForm: false,
       );
 
-      Get.back();
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
 
       final bool isSuccess = _isSuccessfulSaveResponse(response);
 
@@ -398,12 +469,17 @@ class SpecialProfileController extends GetxController {
             response['data']['id'] != null) {
           _authStorage.saveMasterProfileId(response['data']['id'].toString());
         }
+
+        // Force a full refresh before navigating
         await refreshProfile();
+
         if (isEdit) {
           Get.back();
         } else {
+          // If adding new, we need to replace current view with profile
           Get.off(() => const SpecialProfile());
         }
+
         _showSuccessSnackBar('success_subtitle');
       } else {
         _showConnectionSnackBar();
@@ -412,6 +488,7 @@ class SpecialProfileController extends GetxController {
       if (Get.isDialogOpen == true) {
         Get.back();
       }
+      print('❌ [saveMasterProfile] Error: $e');
       _showConnectionSnackBar();
     }
   }

@@ -155,8 +155,8 @@ class CustomWidgets {
       snackPosition: SnackPosition.TOP,
       backgroundColor: color,
       borderRadius: 20.0,
-      duration: const Duration(milliseconds: 1000),
       margin: const EdgeInsets.all(8),
+      duration: const Duration(milliseconds: 2500),
     );
   }
 }

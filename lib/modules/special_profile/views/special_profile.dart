@@ -364,8 +364,11 @@ class _SpecialProfileState extends State<SpecialProfile> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.insert_drive_file_outlined,
-                size: 28, color: ColorConstants.kPrimaryColor2),
+            const HugeIcon(
+              icon: HugeIcons.strokeRoundedFiles02,
+              color: ColorConstants.kPrimaryColor2,
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
