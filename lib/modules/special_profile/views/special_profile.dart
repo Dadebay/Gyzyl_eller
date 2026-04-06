@@ -349,38 +349,41 @@ class _SpecialProfileState extends State<SpecialProfile> {
     return InkWell(
       onTap: () => _openFile(docUrl),
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
+        margin: const EdgeInsets.symmetric(vertical: 5),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.05),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           children: [
-            const Icon(Icons.insert_drive_file,
-                size: 32, color: ColorConstants.kPrimaryColor2),
+            const Icon(Icons.insert_drive_file_outlined,
+                size: 28, color: ColorConstants.kPrimaryColor2),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                fileName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: ColorConstants.blackColor,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const Icon(Icons.open_in_new, size: 20, color: Colors.grey),
           ],
         ),
       ),
