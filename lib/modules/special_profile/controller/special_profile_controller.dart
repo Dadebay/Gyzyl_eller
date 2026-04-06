@@ -5,12 +5,18 @@ import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
 import 'package:gyzyleller/core/models/special_profile_model.dart';
+import 'package:gyzyleller/core/models/review_model.dart';
+import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
+
 
 class SpecialProfileController extends GetxController {
   final Rx<SpecialProfileModel> profile = SpecialProfileModel().obs;
   final RxList<File> images = <File>[].obs;
   final Rxn<File> selectedProfileImage = Rxn<File>(null);
   final RxBool isUploadingProfileImage = false.obs;
+  final RxList<ReviewModel> reviews = <ReviewModel>[].obs;
+  final RxBool isLoadingReviews = false.obs;
+
 
   final ImagePicker _picker = ImagePicker();
   final AuthStorage _authStorage = AuthStorage();
@@ -123,6 +129,34 @@ class SpecialProfileController extends GetxController {
         }
       }
       setProfileFromData(response['data'] as Map<String, dynamic>);
+    }
+  }
+
+  Future<void> fetchReviews() async {
+    final userId = profile.value.userId;
+    if (userId == null || userId.isEmpty) return;
+
+    isLoadingReviews.value = true;
+    try {
+      final ApiService apiService = ApiService();
+      final rawList = await apiService.getMasterReviews(userId);
+      reviews.value = rawList
+          .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('❌ [SpecialProfileController] fetchReviews error: $e');
+    } finally {
+      isLoadingReviews.value = false;
+    }
+  }
+
+  Future<void> refreshProfile() async {
+    await fetchProfileData();
+    await fetchReviews();
+
+    // Refresh Settings Header if available
+    if (Get.isRegistered<SettingsController>()) {
+      Get.find<SettingsController>().fetchMasterProfileHeader();
     }
   }
 
@@ -364,7 +398,7 @@ class SpecialProfileController extends GetxController {
             response['data']['id'] != null) {
           _authStorage.saveMasterProfileId(response['data']['id'].toString());
         }
-        await fetchProfileData();
+        await refreshProfile();
         if (isEdit) {
           Get.back();
         } else {

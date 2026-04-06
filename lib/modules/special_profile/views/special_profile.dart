@@ -26,8 +26,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
 
   // ── State ────────────────────────────────────────────────────────────────
   bool _isExpanded = false;
-  List<ReviewModel> _reviews = [];
-  bool _isLoadingReviews = false;
   final ApiService _apiService = ApiService();
 
   List<String> _buildAbsoluteUrls(List<dynamic> rawFiles) {
@@ -50,32 +48,7 @@ class _SpecialProfileState extends State<SpecialProfile> {
   @override
   void initState() {
     super.initState();
-    _fetchReviews();
-  }
-
-  /// Fetches reviews from `master-reviews/{userId}` and converts raw JSON
-  /// into [ReviewModel] instances.
-  Future<void> _fetchReviews() async {
-    final userId = _controller.profile.value.userId;
-    if (userId == null || userId.isEmpty) {
-      return;
-    }
-
-    setState(() => _isLoadingReviews = true);
-    try {
-      final rawList = await _apiService.getMasterReviews(userId);
-      if (mounted) {
-        final reviews = rawList
-            .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-        setState(() {
-          _reviews = reviews;
-          _isLoadingReviews = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoadingReviews = false);
-    }
+    _controller.fetchReviews();
   }
 
   String get _shortText {
@@ -119,7 +92,7 @@ class _SpecialProfileState extends State<SpecialProfile> {
                 const SizedBox(height: 20),
                 _buildImagesSection(serverImages),
               ],
-              if (profile.reviewCount > 0 || _reviews.isNotEmpty) ...[
+              if (profile.reviewCount > 0 || _controller.reviews.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 _buildReviewsSection(profile),
               ],
@@ -339,7 +312,7 @@ class _SpecialProfileState extends State<SpecialProfile> {
   /// Reviews section with AnimatedSwitcher + shimmer loading.
   Widget _buildReviewsSection(profile) {
     final totalReviews =
-        profile.reviewCount > 0 ? profile.reviewCount : _reviews.length;
+        profile.reviewCount > 0 ? profile.reviewCount : _controller.reviews.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,9 +325,9 @@ class _SpecialProfileState extends State<SpecialProfile> {
         const SizedBox(height: 12),
 
         // AnimatedSwitcher: shimmer ↔ loaded reviews
-        AnimatedSwitcher(
+        Obx(() => AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child: _isLoadingReviews
+          child: _controller.isLoadingReviews.value
               ? const Column(
                   key: ValueKey('loading'),
                   children: [
@@ -364,15 +337,15 @@ class _SpecialProfileState extends State<SpecialProfile> {
                 )
               : Column(
                   key: const ValueKey('loaded'),
-                  children: _reviews
+                  children: _controller.reviews
                       .take(2) // show first 2, rest via "see all"
                       .map((r) => ReviewTile(review: r))
                       .toList(),
                 ),
-        ),
+        )),
 
         // "See all" link
-        if (_reviews.length > 2) ...[
+        if (_controller.reviews.length > 2) ...[
           const SizedBox(height: 5),
           InkWell(
             onTap: () => _showAllReviews(),
