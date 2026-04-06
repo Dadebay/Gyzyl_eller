@@ -300,16 +300,7 @@ class WalletView extends GetView<WalletController> {
       _ => 'unknown_transaction'.tr,
     };
 
-    final iconColor = switch (eventType) {
-      1 => ColorConstants.blue,
-      2 => ColorConstants.purpleColor,
-      3 => Colors.orange,
-      4 => Colors.pink,
-      5 => ColorConstants.greenColor,
-      6 => ColorConstants.kPrimaryColor2,
-      7 => ColorConstants.premiumColor,
-      _ => Colors.grey,
-    };
+    final mainColor = isPositive ? ColorConstants.kSecondaryColor : ColorConstants.kPrimaryColor2;
 
     String createdAtFormatted = '';
     try {
@@ -333,9 +324,10 @@ class WalletView extends GetView<WalletController> {
                   color: ColorConstants.background,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: SvgPicture.asset(
-                  'assets/icons/toleg.svg',
-                  color: iconColor,
+                child: Icon(
+                  isPositive ? Icons.north_west : Icons.south_west,
+                  color: mainColor,
+                  size: 24,
                 ),
               ),
               const SizedBox(width: 14),
@@ -348,18 +340,18 @@ class WalletView extends GetView<WalletController> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: ColorConstants.blue,
+                        color: ColorConstants.fonts,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '$summ ŞAÝ',
-                      style: const TextStyle(
+                      '${isPositive ? '+' : '-'}$summ ŞAÝ',
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: ColorConstants.fonts,
+                        color: mainColor,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -380,9 +372,7 @@ class WalletView extends GetView<WalletController> {
                     ? (parsedSumm >= 0 ? 'alyndy'.tr : 'geçdi'.tr)
                     : 'alyndy'.tr,
                 style: TextStyle(
-                  color: isPositive
-                      ? ColorConstants.kPrimaryColor2
-                      : ColorConstants.kPrimaryColor2,
+                  color: mainColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
