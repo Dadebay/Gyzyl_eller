@@ -2,9 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/core/services/api_constants.dart';
-import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile_edit_view.dart';
@@ -28,7 +26,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
 
   // ── State ────────────────────────────────────────────────────────────────
   bool _isExpanded = false;
-  final ApiService _apiService = ApiService();
 
   List<String> _buildAbsoluteUrls(List<dynamic> rawFiles) {
     return rawFiles
@@ -419,10 +416,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
 
   /// Reviews section with AnimatedSwitcher + shimmer loading.
   Widget _buildReviewsSection(profile) {
-    final totalReviews = profile.reviewCount > 0
-        ? profile.reviewCount
-        : _controller.reviews.length;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -489,9 +482,6 @@ class _SpecialProfileState extends State<SpecialProfile> {
   }
 }
 
-// ── Internal Gallery Screen ──────────────────────────────────────────────────
-
-/// Simple full-screen image gallery with swipe-to-switch pages.
 class _ImageGalleryScreen extends StatefulWidget {
   final List<String> images;
   final int initialIndex;

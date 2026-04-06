@@ -310,75 +310,90 @@ class _FileUploadSectionState extends State<FileUploadSection> {
 
         const SizedBox(height: 16),
 
-        // ---------------- Files List ----------------
+        // ---------------- Documents List ----------------
         if (uploadedFiles.isNotEmpty) ...[
-          Wrap(
-            spacing: 8,
-            runSpacing: 10,
-            children: uploadedFiles.map((file) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: uploadedFiles.length,
+            itemBuilder: (context, index) {
+              final file = uploadedFiles[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.insert_drive_file,
-                            size: 22, color: ColorConstants.kPrimaryColor2),
-                        const SizedBox(width: 6),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 140),
-                          child: Text(
-                            file["name"],
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.insert_drive_file_outlined,
+                        size: 28, color: ColorConstants.kPrimaryColor2),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            file["name"] ?? 'file',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w500),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: ColorConstants.blackColor,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        GestureDetector(
-                          onTap: () => _removeFile(file),
-                          child: const Icon(Icons.close, size: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (file["loading"] == true) ...[
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      width: 100,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: file["progress"],
-                          minHeight: 3,
-                          backgroundColor: Colors.grey.shade100,
-                          valueColor: const AlwaysStoppedAnimation(
-                              ColorConstants.kPrimaryColor2),
-                        ),
+                          if (file["size"] != null)
+                            Text(
+                              file["size"] as String,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    ColorConstants.blackColor.withOpacity(0.4),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
+                    if (file["loading"] == true)
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              value: file["progress"],
+                              strokeWidth: 2,
+                              backgroundColor: Colors.grey[200],
+                              valueColor: const AlwaysStoppedAnimation(
+                                  ColorConstants.kPrimaryColor2),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      IconButton(
+                        onPressed: () => _removeFile(file),
+                        icon: const Icon(Icons.delete_outline,
+                            color: Colors.redAccent, size: 22),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
                   ],
-                ],
+                ),
               );
-            }).toList(),
+            },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
         ],
 
         // ---------------- Images List ----------------
@@ -429,9 +444,9 @@ class _FileUploadSectionState extends State<FileUploadSection> {
                             ),
                           ),
                           Text(
-                            '${img["size"]} / ${img["loading"] ? "loading" : "complete"}',
-                            style: const TextStyle(
-                              color: ColorConstants.greyColor,
+                            img["size"] ?? '',
+                            style: TextStyle(
+                              color: ColorConstants.blackColor.withOpacity(0.4),
                               fontSize: 12,
                             ),
                           ),
