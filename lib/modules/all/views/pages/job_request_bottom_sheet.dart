@@ -81,10 +81,7 @@ class JobRequestBottomSheet extends StatelessWidget {
               Text(
                 "send_offer_desc".tr,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 14,
-                    color: ColorConstants.secondary,
-                    fontWeight: FontWeight.w500),
+                style: const TextStyle(fontSize: 14, color: ColorConstants.secondary, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 24),
 
@@ -102,8 +99,8 @@ class JobRequestBottomSheet extends StatelessWidget {
                     fontSize: 18,
                     color: Colors.black,
                   ),
-                  decoration: const InputDecoration(
-                    hintText: "0",
+                  decoration: InputDecoration(
+                    hintText: "price_hint".tr,
                     hintStyle: TextStyle(
                       color: ColorConstants.secondary,
                     ),
@@ -114,8 +111,7 @@ class JobRequestBottomSheet extends StatelessWidget {
                       fontSize: 18,
                     ),
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 16, horizontal: 15),
+                    contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 15),
                   ),
                 ),
               ),
@@ -162,10 +158,8 @@ class JobRequestBottomSheet extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close,
-                            size: 16, color: Color(0xFF2E7D32)),
-                        onPressed: () =>
-                            controller.showSuccessBanner.value = false,
+                        icon: const Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
+                        onPressed: () => controller.showSuccessBanner.value = false,
                       ),
                     ],
                   ),
@@ -180,8 +174,7 @@ class JobRequestBottomSheet extends StatelessWidget {
                   Expanded(
                     child: SizedBox(
                       child: ElevatedButton(
-                        onPressed: () =>
-                            controller.showingTemplates.value = true,
+                        onPressed: () => controller.showingTemplates.value = true,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1E5BB8),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -205,16 +198,10 @@ class JobRequestBottomSheet extends StatelessWidget {
                   Expanded(
                     child: SizedBox(
                       child: ElevatedButton(
-                        onPressed:
-                            controller.currentCommentText.value.trim().isEmpty
-                                ? null
-                                : () => controller.saveTemplate(),
+                        onPressed: controller.currentCommentText.value.trim().isEmpty ? null : () => controller.saveTemplate(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: controller.showSuccessBanner.value
-                              ? const Color(0xFFE0E0E0)
-                              : ColorConstants.kPrimaryColor2,
-                          disabledBackgroundColor:
-                              ColorConstants.kPrimaryColor2.withOpacity(0.5),
+                          backgroundColor: controller.showSuccessBanner.value ? const Color(0xFFE0E0E0) : ColorConstants.kPrimaryColor2,
+                          disabledBackgroundColor: ColorConstants.kPrimaryColor2.withOpacity(0.5),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -226,14 +213,7 @@ class JobRequestBottomSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: controller.showSuccessBanner.value
-                                ? Colors.grey
-                                : Colors.white.withOpacity(controller
-                                        .currentCommentText.value
-                                        .trim()
-                                        .isEmpty
-                                    ? 0.7
-                                    : 1.0),
+                            color: controller.showSuccessBanner.value ? Colors.grey : Colors.white.withOpacity(controller.currentCommentText.value.trim().isEmpty ? 0.7 : 1.0),
                           ),
                         ),
                       ),
@@ -295,7 +275,7 @@ class JobRequestBottomSheet extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios, size: 20),
                 onPressed: () => controller.showingTemplates.value = false,
               ),
-               Expanded(
+              Expanded(
                 child: Center(
                   child: Text(
                     "templates".tr,
@@ -321,7 +301,7 @@ class JobRequestBottomSheet extends StatelessWidget {
               }
 
               if (controller.templates.isEmpty) {
-                return  Center(
+                return Center(
                   child: Text(
                     "no_templates".tr,
                     style: const TextStyle(
@@ -334,8 +314,7 @@ class JobRequestBottomSheet extends StatelessWidget {
 
               return ListView.separated(
                 itemCount: controller.templates.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 12),
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final template = controller.templates[index];
                   return Stack(

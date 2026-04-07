@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "261474756113",
-    "project_id": "gyzyleller-d1cb3",
-    "storage_bucket": "gyzyleller-d1cb3.firebasestorage.app"
+    "project_number": "406458755749",
+    "firebase_url": "https://ayterek-5c3e8-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "ayterek-5c3e8",
+    "storage_bucket": "ayterek-5c3e8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:261474756113:android:e2878f232a7445148c73b0",
+        "mobilesdk_app_id": "1:406458755749:android:a168a4597d81e3ab683b4c",
         "android_client_info": {
           "package_name": "com.ayterek.hyzmatlar"
         }
@@ -15,7 +16,64 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBQiCodPj_pgcNb8NBXR4pTT65p2KdD_OE"
+          "current_key": "AIzaSyCnviagkclA2x1MaG5tBv1ODq4xlV2f0BI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406458755749:android:e7a8d83a295f5313683b4c",
+        "android_client_info": {
+          "package_name": "com.dev.ayterek"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnviagkclA2x1MaG5tBv1ODq4xlV2f0BI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406458755749:android:2a26d6faf8dda135683b4c",
+        "android_client_info": {
+          "package_name": "com.example.fcm_barlag"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnviagkclA2x1MaG5tBv1ODq4xlV2f0BI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406458755749:android:51ba6e71ef1a368f683b4c",
+        "android_client_info": {
+          "package_name": "tm.com.ayterek"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnviagkclA2x1MaG5tBv1ODq4xlV2f0BI"
         }
       ],
       "services": {

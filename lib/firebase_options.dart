@@ -50,21 +50,21 @@ class DefaultFirebaseOptions {
   }
 
   // Android — values from google-services.json (project: gyzyleller-d1cb3)
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBQiCodPj_pgcNb8NBXR4pTT65p2KdD_OE',
-    appId: '1:261474756113:android:e2878f232a7445148c73b0',
-    messagingSenderId: '261474756113',
-    projectId: 'gyzyleller-d1cb3',
-    storageBucket: 'gyzyleller-d1cb3.firebasestorage.app',
-  );
+ static const FirebaseOptions android = FirebaseOptions(
+  apiKey: 'AIzaSyCnviagkclA2x1MaG5tBv1ODq4xlV2f0BI',
+  appId: '1:406458755749:android:a168a4597d81e3ab683b4c',
+  messagingSenderId: '406458755749',
+  projectId: 'ayterek-5c3e8',
+  storageBucket: 'ayterek-5c3e8.firebasestorage.app',
+);
 
   // iOS — update appId/apiKey from GoogleService-Info.plist if needed
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyC8uZGzY9QQP4lkb04GXIh1kOYvkdW8ws8',
-    appId: '1:261474756113:ios:ae9591870dae98cc8c73b0',
-    messagingSenderId: '261474756113',
-    projectId: 'gyzyleller-d1cb3',
-    storageBucket: 'gyzyleller-d1cb3.firebasestorage.app',
-    iosBundleId: 'com.ayterek.hyzmatlar',
-  );
+static const FirebaseOptions ios = FirebaseOptions(
+  apiKey: 'AIzaSyDvdYXxhYTUH4sjlff9MYrRMFyRXwjUCdk',
+  appId: '1:406458755749:ios:d106f1c09c36358e683b4c',
+  messagingSenderId: '406458755749',
+  projectId: 'ayterek-5c3e8',
+  storageBucket: 'ayterek-5c3e8.firebasestorage.app',
+  iosBundleId: 'com.ayterek.hyzmatlar',
+);
 }

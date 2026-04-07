@@ -51,20 +51,18 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     _initSocketListeners();
 
     // Bind notification count to stay updated in UI
-    final notifCtrl = Get.isRegistered<NotificationController>()
-        ? Get.find<NotificationController>()
-        : Get.put(NotificationController());
+    final notifCtrl = Get.isRegistered<NotificationController>() ? Get.find<NotificationController>() : Get.put(NotificationController());
 
     notifCount.value = notifCtrl.unreadCount.value;
     ever<int>(notifCtrl.unreadCount, (val) => notifCount.value = val);
 
-    fetchChats();
+    if (_auth.isLoggedIn) fetchChats();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && _auth.isLoggedIn) {
       debugPrint('🔄 [ChatController] App resumed, refreshing data...');
       fetchChats();
     }
@@ -94,8 +92,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     });
 
     s.onDisconnect((reason) {
-      debugPrint(
-          '❌ [ChatController] Socket kesildi: $reason – polling başladyldy');
+      debugPrint('❌ [ChatController] Socket kesildi: $reason – polling başladyldy');
       _fetchChatsHttp(); // Immediate fetch on cut
       _startPolling();
     });
@@ -119,10 +116,11 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
   // ─── Polling fallback ───
   void _startPolling() {
+    if (!_auth.isLoggedIn) return;
     if (_pollingTimer != null) return;
     debugPrint('⏳ [ChatController] Polling başlady (10s interval)');
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (!_socketConnected) {
+      if (!_socketConnected && _auth.isLoggedIn) {
         debugPrint('--> [HTTP Polling] Chatlar çekilýär...');
         _fetchChatsHttp();
       }
@@ -149,9 +147,8 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     _isFetching = false;
   }
 
-
-
   Future<void> fetchChats() async {
+    if (!_auth.isLoggedIn) return;
     if (_isFetching) return;
     _isFetching = true;
 
@@ -232,15 +229,13 @@ class ChatController extends GetxController with WidgetsBindingObserver {
               }
             }
             if (map.isNotEmpty) {
-              debugPrint(
-                  '📥 [ChatController] Socket Metadata keys: ${map.keys.take(5).toList()}');
+              debugPrint('📥 [ChatController] Socket Metadata keys: ${map.keys.take(5).toList()}');
             }
             return map;
           }
 
           if (chatList.isNotEmpty) {
-            debugPrint(
-                '📥 [ChatController] Socket First chat raw: ${jsonEncode(chatList.first)}');
+            debugPrint('📥 [ChatController] Socket First chat raw: ${jsonEncode(chatList.first)}');
           }
 
           final products = toMap(data['products'] ?? data['jobs']);
@@ -250,10 +245,8 @@ class ChatController extends GetxController with WidgetsBindingObserver {
           _productsCache.addAll(products);
           _usersCache.addAll(users);
 
-          if (chatList.length > 1 &&
-              (products.isEmpty || users.isEmpty)) {
-            debugPrint(
-                '⚠️ [ChatController] Metadata eksik (Socket), 2s soň täzeden synanyşylýar...');
+          if (chatList.length > 1 && (products.isEmpty || users.isEmpty)) {
+            debugPrint('⚠️ [ChatController] Metadata eksik (Socket), 2s soň täzeden synanyşylýar...');
             Future.delayed(const Duration(seconds: 2), () => fetchChats());
             responded = true; // Mark as handled but don't update UI yet
             return;
@@ -272,16 +265,12 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
           // Also fetch notifications on socket response
           if (Get.isRegistered<NotificationController>()) {
-            Get.find<NotificationController>()
-                .fetchNotificationCount()
-                .then((_) {
-              notifCount.value =
-                  Get.find<NotificationController>().unreadCount.value;
+            Get.find<NotificationController>().fetchNotificationCount().then((_) {
+              notifCount.value = Get.find<NotificationController>().unreadCount.value;
             });
           }
           hasError.value = false;
-          debugPrint(
-              '✅ [ChatController] Socket: ${chats.length} chat ýüklendi');
+          debugPrint('✅ [ChatController] Socket: ${chats.length} chat ýüklendi');
         }
       } catch (e) {
         debugPrint('⚠️ [ChatController] Socket ack parse ýalňyşy: $e');
@@ -312,9 +301,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
     }
     hasError.value = false;
 
-    final notifCtrl = Get.isRegistered<NotificationController>()
-        ? Get.find<NotificationController>()
-        : Get.put(NotificationController());
+    final notifCtrl = Get.isRegistered<NotificationController>() ? Get.find<NotificationController>() : Get.put(NotificationController());
 
     await notifCtrl.fetchNotificationCount();
     notifCount.value = notifCtrl.unreadCount.value;
@@ -338,8 +325,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
         final List<dynamic> chatList = data['chats'] ?? [];
 
         if (chatList.isNotEmpty) {
-          debugPrint(
-              '📥 [ChatController] First chat full data: ${jsonEncode(chatList.first)}');
+          debugPrint('📥 [ChatController] First chat full data: ${jsonEncode(chatList.first)}');
         }
 
         // Metadata processing: convert List to Map or ensure String keys
@@ -355,8 +341,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
             }
           }
           if (map.isNotEmpty) {
-            debugPrint(
-                '📥 [ChatController] Metadata keys (sample): ${map.keys.take(5).toList()}');
+            debugPrint('📥 [ChatController] Metadata keys (sample): ${map.keys.take(5).toList()}');
           }
           return map;
         }
@@ -380,12 +365,10 @@ class ChatController extends GetxController with WidgetsBindingObserver {
         _computeUnread(newHttpChats);
 
         hasError.value = false;
-        debugPrint(
-            '✅ [ChatController] HTTP: ${chats.length} chat ýüklendi. Final badge count: ${unreadCount.value}');
+        debugPrint('✅ [ChatController] HTTP: ${chats.length} chat ýüklendi. Final badge count: ${unreadCount.value}');
       } else {
         hasError.value = true;
-        debugPrint(
-            '❌ [ChatController] fetchChats error: ${response.statusCode}');
+        debugPrint('❌ [ChatController] fetchChats error: ${response.statusCode}');
       }
     } catch (e) {
       hasError.value = true;
@@ -414,15 +397,13 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
   void blockUser(String chatId) {
     if (_socketConnected) {
-      _socket?.emitWithAck('block_chat', {'chat_id': chatId, 'type': 'gyzyl'},
-          ack: (_) {});
+      _socket?.emitWithAck('block_chat', {'chat_id': chatId, 'type': 'gyzyl'}, ack: (_) {});
     }
   }
 
   void unBlockUser(String userId) {
     if (_socketConnected) {
-      _socket?.emitWithAck('unblock_user', {'user_id': userId, 'type': 'gyzyl'},
-          ack: (_) {
+      _socket?.emitWithAck('unblock_user', {'user_id': userId, 'type': 'gyzyl'}, ack: (_) {
         fetchChats();
       });
     }
@@ -457,8 +438,7 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
     if (_socketConnected) {
       final lang = Get.find<GetStorage>().read('langCode') ?? 'tk';
-      _socket?.emitWithAck('get_data', {'lang': lang, 'type': 'gyzyl'},
-          ack: (data) {
+      _socket?.emitWithAck('get_data', {'lang': lang, 'type': 'gyzyl'}, ack: (data) {
         if (data['status'] == 200) {
           onlineUsers.value = data['online_users'] ?? [];
           // Note: we don't overwrite unreadCount from server response here
@@ -498,13 +478,11 @@ class ChatController extends GetxController with WidgetsBindingObserver {
 
   Future<void> deleteChat(String chatId, {bool refresh = true}) async {
     if (_socketConnected) {
-      _socket?.emitWithAck('delete_chat', {'chat_id': chatId, 'type': 'gyzyl'},
-          ack: (_) {});
+      _socket?.emitWithAck('delete_chat', {'chat_id': chatId, 'type': 'gyzyl'}, ack: (_) {});
     } else {
       try {
         await http.delete(
-          Uri.parse('${_api.urlLink}api/user/chats/$chatId')
-              .replace(queryParameters: {'type': 'gyzyl'}),
+          Uri.parse('${_api.urlLink}api/user/chats/$chatId').replace(queryParameters: {'type': 'gyzyl'}),
           headers: {'Authorization': 'Bearer $token'},
         );
       } catch (e) {

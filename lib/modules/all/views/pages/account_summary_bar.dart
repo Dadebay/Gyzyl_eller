@@ -48,8 +48,8 @@ class AccountSummaryBar extends StatelessWidget {
                   balanceText,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ],
@@ -59,15 +59,10 @@ class AccountSummaryBar extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onPressed,
             icon: SvgPicture.asset(IconConstants.arrowOutward),
-            label: Text('ginis'.tr,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
+            label: Text('ginis'.tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorConstants.kPrimaryColor2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               elevation: 0,
             ),

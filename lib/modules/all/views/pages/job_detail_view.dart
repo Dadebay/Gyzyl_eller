@@ -106,8 +106,7 @@ class JobDetailView extends StatelessWidget {
                   ],
                   onSelected: (value) async {
                     if (value == 'delete' && controller.job.value != null) {
-                      final deleted = await DialogUtils().showDeleteJobDialog(
-                          context, controller.job.value!.id);
+                      final deleted = await DialogUtils().showDeleteJobDialog(context, controller.job.value!.id);
                       if (deleted == true) {
                         Get.back();
                       }
@@ -165,9 +164,7 @@ class JobDetailView extends StatelessWidget {
         }
 
         for (final answer in job.answers) {
-          if ((answer.type == 'image' || answer.type == 'file') &&
-              answer.value != null &&
-              answer.value!.isNotEmpty) {
+          if ((answer.type == 'image' || answer.type == 'file') && answer.value != null && answer.value!.isNotEmpty) {
             images.add(_resolveMediaUrl(answer.value!));
           }
         }
@@ -186,8 +183,7 @@ class JobDetailView extends StatelessWidget {
         try {
           final dateTime = DateTime.parse(job.createdAt);
           final month = 'month_${dateTime.month}'.tr;
-          displayCreatedAt =
-              "${dateTime.day} $month ${dateTime.year}, ${DateFormat('HH:mm').format(dateTime)}";
+          displayCreatedAt = "${dateTime.day} $month ${dateTime.year}, ${DateFormat('HH:mm').format(dateTime)}";
         } catch (_) {}
 
         return SmartRefresher(
@@ -204,23 +200,18 @@ class JobDetailView extends StatelessWidget {
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(
-                left: 16.0, right: 16.0, top: 16.0, bottom: 20.0),
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 20.0),
             children: [
               _buildDateCard(displayCreatedAt),
               const SizedBox(height: 16),
               Text(
                 'isin_gys'.tr,
-                style: const TextStyle(
-                    color: ColorConstants.blue,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold),
+                style: const TextStyle(color: ColorConstants.blue, fontSize: 13, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
                 job.name,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               if (job.desc.isNotEmpty)
@@ -240,10 +231,7 @@ class JobDetailView extends StatelessWidget {
                   children: [
                     Text(
                       "file_img".tr,
-                      style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: ColorConstants.blue),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.blue),
                     ),
                     const SizedBox(height: 12),
                     _buildImageGallery(
@@ -264,20 +252,14 @@ class JobDetailView extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
                 ),
-              if (job.position != null &&
-                  job.position!.isNotEmpty &&
-                  job.position != "0.0, 0.0" &&
-                  job.position != "(0.0, 0.0)") ...[
+              if (job.position != null && job.position!.isNotEmpty && job.position != "0.0, 0.0" && job.position != "(0.0, 0.0)") ...[
                 const SizedBox(height: 14),
                 _buildMapPreview(job, position, context),
                 const SizedBox(height: 14),
               ],
               Text(
                 'bash_mag'.tr,
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: ColorConstants.blue),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.blue),
               ),
               const SizedBox(height: 14),
               NewTag(status: job.status),
@@ -285,10 +267,7 @@ class JobDetailView extends StatelessWidget {
               if (jobStatusEnum == MyTasksStatus.retEdilen) ...[
                 Text(
                   'duzgun'.tr,
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: ColorConstants.kPrimaryColor2),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.kPrimaryColor2),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -301,8 +280,7 @@ class JobDetailView extends StatelessWidget {
                     if (job.finished) {
                       return Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(15),
@@ -316,8 +294,7 @@ class JobDetailView extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time,
-                                size: 24, color: Colors.black),
+                            const Icon(Icons.access_time, size: 24, color: Colors.black),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -345,16 +322,14 @@ class JobDetailView extends StatelessWidget {
                           else
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
                                 color: ColorConstants.whiteColor,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.access_time,
-                                      color: ColorConstants.blackColor),
+                                  const Icon(Icons.access_time, color: ColorConstants.blackColor),
                                   const SizedBox(width: 8),
                                   Text(
                                     "offer_sent".tr,
@@ -462,18 +437,14 @@ class JobDetailView extends StatelessWidget {
                                   onPressed: controller.isCompletingJob.value
                                       ? null
                                       : () async {
-                                          final result = await DialogUtils()
-                                              .showCompleteJobDialog(context);
+                                          final result = await DialogUtils().showCompleteJobDialog(context);
                                           if (result == true) {
-                                            controller
-                                                .markJobDoneByMasterWithRequestId();
+                                            controller.markJobDoneByMasterWithRequestId();
                                           }
                                         },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        ColorConstants.kPrimaryColor2,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
+                                    backgroundColor: ColorConstants.kPrimaryColor2,
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -515,8 +486,7 @@ class JobDetailView extends StatelessWidget {
                               context: context,
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
-                              builder: (context) =>
-                                  const JobRequestBottomSheet(),
+                              builder: (context) => const JobRequestBottomSheet(),
                             );
                           });
                         },
@@ -547,8 +517,7 @@ class JobDetailView extends StatelessWidget {
                             onPressed: () => Get.to(() => const WalletView()),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: ColorConstants.blue,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -561,16 +530,13 @@ class JobDetailView extends StatelessWidget {
                                   onTap: () => Get.to(() => const WalletView()),
                                   child: Row(
                                     children: [
-                                      SvgPicture.asset(IconConstants.hasabym,
-                                          colorFilter: const ColorFilter.mode(
-                                              Colors.white, BlendMode.srcIn),
-                                          width: 18),
+                                      SvgPicture.asset(IconConstants.hasabym, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn), width: 18),
                                       const SizedBox(width: 8),
                                       Text(
                                         "${"wallet".tr}: ${controller.userBalance.value.toStringAsFixed(0)} TMT",
                                         style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
                                       ),
@@ -578,19 +544,14 @@ class JobDetailView extends StatelessWidget {
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: ColorConstants.kPrimaryColor2,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
-                                      SvgPicture.asset(
-                                          IconConstants.arrowOutward,
-                                          colorFilter: const ColorFilter.mode(
-                                              Colors.white, BlendMode.srcIn),
-                                          width: 14),
+                                      SvgPicture.asset(IconConstants.arrowOutward, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn), width: 14),
                                       const SizedBox(width: 6),
                                       Text(
                                         "ginis".tr,
@@ -618,16 +579,14 @@ class JobDetailView extends StatelessWidget {
     );
   }
 
-  void _checkMasterAndExecute(
-      BuildContext context, String actionTitle, VoidCallback onExecute) {
+  void _checkMasterAndExecute(BuildContext context, String actionTitle, VoidCallback onExecute) {
     if (AuthStorage().masterProfileId == null) {
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
             backgroundColor: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             title: Text(
               actionTitle,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -647,18 +606,14 @@ class JobDetailView extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('ÝAPMAK',
-                    style: TextStyle(
-                        color: Colors.black, fontWeight: FontWeight.bold)),
+                child: const Text('ÝAPMAK', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   Get.to(() => const SpecialProfileAdd());
                 },
-                child: const Text('DOLDURMAK',
-                    style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold)),
+                child: const Text('DOLDURMAK', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -669,8 +624,7 @@ class JobDetailView extends StatelessWidget {
     }
   }
 
-  Widget _buildOfferSuccessBox(
-      {required String price, required String comment}) {
+  Widget _buildOfferSuccessBox({required String price, required String comment}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -693,8 +647,7 @@ class JobDetailView extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.access_time,
-                  size: 20, color: ColorConstants.fonts),
+              const Icon(Icons.access_time, size: 20, color: ColorConstants.fonts),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -726,10 +679,7 @@ class JobDetailView extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             dateStr,
-            style: const TextStyle(
-                color: ColorConstants.fonts,
-                fontSize: 13,
-                fontWeight: FontWeight.w500),
+            style: const TextStyle(color: ColorConstants.fonts, fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -799,9 +749,7 @@ class JobDetailView extends StatelessWidget {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: isExpanded
-                                    ? content
-                                    : "${content.substring(0, tp.getPositionForOffset(Offset(constraints.maxWidth, tp.height)).offset - 12)}...",
+                                text: isExpanded ? content : "${content.substring(0, tp.getPositionForOffset(Offset(constraints.maxWidth, tp.height)).offset - 12)}...",
                                 style: const TextStyle(
                                   fontSize: 15,
                                   color: ColorConstants.fonts,
@@ -811,8 +759,7 @@ class JobDetailView extends StatelessWidget {
                                 alignment: PlaceholderAlignment.baseline,
                                 baseline: TextBaseline.alphabetic,
                                 child: GestureDetector(
-                                  onTap: () =>
-                                      controller.isDescExpanded.toggle(),
+                                  onTap: () => controller.isDescExpanded.toggle(),
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 4),
                                     child: Text(
@@ -886,8 +833,7 @@ class JobDetailView extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: GestureDetector(
-                          onLongPress: () =>
-                              _showDownloadOption(context, images[firstIndex]),
+                          onLongPress: () => _showDownloadOption(context, images[firstIndex]),
                           child: InkWell(
                             onTap: () {
                               Navigator.of(context, rootNavigator: true).push(
@@ -905,12 +851,10 @@ class JobDetailView extends StatelessWidget {
                                 imageUrl: images[firstIndex],
                                 fit: BoxFit.cover,
                                 height: 120,
-                                placeholder: (context, url) =>
-                                    _buildImageShimmer(),
+                                placeholder: (context, url) => _buildImageShimmer(),
                                 errorWidget: (context, url, error) => Container(
                                   color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image,
-                                      color: Colors.grey),
+                                  child: const Icon(Icons.broken_image, color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -926,14 +870,12 @@ class JobDetailView extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: GestureDetector(
-                            onLongPress: () => _showDownloadOption(
-                                context, images[secondIndex]),
+                            onLongPress: () => _showDownloadOption(context, images[secondIndex]),
                             child: InkWell(
                               onTap: () {
                                 Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        FullScreenImageGallery(
+                                    builder: (context) => FullScreenImageGallery(
                                       images: images,
                                       initialIndex: secondIndex,
                                     ),
@@ -946,13 +888,10 @@ class JobDetailView extends StatelessWidget {
                                   imageUrl: images[secondIndex],
                                   fit: BoxFit.cover,
                                   height: 120,
-                                  placeholder: (context, url) =>
-                                      _buildImageShimmer(),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
+                                  placeholder: (context, url) => _buildImageShimmer(),
+                                  errorWidget: (context, url, error) => Container(
                                     color: Colors.grey[200],
-                                    child: const Icon(Icons.broken_image,
-                                        color: Colors.grey),
+                                    child: const Icon(Icons.broken_image, color: Colors.grey),
                                   ),
                                 ),
                               ),
@@ -979,9 +918,7 @@ class JobDetailView extends StatelessWidget {
                 height: 6,
                 width: 6,
                 decoration: BoxDecoration(
-                  color: currentPage == index
-                      ? ColorConstants.kPrimaryColor2
-                      : Colors.grey[400],
+                  color: currentPage == index ? ColorConstants.kPrimaryColor2 : Colors.grey[400],
                   borderRadius: BorderRadius.circular(3),
                 ),
               );
@@ -1046,9 +983,7 @@ class JobDetailView extends StatelessWidget {
     int? currentFormId;
 
     for (var answer in job.answers) {
-      if (answer.formId != null &&
-          answer.formId != currentFormId &&
-          answer.formName != null) {
+      if (answer.formId != null && answer.formId != currentFormId && answer.formName != null) {
         if (innerWidgets.isNotEmpty) {
           innerWidgets.add(const SizedBox(height: 12));
         }
@@ -1106,12 +1041,8 @@ class JobDetailView extends StatelessWidget {
     ];
   }
 
-  Widget? _buildSingleAnswer(
-      JobAnswer answer, JobModel job, BuildContext context) {
-    final hasMap = (answer.lat != null && answer.lng != null) ||
-        (answer.type == 'map' &&
-            answer.value != null &&
-            answer.value!.isNotEmpty);
+  Widget? _buildSingleAnswer(JobAnswer answer, JobModel job, BuildContext context) {
+    final hasMap = (answer.lat != null && answer.lng != null) || (answer.type == 'map' && answer.value != null && answer.value!.isNotEmpty);
     final content = _getAnswerContent(answer, excludeLocationInfo: hasMap);
 
     if (content.isEmpty && !hasMap) return null;
@@ -1130,10 +1061,7 @@ class JobDetailView extends StatelessWidget {
 
   Widget _buildAnswerMap(JobAnswer answer, JobModel job, BuildContext context) {
     final JobDetailController controller = Get.find<JobDetailController>();
-    final mapPos = controller.parsePosition(answer.value ??
-        ((answer.lat != null && answer.lng != null)
-            ? "(${answer.lng},${answer.lat})"
-            : ""));
+    final mapPos = controller.parsePosition(answer.value ?? ((answer.lat != null && answer.lng != null) ? "(${answer.lng},${answer.lat})" : ""));
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -1181,8 +1109,7 @@ class JobDetailView extends StatelessWidget {
     );
   }
 
-  String _getAnswerContent(JobAnswer answer,
-      {bool excludeLocationInfo = false}) {
+  String _getAnswerContent(JobAnswer answer, {bool excludeLocationInfo = false}) {
     final List<String> parts = [];
 
     // 1. Add Options (Selections)
@@ -1211,9 +1138,7 @@ class JobDetailView extends StatelessWidget {
 
     if (!excludeLocationInfo) {
       // 3. Add Raw Value
-      if (answer.value != null &&
-          answer.value!.isNotEmpty &&
-          !parts.any((p) => p.contains(answer.value!))) {
+      if (answer.value != null && answer.value!.isNotEmpty && !parts.any((p) => p.contains(answer.value!))) {
         parts.add(answer.value!);
       }
     }
@@ -1226,8 +1151,7 @@ class JobDetailView extends StatelessWidget {
       if (job.startDate != null && job.startDate!.isNotEmpty) {
         try {
           final taskDate = DateTime.parse(job.startDate!);
-          final dateFormat = DateFormat(
-              'EEEE, dd MMMM', Localizations.localeOf(context).toString());
+          final dateFormat = DateFormat('EEEE, dd MMMM', Localizations.localeOf(context).toString());
           final timeStr = DateFormat('HH:mm').format(taskDate);
           return "${job.whenToDo.tr} (${dateFormat.format(taskDate)}) $timeStr";
         } catch (_) {}
@@ -1240,18 +1164,13 @@ class JobDetailView extends StatelessWidget {
         final taskDate = DateTime.parse(job.startDate!);
         final now = DateTime.now();
         final tomorrow = now.add(const Duration(days: 1));
-        final dateFormat = DateFormat(
-            'EEEE, dd MMMM', Localizations.localeOf(context).toString());
+        final dateFormat = DateFormat('EEEE, dd MMMM', Localizations.localeOf(context).toString());
 
-        if (taskDate.year == now.year &&
-            taskDate.month == now.month &&
-            taskDate.day == now.day) {
+        if (taskDate.year == now.year && taskDate.month == now.month && taskDate.day == now.day) {
           return "${"date_today".tr} (${dateFormat.format(now)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
-        if (taskDate.year == tomorrow.year &&
-            taskDate.month == tomorrow.month &&
-            taskDate.day == tomorrow.day) {
+        if (taskDate.year == tomorrow.year && taskDate.month == tomorrow.month && taskDate.day == tomorrow.day) {
           return "${"date_tomorrow".tr} (${dateFormat.format(tomorrow)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
@@ -1261,7 +1180,7 @@ class JobDetailView extends StatelessWidget {
     }
 
     if (job.whenToDo == 'urgent' || job.whenToDo.isEmpty) {
-      return 'Iň çalt wagytda'.tr;
+      return 'Iň çalt wagtda'.tr;
     }
 
     if (job.whenToDo == 'special_date') {
@@ -1285,9 +1204,7 @@ class JobDetailView extends StatelessWidget {
       final startDate = DateTime.parse(start!);
       final endDate = DateTime.parse(end!);
       final formatter = DateFormat('dd.MM.yyyy');
-      if (startDate.year == endDate.year &&
-          startDate.month == endDate.month &&
-          startDate.day == endDate.day) {
+      if (startDate.year == endDate.year && startDate.month == endDate.month && startDate.day == endDate.day) {
         return "${DateFormat('dd.MM.yyyy HH:mm').format(startDate)} - ${DateFormat('HH:mm').format(endDate)}";
       }
       return "${formatter.format(startDate)} - ${formatter.format(endDate)}";
@@ -1322,8 +1239,7 @@ class JobDetailView extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.insert_drive_file,
-                size: 32, color: ColorConstants.kPrimaryColor2),
+            const Icon(Icons.insert_drive_file, size: 32, color: ColorConstants.kPrimaryColor2),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -1343,8 +1259,7 @@ class JobDetailView extends StatelessWidget {
               },
               child: const Padding(
                 padding: EdgeInsets.all(4.0),
-                child: Icon(Icons.download_rounded,
-                    color: ColorConstants.kPrimaryColor2),
+                child: Icon(Icons.download_rounded, color: ColorConstants.kPrimaryColor2),
               ),
             ),
           ],
@@ -1393,9 +1308,7 @@ class JobDetailView extends StatelessWidget {
                 children: [
                   SmallInfo(
                     icon: IconConstants.payment,
-                    text: (job.minPrice == 0 && job.maxPrice == 0)
-                        ? "not_priced".tr
-                        : "${job.minPrice} TMT - ${job.maxPrice} TMT",
+                    text: (job.minPrice == 0 && job.maxPrice == 0) ? "not_priced".tr : "${job.minPrice} TMT - ${job.maxPrice} TMT",
                   ),
                   const SizedBox(width: 16),
                   SmallInfo(
@@ -1413,8 +1326,7 @@ class JobDetailView extends StatelessWidget {
               const SizedBox(height: 12),
               InfoRow(
                 icon: IconConstants.locationHouse,
-                text:
-                    "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
+                text: "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
               ),
               const SizedBox(height: 12),
               const Divider(height: 1.5, color: ColorConstants.whiteColor),
@@ -1468,10 +1380,7 @@ class JobDetailView extends StatelessWidget {
   }
 
   void _showDownloadSnackBar({required bool isSuccess, String? message}) {
-    final String text = message ??
-        (isSuccess
-            ? "${'download'.tr} ${'success_title'.tr}"
-            : "${'error_title'.tr}: ${'download'.tr}");
+    final String text = message ?? (isSuccess ? "${'download'.tr} ${'success_title'.tr}" : "${'error_title'.tr}: ${'download'.tr}");
 
     Get.closeAllSnackbars();
     Get.snackbar(
@@ -1497,11 +1406,7 @@ class JobDetailView extends StatelessWidget {
 
   Future<void> _downloadFile(String url) async {
     final lowerUrl = url.toLowerCase();
-    final isImage = lowerUrl.endsWith('.jpg') ||
-        lowerUrl.endsWith('.jpeg') ||
-        lowerUrl.endsWith('.png') ||
-        lowerUrl.endsWith('.webp') ||
-        lowerUrl.endsWith('.gif');
+    final isImage = lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg') || lowerUrl.endsWith('.png') || lowerUrl.endsWith('.webp') || lowerUrl.endsWith('.gif');
 
     if (isImage) {
       await _downloadImage(url);
@@ -1509,9 +1414,7 @@ class JobDetailView extends StatelessWidget {
     }
 
     try {
-      String fileName = Uri.parse(url).pathSegments.isNotEmpty
-          ? Uri.parse(url).pathSegments.last
-          : 'file_${DateTime.now().millisecondsSinceEpoch}';
+      String fileName = Uri.parse(url).pathSegments.isNotEmpty ? Uri.parse(url).pathSegments.last : 'file_${DateTime.now().millisecondsSinceEpoch}';
       if (fileName.trim().isEmpty) {
         fileName = 'file_${DateTime.now().millisecondsSinceEpoch}';
       }
@@ -1520,9 +1423,7 @@ class JobDetailView extends StatelessWidget {
       Directory saveDir;
 
       if (Platform.isAndroid) {
-        final bool granted =
-            await Permission.manageExternalStorage.request().isGranted ||
-                await Permission.storage.request().isGranted;
+        final bool granted = await Permission.manageExternalStorage.request().isGranted || await Permission.storage.request().isGranted;
 
         if (granted) {
           saveDir = Directory('/storage/emulated/0/Download/Gyzyleller');
@@ -1550,9 +1451,7 @@ class JobDetailView extends StatelessWidget {
     if (normalized.startsWith('/')) {
       normalized = normalized.substring(1);
     }
-    final result = normalized.startsWith('http')
-        ? normalized
-        : "${Api().urlImage}$normalized";
+    final result = normalized.startsWith('http') ? normalized : "${Api().urlImage}$normalized";
     print('📸 [JOB_DETAIL] Resolved URL: $result');
     return result;
   }
@@ -1594,10 +1493,7 @@ class JobDetailView extends StatelessWidget {
                 icon: const Icon(Icons.download, color: Colors.white),
                 label: Text(
                   'download'.tr,
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
             ),

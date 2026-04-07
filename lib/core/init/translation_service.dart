@@ -25,8 +25,7 @@ class TranslationService extends Translations {
           'language': 'Programmanyň dili',
           'logout': 'Programmadan çykmak',
           'deleteProfileTitle': 'Profili pozmak',
-          'deleteProfileDescription':
-              'Siz hakykatdanam profiliňizi pozmak isleýärsiňizmi?',
+          'deleteProfileDescription': 'Siz hakykatdanam profiliňizi pozmak isleýärsiňizmi?',
           'cancel': 'Ýatyr',
           'delete': 'Poz',
           'about': 'Umumy şertler we düzgünler',
@@ -49,17 +48,14 @@ class TranslationService extends Translations {
           'menu_tab': 'Menýu',
           "Ýumuşlarym": "Ýumuşlarym",
           'login_title': 'Içeri gir',
-          'login_instruction':
-              'Ulgama girmek üçin “Aýterekde” registrasiýa eden telefon belgiňizi we açarsözüňizi ulanyp giriziň',
+          'login_instruction': 'Ulgama girmek üçin “Aýterekde” registrasiýa eden telefon belgiňizi we açarsözüňizi ulanyp giriziň',
           'phone_number_label': 'Telefon belgiňiz',
           'password_input_label': 'Açar söz',
           'with_all_terms': 'Ähli şertleri bilen ',
           'agreement_text': 'ylalaşýaryn',
-          'please_agree_privacy':
-              'Dowam etmezden ozal gizlinlik syýasatyny kabul ediň.',
+          'please_agree_privacy': 'Dowam etmezden ozal gizlinlik syýasatyny kabul ediň.',
           'continue_button': 'Dowam et',
-          'onboarding_welcome_title':
-              '"Aýterek - ussalar" ulgamy bilen tanyşyň.',
+          'onboarding_welcome_title': '"Aýterek - ussalar" ulgamy bilen tanyşyň.',
           'onboarding_welcome_description':
               'Indi dürli işlerde hünärmenleri (ussalary) bildirişlerde gözlemek gerek däl. Siz diňe ýumuşlary döredýäňiz, hünärmenler bolsa özleri Size tekliplerini iberýärler. Size diňe amatlysyny saýlamak galýar.',
           'onboarding_how_to_create_task': 'Nädip yumuşlary döretmeli',
@@ -69,29 +65,22 @@ class TranslationService extends Translations {
               'Indi wagtyňyzy saryp edip hünärmenleri gözlemek gerek däl.Bir ýumuş dörediň, kategoriýa saýlaň, näme, nirede we haçan etmelidigini düşündiriň we ýumuşyňyzy çap ediň.',
           'onboarding_find_specialist_title': 'Hünärmen tapyň',
           "title_onbor_1": "Ýumuş çap ediň",
-          "desc_onbor_1":
-              "Indi wagtyňyzy saryp edip hünärmenleri gözlemek gerek däl.Bir ýumuş dörediň, kategoriýa saýlaň, näme, nirede we haçan etmelidigini düşündiriň we ýumuşyňyzy çap ediň.",
+          "desc_onbor_1": "Indi wagtyňyzy saryp edip hünärmenleri gözlemek gerek däl.Bir ýumuş dörediň, kategoriýa saýlaň, näme, nirede we haçan etmelidigini düşündiriň we ýumuşyňyzy çap ediň.",
           "title_onbor_2": "Hünärmenleriň tekliplerine garaşyň",
-          "desc_onbor_2":
-              "Ýumuş çap edilenden soňra, hünärmenler Size öz bahalaryny we tekliplerini hödürlärler",
+          "desc_onbor_2": "Ýumuş çap edilenden soňra, hünärmenler Size öz bahalaryny we tekliplerini hödürlärler",
           "title_onbor_3": "Hünärmen saýlaň",
-          "desc_onbor_3":
-              "Profildäki maglumatlary, bahasyny we teswirleri görüp, özüňize iň amatly hünärmeni saýlaň",
+          "desc_onbor_3": "Profildäki maglumatlary, bahasyny we teswirleri görüp, özüňize iň amatly hünärmeni saýlaň",
           "title_onbor_4": "Ýazyşmak ýa-da jaňlaşmak",
-          "desc_onbor_4":
-              "Bu ýerdäki çatda ýa-da telefon arkaly ussalar bilen etmeli işiň aýratynlyklaryny gepleşiň.",
+          "desc_onbor_4": "Bu ýerdäki çatda ýa-da telefon arkaly ussalar bilen etmeli işiň aýratynlyklaryny gepleşiň.",
           "title_onbor_5": "Teswir we baha goýmak",
-          "desc_onbor_5":
-              "Hünärmenlere baha goýmagy we teswir ýazmagy unutmaň, olaryň reýtingini düzmek üçin.",
+          "desc_onbor_5": "Hünärmenlere baha goýmagy we teswir ýazmagy unutmaň, olaryň reýtingini düzmek üçin.",
           "title_onbor_6": "Anketaňyzy dolduryň",
-          "desc_onbor_6":
-              "Özüňiz barada maglumaty dolduryň, öz hünäriňizi, işleýän ugryňyzy, tejribäňizi, we öz suratyňyzy ýükläň (buýrujylar suraty bolan ussalara has ynanýarlar)",
+          "desc_onbor_6": "Özüňiz barada maglumaty dolduryň, öz hünäriňizi, işleýän ugryňyzy, tejribäňizi, we öz suratyňyzy ýükläň (buýrujylar suraty bolan ussalara has ynanýarlar)",
           "title_onbor_7": "Işleýän ýeriňiz",
           "desc_onbor_7":
               "Anketada ýa-da Hemmesi ýumuşlar filtrlerde nirede işlejekdiňizi saýlaň. Üns beriň! Täze ýumuşlar barada habarnamalar Size diňe saýlanan welaýatyňyz ýa-da şäheriňiz boýunça geler",
           "title_onbor_8": "Kategoriýany saýlaň",
-          "desc_onbor_8":
-              "Ýumuşlar sahypada filtrlerde öz işlejek kategoriýany saýlaň we ýumuşlara garaşyň",
+          "desc_onbor_8": "Ýumuşlar sahypada filtrlerde öz işlejek kategoriýany saýlaň we ýumuşlara garaşyň",
           "title_onbor_9": "Teklipleriňizi ugradyň",
           "desc_onbor_9":
               "Ýumuşlary görüň we olara öz teklipleriňizi ugradyň. Üns beriň! Siz bir ýumuşa diňe bir gezek teklip ugradyp bilýäňiz. Şonuň üçin ähli şertleriňizi we bahaňyzy birbada ugratjak boluň. Telefon belgiňizi ugratmak gadagan.",
@@ -99,25 +88,19 @@ class TranslationService extends Translations {
           "desc_onbor_10":
               "Siz ýerine ýetiriji hökmünde saýlananyňyzdan soňra, buýruja Siz bilen ýazyşmak we telefon belgiňiz açylar. Buýrujy Sizi saýlamasa Siz özüňiz oňa göni jaň etmek ýa-da hat ýazmak elýeterli däl.",
           "title_onbor_11": " Hasabyňyzy gözegçilikde saklaň",
-          "desc_onbor_11":
-              "Teklipleri ibermek mugt. Balansyňyzdan serişdeler alynar diňe Sizi buýrujy saýlanda.",
+          "desc_onbor_11": "Teklipleri ibermek mugt. Balansyňyzdan serişdeler alynar diňe Sizi buýrujy saýlanda.",
           "title_onbor_12": "Reýtingi ýokarlandyrmak",
-          "desc_onbor_12":
-              "Işiňizi tamamlanyňyzdan soňra Ýumuşda Işi tamamlamak düwmäni basmaga unutmaň, buýrujy Size baha we teswir goýup biler ýaly.",
+          "desc_onbor_12": "Işiňizi tamamlanyňyzdan soňra Ýumuşda Işi tamamlamak düwmäni basmaga unutmaň, buýrujy Size baha we teswir goýup biler ýaly.",
           "title_onbor_13": " \"Aýterek - ussalar\" goşundyny ýükläp alyň.",
-          "desc_onbor_13":
-              "Ýumuşlary ýerine ýetirmek we gazanç etmek üçin \"Aýterek - ussalar\" goşundyny ýükläp alyň. Dürli ýumuşlara teklipleri ugradyp, dürli işleri ýerine ýetirip bilersiňiz.",
-          'onboarding_find_specialist_description':
-              'Hünärmenler size öz tekliplerini ibererler. Siz bolsa iň amatlysyny saýlarsyňyz.',
+          "desc_onbor_13": "Ýumuşlary ýerine ýetirmek we gazanç etmek üçin \"Aýterek - ussalar\" goşundyny ýükläp alyň. Dürli ýumuşlara teklipleri ugradyp, dürli işleri ýerine ýetirip bilersiňiz.",
+          'onboarding_find_specialist_description': 'Hünärmenler size öz tekliplerini ibererler. Siz bolsa iň amatlysyny saýlarsyňyz.',
           'onboarding_complete_task_title': 'Ýumuşy ýerine ýetiriň',
-          'onboarding_complete_task_description':
-              'Saýlanan hünärmen bilen şertleşiň we ýumuşy ýerine ýetirmäge rugsat beriň.',
+          'onboarding_complete_task_description': 'Saýlanan hünärmen bilen şertleşiň we ýumuşy ýerine ýetirmäge rugsat beriň.',
           'onboarding_complete_task_title_6': 'Nädip ýerine ýetiriji bolmaly',
           'onboarding_complete_task_description_6':
               'Ýumuşlary ýerine ýetirmek we gazanç etmek üçin "Aýterek - ussalar" goşundyny ýükläp alyň. Öz telefonyňyzy we açarsözüňizi ýazyp gireňizden soňra, ýumuşlara teklipleri ugradyp, dürli işleri ýerine ýetirip bilersiňiz.',
           'onboarding_complete_task_title_7': 'Üns beriň! ',
-          'onboarding_complete_task_description_7':
-              'Ýumuşlary diňe "Aýterek" goşundyda döredip bilersiňiz. "Aýterek - ussalar" goşundysy diňe ýumuşlary ýerine ýetirmek üçindir.',
+          'onboarding_complete_task_description_7': 'Ýumuşlary diňe "Aýterek" goşundyda döredip bilersiňiz. "Aýterek - ussalar" goşundysy diňe ýumuşlary ýerine ýetirmek üçindir.',
           'onboarding_skip_button': 'Geçmek',
           'language_selection_title': 'Dili Saýlamak',
           'language_selection_instruction': 'Dowam etmek üçin dili saýlaň.',
@@ -153,10 +136,8 @@ class TranslationService extends Translations {
           'other': 'Beýlekiler',
           'company': 'Kompaniýa',
           'long_bio_hint': 'Ginişleyin özüňiz hakda ýazyň',
-          'special_profile_images_limit':
-              'Iň köp 8 sany surat goşup bilersiňiz',
-          'special_profile_username_required':
-              'Ulanyjy adyny girizmegiňiz zerur',
+          'special_profile_images_limit': 'Iň köp 8 sany surat goşup bilersiňiz',
+          'special_profile_username_required': 'Ulanyjy adyny girizmegiňiz zerur',
           'read_the_rules': 'Düzgünnamany hökman okap tanyşyň',
           'i_agree_with': 'Ähli şertleri bilen ',
           'all_the_terms': 'ylalaşýan',
@@ -182,8 +163,7 @@ class TranslationService extends Translations {
           'sort_lowest_rating': 'Iň pes bahasy boýunça',
           'no_reviews': 'Teswirleri yok',
           'validation_error_title': 'Maglumat ýetirýänçiligi',
-          'validation_error_message':
-              'Ähli maglumatlary dolduryň we azyndan bir surat ýükläň',
+          'validation_error_message': 'Ähli maglumatlary dolduryň we azyndan bir surat ýükläň',
           'terms_error_title': 'Şertler bilen ylalaşyň',
           'terms_error_message': 'Dowam etmek üçin şertler bilen ylalaşmaly',
           'error_title': 'Ýalňyşlyk',
@@ -231,7 +211,7 @@ class TranslationService extends Translations {
           'create_task': 'Döretmek',
           'date_today': 'Şu gün',
           'date_tomorrow': 'Ertir',
-          'urgent_label': 'Iň çalt wagytda',
+          'urgent_label': 'Iň çalt wagtda',
           'i_will_choose_date': 'Özüm sene saýlajak',
           'wallet': 'Hasabym',
           'balance': 'Hasabyňyz',
@@ -282,8 +262,7 @@ class TranslationService extends Translations {
           'online': 'onlaýn',
           'message_hint': 'Habar ýazmak...',
           'delete_chats': 'Ýazyşmalary pozmak',
-          'delete_chats_desc':
-              'Siz saýlanan ýazyşmalary pozmak isleýärsiňizmi?',
+          'delete_chats_desc': 'Siz saýlanan ýazyşmalary pozmak isleýärsiňizmi?',
           'no_product_info': 'Haryt maglumaty ýok',
           'no': 'Ýok',
           'yes': 'Hawa',
@@ -292,8 +271,7 @@ class TranslationService extends Translations {
           'location': 'Ýerleşýän ýeri',
           'Notification': 'Bildirişler',
           'no_notifications': 'Bildirişler ýok',
-          'connection_error':
-              'Bagyşlaň, Aýterek Ussalar internetsiz işläp bilenok',
+          'connection_error': 'Bagyşlaň, Aýterek Ussalar internetsiz işläp bilenok',
           'splash_vpn_error': '(ýa-da VPN açyk bolsa öçürmeli)',
           'to_try_again': 'Täzeden synanyş',
           'month_1': 'ýanwar',
@@ -336,17 +314,15 @@ class TranslationService extends Translations {
           'complete_job': 'Iş tamamlamak',
           'make_offer': 'Teklip etmek',
           'your_offer_is': 'Siziň teklibiňiz @price TMT.',
-          'job_completed_rating_pending':
-              'Ýumuş tamamlandy. Baha nobata goýuldy.',
+          'job_completed_rating_pending': 'Ýumuş tamamlandy. Baha nobata goýuldy.',
           'hide': 'gizle',
           'show_more': 'doly aç',
           'subcategory_selected_count': '@count bölüm saýlanan',
           'send_offer_title': 'Teklibiňizi ugratmak',
-          'send_offer_desc':
-              'Ýumuşlara ýazylmak, teklip ugratmak mugt.\nTöleg Siz saýlanyňyzdan soň bolar. Telefon\nnomeriňizi ýazmak gadagan',
+          'send_offer_desc': 'Ýumuşlara ýazylmak, teklip ugratmak mugt.\nTöleg Siz saýlanyňyzdan soň bolar. Telefon\nnomeriňizi ýazmak gadagan',
+          'price_hint': 'Işiň bahasyny ýazyň',
           'comment_hint': 'Teklibiňizi giňişleýin beýan ediň',
-          'template_saved_msg':
-              'Ýazan tekstyňyz ýatda saklanyldy. Ýene ulanmak isleseňiz, Şablonlar düwmeden ulanyp bilersiňiz.',
+          'template_saved_msg': 'Ýazan tekstyňyz ýatda saklanyldy. Ýene ulanmak isleseňiz, Şablonlar düwmeden ulanyp bilersiňiz.',
           'templates': 'Şablonlar',
           'save_template': 'Ýatda sakla',
           'no_templates': 'Şablon ýok',
@@ -363,8 +339,7 @@ class TranslationService extends Translations {
           'my_offers_tab': 'My Offers (@count)',
           'my_jobs_tab': 'My Jobs (@count)',
           'deleteProfileTitle': 'Delete Profile',
-          'deleteProfileDescription':
-              'Are you sure you want to delete your profile? This action cannot be undone.',
+          'deleteProfileDescription': 'Are you sure you want to delete your profile? This action cannot be undone.',
           'cancel': 'Cancel',
           'delete': 'Delete',
           'select_by_camera': 'Select by Camera',
@@ -395,6 +370,7 @@ class TranslationService extends Translations {
           'phone_not_available': 'Phone number not available',
           'all_selected': 'All',
           'saylamak': 'Select',
+          'price_hint': 'Enter the job price',
         },
         'ru': {
           "navigate_to_place": "Показать маршрут",
@@ -426,17 +402,14 @@ class TranslationService extends Translations {
           'tasks_tab': 'Задачи',
           'menu_tab': 'Меню',
           'login_title': 'Войти',
-          'login_instruction':
-              'Чтобы войти в приложение, используйте номер телефона и пароль, которые вы зарегистрировали в «Aýterek».',
+          'login_instruction': 'Чтобы войти в приложение, используйте номер телефона и пароль, которые вы зарегистрировали в «Aýterek».',
           'phone_number_label': 'Номер телефона',
           'password_input_label': 'Пароль',
           'with_all_terms': 'Со всеми условиями ',
           'agreement_text': 'соглашения',
-          'please_agree_privacy':
-              'Пожалуйста, примите политику конфиденциальности, прежде чем продолжить.',
+          'please_agree_privacy': 'Пожалуйста, примите политику конфиденциальности, прежде чем продолжить.',
           'continue_button': 'Продолжить',
-          'onboarding_welcome_title':
-              'Познакомьтесь с системой "Aýterek - ussalar".',
+          'onboarding_welcome_title': 'Познакомьтесь с системой "Aýterek - ussalar".',
           'onboarding_welcome_description':
               'Теперь нет необходимости искать специалистов (мастеров) по различным работам в объявлениях. Вы просто создаете задания, а специалисты сами присылают Вам свои предложения. Вам остается только выбрать наиболее подходящее.',
           'onboarding_how_to_create_task': 'Как создавать задания',
@@ -445,11 +418,9 @@ class TranslationService extends Translations {
           'onboarding_publish_task_description':
               'Теперь не нужно тратить время на поиск специалистов.Создайте задание, выберите категорию, объясните, что, где и когда нужно сделать, и опубликуйте свое задание.',
           'onboarding_find_specialist_title': 'Найти специалиста',
-          'onboarding_find_specialist_description':
-              'Специалисты пришлют вам свои предложения. Вы выберете наиболее подходящее.',
+          'onboarding_find_specialist_description': 'Специалисты пришлют вам свои предложения. Вы выберете наиболее подходящее.',
           'onboarding_complete_task_title': 'Выполнить задание',
-          'onboarding_complete_task_description':
-              'Договоритесь с выбранным специалистом и разрешите ему выполнить задание.',
+          'onboarding_complete_task_description': 'Договоритесь с выбранным специалистом и разрешите ему выполнить задание.',
           'onboarding_skip_button': 'Пропустить',
           'language_selection_title': 'Выбрать язык',
           'language_selection_instruction': 'Выберите язык для продолжения.',
@@ -465,8 +436,7 @@ class TranslationService extends Translations {
           'bottom_nav_menu': 'Меню',
           'logout': 'Выйти из программы',
           'deleteProfileTitle': 'Удалить профиль',
-          'deleteProfileDescription':
-              'Вы уверены, что хотите удалить свой профиль? Это действие нельзя отменить.',
+          'deleteProfileDescription': 'Вы уверены, что хотите удалить свой профиль? Это действие нельзя отменить.',
           'cancel': 'Отмена',
           'delete': 'Удалить',
           'specialist_profile_title': 'Профиль специалиста',
@@ -489,8 +459,7 @@ class TranslationService extends Translations {
           'other': 'Другое',
           'company': 'Компания',
           'long_bio_hint': 'Подробно о себе',
-          'special_profile_images_limit':
-              'Можно добавить не более 8 изображений',
+          'special_profile_images_limit': 'Можно добавить не более 8 изображений',
           'special_profile_username_required': 'Требуется имя пользователя',
           'read_the_rules': 'Обязательно прочтите правила',
           'i_agree_with': 'Я согласен с ',
@@ -517,55 +486,40 @@ class TranslationService extends Translations {
           'sort_lowest_rating': 'Самый низкий рейтинг',
           'no_reviews': 'Нет отзывов',
           'validation_error_title': 'Ошибка валидации',
-          'validation_error_message':
-              'Пожалуйста, заполните все поля и загрузите хотя бы одно изображение',
+          'validation_error_message': 'Пожалуйста, заполните все поля и загрузите хотя бы одно изображение',
           'terms_error_title': 'Согласитесь с условиями',
           'terms_error_message': 'Вы должны принять условия, чтобы продолжить',
           "title_onbor_1": "Создайте задание",
-          "desc_onbor_1":
-              "Теперь не нужно тратить время на поиск специалистов. Создайте задание, выберите категорию, напишите что, когда и где нужно выполнить и опубликуйте.",
+          "desc_onbor_1": "Теперь не нужно тратить время на поиск специалистов. Создайте задание, выберите категорию, напишите что, когда и где нужно выполнить и опубликуйте.",
           "title_onbor_2": "Ожидайте предложений специалистов",
-          "desc_onbor_2":
-              "Послe публикации задания, мастера сами предложат свои цены и дадут предложения",
+          "desc_onbor_2": "Послe публикации задания, мастера сами предложат свои цены и дадут предложения",
           "title_onbor_3": "Выберите исполнителя",
-          "desc_onbor_3":
-              "Выберите лучшего и надежного специалиста, исходя из цены, информации в профиле, отзывов, рейтинга.",
+          "desc_onbor_3": "Выберите лучшего и надежного специалиста, исходя из цены, информации в профиле, отзывов, рейтинга.",
           "title_onbor_4": "Переписывайтесь или созвонитесь",
-          "desc_onbor_4":
-              "Переписывайтесь во внутреннем чате или созвонитесь чтобы уточнить условия и особенности работы",
+          "desc_onbor_4": "Переписывайтесь во внутреннем чате или созвонитесь чтобы уточнить условия и особенности работы",
           "title_onbor_5": "Оставляйте оценки и отзывы",
-          "desc_onbor_5":
-              "Не забудьте после завершения работы, оставить оценку и написать отзыв мастеру, для составления рейтинга",
+          "desc_onbor_5": "Не забудьте после завершения работы, оставить оценку и написать отзыв мастеру, для составления рейтинга",
           "title_onbor_6": "Заполните анкету",
-          "desc_onbor_6":
-              "Заполните информацию о себе, укажите специальность, сферу деятельности, свой опыт и добавьте свое фото. (заказчики больше доверяют профилю с фото)",
+          "desc_onbor_6": "Заполните информацию о себе, укажите специальность, сферу деятельности, свой опыт и добавьте свое фото. (заказчики больше доверяют профилю с фото)",
           "title_onbor_7": "Укажите место работы",
-          "desc_onbor_7":
-              "Укажите в Анкете, и на странице Задания где вы работаете. Внимание! Уведомление о новых заданиях Вам будут приходить только в том велаяте и городе, который Вы выбрали.",
+          "desc_onbor_7": "Укажите в Анкете, и на странице Задания где вы работаете. Внимание! Уведомление о новых заданиях Вам будут приходить только в том велаяте и городе, который Вы выбрали.",
           "title_onbor_8": "Выберите категорию",
-          "desc_onbor_8":
-              "На странице Все задания в фильтре выберите категорию и ожидайте новые задания",
+          "desc_onbor_8": "На странице Все задания в фильтре выберите категорию и ожидайте новые задания",
           "title_onbor_9": "Отправляйте предложения",
           "desc_onbor_9":
               "Просматривайте задания и отправляйте отклики. Внимание! На одно задание можно отправить только 1 отклик. Старайтесь сразу указывать все условия и цену. (телефон и контакты отправлять запрещено)",
           "title_onbor_10": "Свяжитесь с клиентом",
           "my_account_title": "Мой аккаунт",
-          "desc_onbor_10":
-              "После того как Вас выберут исполнителем, Вам будут доступны чат чтобы написать заказчику и телефон номера. Если заказчик Вас не выбрал Вы не можете ему позвонить.",
+          "desc_onbor_10": "После того как Вас выберут исполнителем, Вам будут доступны чат чтобы написать заказчику и телефон номера. Если заказчик Вас не выбрал Вы не можете ему позвонить.",
           "title_onbor_11": "Проверяйте баланс",
-          "desc_onbor_11":
-              "Отправление предложений бесплатно. С вас спишутся средства, только если Вас выберет заказчик.",
+          "desc_onbor_11": "Отправление предложений бесплатно. С вас спишутся средства, только если Вас выберет заказчик.",
           "title_onbor_12": "Повышайте свой рейтинг",
-          "desc_onbor_12":
-              "После завершения работы, не забывайте нажать Завершено, чтобы заказчик мог поставить Вам оценку и написать отзыв.",
-          "title_onbor_13":
-              "Загрузите и установите приложение  \"Aýterek - ussalar\" ",
-          "desc_onbor_13":
-              "Чтобы выполнять задания и зарабатывать установите приложение \"Aýterek - ussalar\". Вы сможете отправлять предложения и выполнять различные задания.",
+          "desc_onbor_12": "После завершения работы, не забывайте нажать Завершено, чтобы заказчик мог поставить Вам оценку и написать отзыв.",
+          "title_onbor_13": "Загрузите и установите приложение  \"Aýterek - ussalar\" ",
+          "desc_onbor_13": "Чтобы выполнять задания и зарабатывать установите приложение \"Aýterek - ussalar\". Вы сможете отправлять предложения и выполнять различные задания.",
           'work_tejribe': 'Опыт работы',
           'error_title': 'Ошибка',
-          'invalid_phone_number':
-              'Пожалуйста, введите корректный номер телефона.',
+          'invalid_phone_number': 'Пожалуйста, введите корректный номер телефона.',
           'empty_password': 'Пожалуйста, введите свой пароль.',
           'login_success_title': 'Успешный вход',
           'login_success_subtitle': 'Добро пожаловать в систему',
@@ -656,8 +610,7 @@ class TranslationService extends Translations {
           'online': 'онлайн',
           'message_hint': 'Написать сообщение...',
           'delete_chats': 'Удалить сообщения',
-          'delete_chats_desc':
-              'Вы уверены, что хотите удалить выбранные сообщения?',
+          'delete_chats_desc': 'Вы уверены, что хотите удалить выбранные сообщения?',
           'no_product_info': 'Нет информации о товаре',
           'no': 'Нет',
           "Ýumuşlarym": "Мои задачи",
@@ -668,8 +621,7 @@ class TranslationService extends Translations {
           'Notification': 'Уведомления',
           'no_notifications': 'Уведомлений нет',
           "Settings": "Настройки",
-          'connection_error':
-              'Извините, Aýterek Ussalar не может работать без интернета',
+          'connection_error': 'Извините, Aýterek Ussalar не может работать без интернета',
           'splash_vpn_error': '(Или выключите VPN если он включен)',
           'to_try_again': 'Попробуйте еще раз',
           'month_1': 'января',
@@ -710,17 +662,15 @@ class TranslationService extends Translations {
           'complete_job': 'Завершить работу',
           'make_offer': 'Сделать предложение',
           'your_offer_is': 'Ваше предложение @price TMT.',
-          'job_completed_rating_pending':
-              'Задание выполнено. Оценка в очереди.',
+          'job_completed_rating_pending': 'Задание выполнено. Оценка в очереди.',
           'hide': 'скрыть',
           'show_more': 'показать больше',
           'subcategory_selected_count': 'выбрано разделов: @count',
           'send_offer_title': 'Отправить предложение',
-          'send_offer_desc':
-              'Запись на задания и отправка предложений — бесплатно.\nОплата производится после того, как вас выберут. Указывать номер телефона запрещено.',
+          'send_offer_desc': 'Запись на задания и отправка предложений — бесплатно.\nОплата производится после того, как вас выберут. Указывать номер телефона запрещено.',
+          'price_hint': 'Введите стоимость работы',
           'comment_hint': 'Опишите ваше предложение подробно',
-          'template_saved_msg':
-              'Ваш текст сохранен. Если вы захотите использовать его снова, воспользуйтесь кнопкой "Шаблоны".',
+          'template_saved_msg': 'Ваш текст сохранен. Если вы захотите использовать его снова, воспользуйтесь кнопкой "Шаблоны".',
           'templates': 'Шаблоны',
           'save_template': 'Сохранить шаблон',
           'no_templates': 'Нет шаблонов',

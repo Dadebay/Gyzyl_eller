@@ -6,6 +6,8 @@ import 'package:gyzyleller/core/init/translation_service.dart';
 import 'package:gyzyleller/core/services/analytics_service.dart';
 import 'package:gyzyleller/core/services/fcm_token_provider.dart';
 import 'package:gyzyleller/core/services/fcm_token_synchronizer.dart';
+import 'package:gyzyleller/core/theme/custom_dark_theme.dart';
+import 'package:gyzyleller/core/theme/custom_light_theme.dart';
 import 'package:gyzyleller/modules/splash/splash_screen.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/shared/no_internet_screen.dart';
@@ -25,12 +27,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     final localNotifications = LocalNotificationsService.instance();
     await localNotifications.init();
-    final title =
-        message.notification?.title ?? message.data['title'] as String?;
+    final title = message.notification?.title ?? message.data['title'] as String?;
     final body = message.notification?.body ?? message.data['body'] as String?;
     if (title != null || body != null) {
-      await localNotifications.showNotification(
-          title, body, jsonEncode(message.data));
+      await localNotifications.showNotification(title, body, jsonEncode(message.data));
     }
   } catch (_) {}
 }
@@ -50,8 +50,7 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     firebaseReady = true;
-    print(
-        '✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
+    print('✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
   } catch (e, stack) {
     print('❌ Firebase initializeApp ERROR: ${e.runtimeType}: $e');
     print('📋 Stack trace:\n$stack');
@@ -77,8 +76,7 @@ Future<void> main() async {
 
       await FirebaseMessaging.instance.subscribeToTopic('EVENT');
 
-      await FirebaseMessaging.instance
-          .setForegroundNotificationPresentationOptions(
+      await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
         alert: false,
         badge: false,
         sound: false,
@@ -147,13 +145,13 @@ class _MyAppState extends State<MyApp> {
         FocusManager.instance.primaryFocus?.unfocus();
       },
       child: GetMaterialApp(
+        theme: CustomLightTheme().themeData,
+        darkTheme: CustomDarkTheme().themeData,
         translations: TranslationService(),
         defaultTransition: Transition.fade,
         fallbackLocale: const Locale('tk'),
         debugShowCheckedModeBanner: false,
-        locale: widget.storage.read('langCode') != null
-            ? Locale(widget.storage.read('langCode'))
-            : const Locale('tk'),
+        locale: widget.storage.read('langCode') != null ? Locale(widget.storage.read('langCode')) : const Locale('tk'),
         home: _hasInternet ? const SplashScreen() : const NoInternetScreen(),
         builder: (context, child) {
           return GlobalSafeAreaWrapper(

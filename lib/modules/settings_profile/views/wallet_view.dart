@@ -379,6 +379,7 @@ class WalletView extends GetView<WalletController> {
 
   void _showSortBottomSheet(BuildContext context, int sortId) {
     showModalBottomSheet(
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
       ),

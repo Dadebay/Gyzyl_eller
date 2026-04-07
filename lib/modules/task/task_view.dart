@@ -18,8 +18,7 @@ class TaskView extends StatefulWidget {
   State<TaskView> createState() => _TaskViewState();
 }
 
-class _TaskViewState extends State<TaskView>
-    with SingleTickerProviderStateMixin {
+class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final TaskController controller = Get.put(TaskController());
 
@@ -65,27 +64,13 @@ class _TaskViewState extends State<TaskView>
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
                   builder: (_) => FilterBottomSheet(
-                    initialCatIds: isRequested
-                        ? controller.reqCatIds
-                        : controller.procCatIds,
-                    initialWelayatIds: isRequested
-                        ? controller.reqWelayatIds
-                        : controller.procWelayatIds,
-                    initialEtrapIds: isRequested
-                        ? controller.reqEtrapIds
-                        : controller.procEtrapIds,
-                    initialMinPrice: isRequested
-                        ? controller.reqMinPrice.value
-                        : controller.procMinPrice.value,
-                    initialMaxPrice: isRequested
-                        ? controller.reqMaxPrice.value
-                        : controller.procMaxPrice.value,
-                    initialSearch: isRequested
-                        ? controller.reqSearch.value
-                        : controller.procSearch.value,
-                    initialDates: isRequested
-                        ? controller.reqSelectedDates
-                        : controller.procSelectedDates,
+                    initialCatIds: isRequested ? controller.reqCatIds : controller.procCatIds,
+                    initialWelayatIds: isRequested ? controller.reqWelayatIds : controller.procWelayatIds,
+                    initialEtrapIds: isRequested ? controller.reqEtrapIds : controller.procEtrapIds,
+                    initialMinPrice: isRequested ? controller.reqMinPrice.value : controller.procMinPrice.value,
+                    initialMaxPrice: isRequested ? controller.reqMaxPrice.value : controller.procMaxPrice.value,
+                    initialSearch: isRequested ? controller.reqSearch.value : controller.procSearch.value,
+                    initialDates: isRequested ? controller.reqSelectedDates : controller.procSelectedDates,
                     requestedInput: isRequested,
                     processingInput: !isRequested,
                     onApply: (filters) {
@@ -111,8 +96,7 @@ class _TaskViewState extends State<TaskView>
                   context: context,
                   backgroundColor: Colors.white,
                   shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(20.0)),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
                   ),
                   builder: (context) {
                     return AllOrderBySheet(
@@ -153,17 +137,18 @@ class _TaskViewState extends State<TaskView>
                   unselectedLabelColor: Colors.grey,
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Gilroy',
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   tabs: [
                     Tab(
                       child: Text(
-                        "my_offers_tab"
-                            .trParams({"count": reqCount.toString()}),
+                        "my_offers_tab".trParams({"count": reqCount.toString()}),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 18,
+                          fontFamily: 'Gilroy',
                         ),
                       ),
                     ),
@@ -172,7 +157,8 @@ class _TaskViewState extends State<TaskView>
                         "my_jobs_tab".trParams({"count": procCount.toString()}),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 18,
+                          fontFamily: 'Gilroy',
                         ),
                       ),
                     ),
@@ -235,8 +221,7 @@ class _TaskViewState extends State<TaskView>
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                       itemCount: controller.requestedJobs.length,
                       itemBuilder: (context, index) {
                         final job = controller.requestedJobs[index];
@@ -318,8 +303,7 @@ class _TaskViewState extends State<TaskView>
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                       itemCount: controller.processingJobs.length,
                       itemBuilder: (context, index) {
                         final job = controller.processingJobs[index];
