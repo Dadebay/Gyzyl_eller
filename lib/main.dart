@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:gyzyleller/core/init/app_initialize.dart';
 import 'package:gyzyleller/core/init/translation_service.dart';
@@ -10,7 +10,7 @@ import 'package:gyzyleller/core/theme/custom_dark_theme.dart';
 import 'package:gyzyleller/core/theme/custom_light_theme.dart';
 import 'package:gyzyleller/modules/splash/splash_screen.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
-import 'package:gyzyleller/shared/no_internet_screen.dart';
+
 import 'package:gyzyleller/utils/global_safe_area_wrapper.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 
@@ -27,10 +27,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     final localNotifications = LocalNotificationsService.instance();
     await localNotifications.init();
-    final title = message.notification?.title ?? message.data['title'] as String?;
+    final title =
+        message.notification?.title ?? message.data['title'] as String?;
     final body = message.notification?.body ?? message.data['body'] as String?;
     if (title != null || body != null) {
-      await localNotifications.showNotification(title, body, jsonEncode(message.data));
+      await localNotifications.showNotification(
+          title, body, jsonEncode(message.data));
     }
   } catch (_) {}
 }
@@ -50,7 +52,8 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     firebaseReady = true;
-    print('✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
+    print(
+        '✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
   } catch (e, stack) {
     print('❌ Firebase initializeApp ERROR: ${e.runtimeType}: $e');
     print('📋 Stack trace:\n$stack');
@@ -67,16 +70,19 @@ Future<void> main() async {
       );
 
       final fcmTokenProvider = FcmTokenProvider();
-      await fcmTokenProvider.init();
+      // FCM token alma internet gerektirdiği üçin fire-and-forget
+      unawaited(fcmTokenProvider.init());
       Get.put(fcmTokenProvider, permanent: true);
 
       final fcmTokenSynchronizer = FcmTokenSynchronizer(fcmTokenProvider);
       fcmTokenSynchronizer.init();
       Get.put(fcmTokenSynchronizer, permanent: true);
 
-      await FirebaseMessaging.instance.subscribeToTopic('EVENT');
+      // Topic subscription-lar internet gerektirýär, fire-and-forget
+      unawaited(FirebaseMessaging.instance.subscribeToTopic('EVENT'));
 
-      await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
         alert: false,
         badge: false,
         sound: false,
@@ -108,35 +114,9 @@ Future<void> main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   MyApp({super.key});
   final storage = GetStorage();
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  bool _hasInternet = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkInternet();
-  }
-
-  Future<void> _checkInternet() async {
-    try {
-      final result = await InternetAddress.lookup('example.com');
-      setState(() {
-        _hasInternet = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-      });
-    } catch (_) {
-      setState(() {
-        _hasInternet = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,13 +126,15 @@ class _MyAppState extends State<MyApp> {
       },
       child: GetMaterialApp(
         theme: CustomLightTheme().themeData,
-        darkTheme: CustomDarkTheme().themeData,
+        // darkTheme: CustomDarkTheme().themeData,
         translations: TranslationService(),
         defaultTransition: Transition.fade,
         fallbackLocale: const Locale('tk'),
         debugShowCheckedModeBanner: false,
-        locale: widget.storage.read('langCode') != null ? Locale(widget.storage.read('langCode')) : const Locale('tk'),
-        home: _hasInternet ? const SplashScreen() : const NoInternetScreen(),
+        locale: storage.read('langCode') != null
+            ? Locale(storage.read('langCode'))
+            : const Locale('tk'),
+        home: const SplashScreen(),
         builder: (context, child) {
           return GlobalSafeAreaWrapper(
             child: child ?? const SizedBox.shrink(),

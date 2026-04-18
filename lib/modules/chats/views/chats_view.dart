@@ -14,7 +14,6 @@ import 'package:gyzyleller/modules/chats/controllers/chat_controller.dart';
 import 'package:gyzyleller/modules/chats/views/chat_detail_view.dart';
 import 'package:gyzyleller/modules/chats/views/non_auth_chat_detail_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
-import 'package:gyzyleller/shared/widgets/empty_state_widget.dart';
 import 'package:intl/intl.dart';
 
 const zerror = Color.fromRGBO(255, 45, 95, 1.0);
@@ -121,27 +120,6 @@ class _ChatsViewState extends State<ChatsView>
                   fontWeight: FontWeight.w700,
                   color: Colors.black,
                 ),
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => Get.to(() => SettingsView(showAppBar: true)),
-            child: Container(
-              height: 50,
-              width: 50,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: ColorConstants.background,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.black.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: SvgPicture.asset(
-                'assets/icons/settings_2.svg',
-                colorFilter:
-                    const ColorFilter.mode(Colors.black, BlendMode.srcIn),
               ),
             ),
           ),
@@ -320,49 +298,25 @@ class _ChatsViewState extends State<ChatsView>
                 onPressed: ctrl.clearSelection,
               )
             else
-              const SizedBox(width: 50),
-            Expanded(
-              child: Center(
-                child: Text(
-                  isSelectionMode
-                      ? '$selectedCount ${'selected'.tr}'
-                      : 'chat'.tr,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
+              Expanded(
+                child: Center(
+                  child: Text(
+                    isSelectionMode
+                        ? '$selectedCount ${'selected'.tr}'
+                        : 'chat'.tr,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),
-            ),
             if (isSelectionMode)
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
                 onPressed: () => _showDeleteDialog(context),
               )
-            else
-              GestureDetector(
-                onTap: () => Get.to(() => SettingsView(showAppBar: true))
-                    ?.then((_) => _onRefresh()),
-                child: Container(
-                  height: 50,
-                  width: 50,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: ColorConstants.background,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.black.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: SvgPicture.asset(
-                    'assets/icons/settings_2.svg',
-                    colorFilter:
-                        const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                  ),
-                ),
-              ),
           ],
         ),
       );
@@ -473,24 +427,71 @@ class _ChatsViewState extends State<ChatsView>
       }
 
       if (ctrl.hasError.value || ctrl.chats.isEmpty) {
+        final lang = Get.locale?.languageCode ?? 'tk';
+        final imagePath = lang == 'ru'
+            ? 'assets/images/onboarding4_ru.png'
+            : 'assets/images/onboarding4.png';
         return SliverFillRemaining(
-          child: EmptyStateWidget(
-            title: ctrl.hasError.value
-                ? 'Ýalňyşlyk ýüze çykdy'
-                : 'Çatlar tapylmady',
-            subtitle: ctrl.hasError.value
-                ? 'Maglumatlary ýükläp bolmady. Internediňizi barlaň.'
-                : 'Siziň heniz hiç hili hatyňyz ýok.',
-            svgIcon: 'assets/icons/emptysearch.svg',
-            onActionPressed: ctrl.fetchChats,
-            actionLabel: 'Tazele',
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(imagePath, width: 260),
+                  const SizedBox(height: 24),
+                  Text(
+                    ctrl.hasError.value
+                        ? 'chat_error_title'.tr
+                        : 'chat_empty_title'.tr,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    ctrl.hasError.value
+                        ? 'chat_error_subtitle'.tr
+                        : 'chat_empty_subtitle'.tr,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorConstants.kPrimaryColor2,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: _onRefresh,
+                    child: Text(
+                      'refresh'.tr,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       }
 
       final chats = ctrl.chats.where((c) => !c.isAdmin).toList();
-      final int firstValid = chats.indexWhere(
-          (c) => c.productTitle.isNotEmpty);
+      final int firstValid = chats.indexWhere((c) => c.productTitle.isNotEmpty);
 
       return SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

@@ -6,11 +6,57 @@ import 'package:hugeicons/hugeicons.dart';
 
 class NewTag extends StatelessWidget {
   final int? status;
-  const NewTag({super.key, this.status});
+  final bool hideTag;
+  final String? customLabel;
+  final Color? customTextColor;
+  final Color? customBgColor;
+  final Widget? customIcon;
+
+  const NewTag({
+    super.key,
+    this.status,
+    this.hideTag = false,
+    this.customLabel,
+    this.customTextColor,
+    this.customBgColor,
+    this.customIcon,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (status == null) return const SizedBox.shrink();
+    if (hideTag) return const SizedBox.shrink();
+
+    final bool hasCustom =
+        customLabel != null && customTextColor != null && customBgColor != null;
+
+    if (!hasCustom && status == null) return const SizedBox.shrink();
+
+    if (hasCustom) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: customBgColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (customIcon != null) ...[
+              customIcon!,
+              const SizedBox(width: 4),
+            ],
+            Text(
+              customLabel!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: customTextColor,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     final myStatus = MyTasksStatus.fromApiValue(status);
 

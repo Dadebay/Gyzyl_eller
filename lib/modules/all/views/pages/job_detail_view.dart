@@ -1,10 +1,12 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unused_element
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:gyzyleller/core/utils/all_view_tag_resolver.dart';
 import 'package:intl/intl.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:latlong2/latlong.dart';
@@ -26,6 +28,8 @@ import 'package:gyzyleller/shared/widgets/full_screen_image_gallery.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
+import 'package:gyzyleller/modules/login/views/login_view.dart';
+import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:dio/dio.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -34,6 +38,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:gyzyleller/shared/widgets/custom_flutter_map.dart';
 import 'package:gyzyleller/shared/widgets/services_map_screen.dart';
 import 'package:gyzyleller/core/models/location_model.dart';
+import 'package:gyzyleller/modules/chats/views/chat_detail_view.dart';
 
 class JobDetailView extends StatelessWidget {
   const JobDetailView({super.key});
@@ -130,25 +135,57 @@ class JobDetailView extends StatelessWidget {
 
         if (controller.error.isNotEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(controller.error.value),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    dynamic args = Get.arguments;
-                    int? id;
-                    if (args is int) {
-                      id = args;
-                    } else if (args is Map && args.containsKey('id')) {
-                      id = args['id'];
-                    }
-                    if (id != null) controller.fetchJobDetail(id);
-                  },
-                  child: Text('try_again'.tr),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const HugeIcon(
+                    icon: HugeIcons.strokeRoundedJobSearch,
+                    size: 84,
+                    color: ColorConstants.greyColor,
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    'error'.tr,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorConstants.kPrimaryColor2,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: () {
+                      dynamic args = Get.arguments;
+                      int? id;
+                      if (args is int) {
+                        id = args;
+                      } else if (args is Map && args.containsKey('id')) {
+                        id = args['id'];
+                      }
+                      if (id != null) controller.fetchJobDetail(id);
+                    },
+                    child: Text(
+                      'try_again'.tr,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -178,6 +215,21 @@ class JobDetailView extends StatelessWidget {
 
         final position = controller.parsePosition(job.position);
         final jobStatusEnum = MyTasksStatus.fromApiValue(job.status);
+        final args = Get.arguments;
+        final bool fromAllView = args is Map && args['fromAllView'] == true;
+        final bool fromTaskView = args is Map && args['fromTaskView'] == true;
+        final int taskTabIndex = args is Map ? ((args['taskTabIndex'] as int?) ?? 0) : 0;
+        final AllViewTagResolver tagResolver = AllViewTagResolver();
+        AllViewTagData? detailTag;
+        if (fromAllView) {
+          detailTag = tagResolver.resolve(job, isLoggedIn: controller.isLoggedIn.value);
+        } else if (fromTaskView) {
+          if (taskTabIndex == 0) {
+            detailTag = _TaskRequestedDetailTagResolver().resolve(job);
+          } else {
+            detailTag = _TaskProcessingDetailTagResolver().resolve(job);
+          }
+        }
 
         String displayCreatedAt = job.createdAt;
         try {
@@ -262,7 +314,14 @@ class JobDetailView extends StatelessWidget {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.blue),
               ),
               const SizedBox(height: 14),
-              NewTag(status: job.status),
+              NewTag(
+                status: job.status,
+                hideTag: detailTag?.hideTag ?? false,
+                customLabel: detailTag?.label,
+                customTextColor: detailTag?.textColor,
+                customBgColor: detailTag?.bgColor,
+                customIcon: detailTag?.icon,
+              ),
               const SizedBox(height: 16),
               if (jobStatusEnum == MyTasksStatus.retEdilen) ...[
                 Text(
@@ -276,237 +335,144 @@ class JobDetailView extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Builder(builder: (context) {
-                    if (job.finished) {
-                      return Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.access_time, size: 24, color: Colors.black),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                "job_completed_rating_pending".tr,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+                  Obx(() {
+                    final currentJob = controller.job.value;
+                    if (currentJob == null) return const SizedBox.shrink();
 
-                    if (controller.isOfferSent.value || job.requestId != null) {
-                      return Column(
-                        children: [
-                          if (controller.isOfferSent.value)
-                            _buildOfferSuccessBox(
-                              price: controller.sentPrice.value,
-                              comment: controller.sentComment.value,
-                            )
-                          else
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: ColorConstants.whiteColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.access_time, color: ColorConstants.blackColor),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    "offer_sent".tr,
-                                    style: const TextStyle(
-                                      color: ColorConstants.blackColor,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          const SizedBox(height: 16),
-                          // Row(
-                          //   children: [
-                          //     Expanded(
-                          //       child: ElevatedButton.icon(
-                          //         onPressed: () {
-                          //           final phone = job.phone;
-                          //           if (phone != null && phone.isNotEmpty) {
-                          //             launchUrl(
-                          //                 Uri(scheme: 'tel', path: phone));
-                          //           }
-                          //         },
-                          //         icon: const Icon(Icons.call,
-                          //             color: Colors.white, size: 20),
-                          //         label: Text(
-                          //           "jan".tr,
-                          //           style: const TextStyle(
-                          //             color: Colors.white,
-                          //             fontWeight: FontWeight.bold,
-                          //           ),
-                          //         ),
-                          //         style: ElevatedButton.styleFrom(
-                          //           backgroundColor:
-                          //               ColorConstants.kPrimaryColor2,
-                          //           padding: const EdgeInsets.symmetric(
-                          //               vertical: 12),
-                          //           shape: RoundedRectangleBorder(
-                          //             borderRadius: BorderRadius.circular(10),
-                          //           ),
-                          //           elevation: 0,
-                          //         ),
-                          //       ),
-                          //     ),
-                          //     const SizedBox(width: 12),
-                          //     Expanded(
-                          //       child: ElevatedButton.icon(
-                          //         onPressed: () {
-                          //           if (job.userId != null) {
-                          //             Get.to(
-                          //               () => ChatDetailView(
-                          //                 chatId: '',
-                          //                 userId: job.userId.toString(),
-                          //                 userName: job.username,
-                          //                 userPicture: job.image != null &&
-                          //                         job.image!.isNotEmpty
-                          //                     ? (job.image!.startsWith('http')
-                          //                         ? job.image!
-                          //                         : '${Api().urlImage}${job.image}')
-                          //                     : '',
-                          //                 productId: job.id.toString(),
-                          //                 productImage: '',
-                          //                 productPrice:
-                          //                     '${job.minPrice} - ${job.maxPrice} TMT',
-                          //                 productTitle: job.name,
-                          //                 productStatus: job.status.toString(),
-                          //                 lastSeen: '',
-                          //                 blocked: false,
-                          //                 notification: true,
-                          //               ),
-                          //             );
-                          //           }
-                          //         },
-                          //         icon: const Icon(Icons.chat_bubble,
-                          //             color: Colors.white, size: 20),
-                          //         label: Text(
-                          //           "yazmak".tr,
-                          //           style: const TextStyle(
-                          //             color: Colors.white,
-                          //             fontWeight: FontWeight.bold,
-                          //           ),
-                          //         ),
-                          //         style: ElevatedButton.styleFrom(
-                          //           backgroundColor: ColorConstants.blue,
-                          //           padding: const EdgeInsets.symmetric(
-                          //               vertical: 12),
-                          //           shape: RoundedRectangleBorder(
-                          //             borderRadius: BorderRadius.circular(10),
-                          //           ),
-                          //           elevation: 0,
-                          //         ),
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
-                          const SizedBox(height: 16),
-                          if (job.selected)
-                            if (controller.isCompleteRequestSent.value)
-                              const SizedBox.shrink()
-                            else
-                              SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton(
-                                  onPressed: controller.isCompletingJob.value
-                                      ? null
-                                      : () async {
-                                          final result = await DialogUtils().showCompleteJobDialog(context);
-                                          if (result == true) {
-                                            controller.markJobDoneByMasterWithRequestId();
-                                          }
-                                        },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: ColorConstants.kPrimaryColor2,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: controller.isCompletingJob.value
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : Text(
-                                          'complete_job'.tr,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      switchInCurve: Curves.easeInOut,
+                      switchOutCurve: Curves.easeInOut,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SizeTransition(
+                            sizeFactor: animation,
+                            axisAlignment: -1.0,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: currentJob.finished
+                          ? const SizedBox()
+                          : (controller.isOfferSent.value || currentJob.requestId != null)
+                              ? Column(
+                                  key: const ValueKey('offer_sent'),
+                                  children: [
+                                    if (controller.isOfferSent.value)
+                                      _buildOfferSuccessBox(
+                                        price: controller.sentPrice.value,
+                                        comment: controller.sentComment.value,
+                                      )
+                                    else
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: ColorConstants.whiteColor,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.access_time, color: ColorConstants.blackColor),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              "offer_sent".tr,
+                                              style: const TextStyle(
+                                                color: ColorConstants.blackColor,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    const SizedBox(height: 16),
+                                    if (currentJob.selected) ...[
+                                      _buildActionButtons(context, currentJob),
+                                      const SizedBox(height: 16),
+                                      if (controller.isCompleteRequestSent.value)
+                                        const SizedBox.shrink()
+                                      else
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 50,
+                                          child: ElevatedButton(
+                                            onPressed: controller.isCompletingJob.value
+                                                ? null
+                                                : () async {
+                                                    final result = await DialogUtils().showCompleteJobDialog(context);
+                                                    if (result == true) {
+                                                      controller.markJobDoneByMasterWithRequestId();
+                                                    }
+                                                  },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: ColorConstants.kPrimaryColor2,
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              elevation: 0,
+                                            ),
+                                            child: controller.isCompletingJob.value
+                                                ? const SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    'complete_job'.tr,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
                                           ),
                                         ),
+                                      const SizedBox(height: 16),
+                                    ],
+                                  ],
+                                )
+                              : SizedBox(
+                                  key: const ValueKey('make_offer'),
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      if (!controller.isLoggedIn.value) {
+                                        Get.to(() => const LoginView(), binding: LoginBinding());
+                                        return;
+                                      }
+                                      _checkMasterAndExecute(context, "make_offer".tr, () {
+                                        controller.showingTemplates.value = false;
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) => const JobRequestBottomSheet(),
+                                        );
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: ColorConstants.kPrimaryColor2,
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: Text(
+                                      "make_offer".tr,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                          if (job.selected) const SizedBox(height: 16),
-                        ],
-                      );
-                    }
-                    if (!controller.isLoggedIn.value) {
-                      return const SizedBox.shrink();
-                    }
-                    return // Teklip etmek button
-                        SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _checkMasterAndExecute(context, "make_offer".tr, () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => const JobRequestBottomSheet(),
-                            );
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorConstants.kPrimaryColor2,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          "make_offer".tr,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                     );
                   }),
                   const SizedBox(height: 20),
@@ -579,46 +545,110 @@ class JobDetailView extends StatelessWidget {
     );
   }
 
+  Widget _buildActionButtons(BuildContext context, JobModel job) {
+    final bool hasChat = job.chatId != null;
+    print("hasChat id  --------------hasChat$hasChat");
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () => _makePhoneCall(job.phone),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedCall,
+                color: Colors.white,
+                size: 20,
+              ),
+              label: Text(
+                'call_button'.tr,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorConstants.kSecondaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ),
+        // if (hasChat) ...[
+        const SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () => _navigateToChat(job),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedBubbleChat,
+                color: Colors.white,
+                size: 20,
+              ),
+              label: Text(
+                'chat_button'.tr,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorConstants.blue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ),
+        // ],
+      ],
+    );
+  }
+
+  Future<void> _makePhoneCall(String? phoneNumber) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) return;
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    }
+  }
+
+  void _navigateToChat(JobModel job) {
+    if (job.chatId == null) return;
+    final String chatId = job.chatId.toString();
+
+    Get.to(
+      () => ChatDetailView(
+        chatId: chatId,
+        userId: (job.userId ?? 0).toString(),
+        userName: job.username,
+        userPicture: job.image ?? '',
+        productId: job.id.toString(),
+        productImage: '',
+        productPrice: "${job.minPrice} - ${job.maxPrice} TMT",
+        productTitle: '',
+        productStatus: '1',
+        lastSeen: '',
+        blocked: false,
+        notification: true,
+      ),
+    );
+  }
+
   void _checkMasterAndExecute(BuildContext context, String actionTitle, VoidCallback onExecute) {
     if (AuthStorage().masterProfileId == null) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: Text(
-              actionTitle,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(IconConstants.personwork, height: 70),
-                const SizedBox(height: 16),
-                const Text(
-                  'Teklipleri ugratmak we ýumuşlary almak üçin Siz hünärmenlik profiliňizi doldurmaly.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.black87),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('ÝAPMAK', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Get.to(() => const SpecialProfileAdd());
-                },
-                child: const Text('DOLDURMAK', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          );
-        },
-      );
+      DialogUtils().showFillProfileDialog(context, actionTitle);
     } else {
       onExecute();
     }
@@ -1180,7 +1210,7 @@ class JobDetailView extends StatelessWidget {
     }
 
     if (job.whenToDo == 'urgent' || job.whenToDo.isEmpty) {
-      return 'Iň çalt wagtda'.tr;
+      return 'urgent_label'.tr;
     }
 
     if (job.whenToDo == 'special_date') {
@@ -1314,7 +1344,7 @@ class JobDetailView extends StatelessWidget {
                   SmallInfo(
                     icon: IconConstants.builder,
                     text: "${job.responsesCount ?? 0}",
-                    color: job.requestId != null ? Colors.red : null,
+                    color: job.requestId != null ? ColorConstants.secondary : null,
                   ),
                   const SizedBox(width: 16),
                   SmallInfo(
@@ -1501,6 +1531,135 @@ class JobDetailView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DetailTagData {
+  final bool hideTag;
+  final String label;
+  final Color textColor;
+  final Color bgColor;
+  final Widget icon;
+
+  const _DetailTagData({
+    this.hideTag = false,
+    required this.label,
+    required this.textColor,
+    required this.bgColor,
+    required this.icon,
+  });
+}
+
+// Resolver moved to core/utils/all_view_tag_resolver.dart
+
+// ─── Task view — Sol tab (Tekliplerimde) detail resolver ────────────────────
+class _TaskRequestedDetailTagResolver {
+  final AuthStorage _auth = AuthStorage();
+
+  AllViewTagData resolve(JobModel job) {
+    if (job.status == 5) {
+      return AllViewTagData(
+        label: 'task_status_cancelled'.tr,
+        textColor: Colors.white,
+        bgColor: ColorConstants.kPrimaryColor2,
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedCancel01,
+          size: 14,
+          color: Colors.white,
+        ),
+      );
+    }
+
+    if (job.status == 7) {
+      return AllViewTagData(
+        label: 'status_expired'.tr,
+        textColor: Colors.white,
+        bgColor: ColorConstants.kPrimaryColor2,
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedTimer02,
+          size: 14,
+          color: Colors.white,
+        ),
+      );
+    }
+
+    if (job.status == 3) {
+      final user = _auth.getUser();
+      final myId = int.tryParse((user?['id'] ?? '').toString());
+      final isMe = myId != null && job.userId == myId;
+      if (!isMe) {
+        return AllViewTagData(
+          label: 'task_status_other_selected'.tr,
+          textColor: const Color(0xFF165500),
+          bgColor: const Color.fromARGB(255, 120, 229, 118),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedUserCheck01,
+            size: 14,
+            color: Color(0xFF165500),
+          ),
+        );
+      }
+    }
+
+    return const AllViewTagData(
+      hideTag: true,
+      label: '',
+      textColor: Colors.transparent,
+      bgColor: Colors.transparent,
+      icon: SizedBox.shrink(),
+    );
+  }
+}
+
+// ─── Task view — Sag tab (Işlerimde) detail resolver ────────────────────────
+class _TaskProcessingDetailTagResolver {
+  AllViewTagData resolve(JobModel job) {
+    if (job.selected == true && job.finished == false) {
+      return AllViewTagData(
+        label: 'task_status_working'.tr,
+        textColor: Colors.white,
+        bgColor: ColorConstants.greenColor,
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedWorkAlert,
+          size: 14,
+          color: Colors.white,
+        ),
+      );
+    }
+
+    if (job.status == 3 && job.selected == true && job.finished == true) {
+      return AllViewTagData(
+        label: 'task_status_done_no_rating'.tr,
+        textColor: const Color(0xFF616161),
+        bgColor: const Color(0xFFF0F0F0),
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedCheckmarkCircle03,
+          size: 14,
+          color: Color(0xFF616161),
+        ),
+      );
+    }
+
+    if (job.status == 4) {
+      return AllViewTagData(
+        label: 'status_done'.tr,
+        textColor: const Color(0xFF616161),
+        bgColor: const Color(0xFFF0F0F0),
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedCheckmarkBadge04,
+          size: 14,
+          color: Color(0xFF616161),
+        ),
+      );
+    }
+
+    return const AllViewTagData(
+      hideTag: true,
+      label: '',
+      textColor: Colors.transparent,
+      bgColor: Colors.transparent,
+      icon: SizedBox.shrink(),
     );
   }
 }

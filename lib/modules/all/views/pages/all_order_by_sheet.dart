@@ -7,7 +7,7 @@ class AllOrderBySheet extends StatelessWidget {
   final MyTasksOrderBy groupValue;
   final ValueChanged<MyTasksOrderBy> onChanged;
 
-  static const List<MyTasksOrderBy> _options = MyTasksOrderBy.values;
+  static final List<MyTasksOrderBy> _options = MyTasksOrderBy.values;
 
   const AllOrderBySheet({
     super.key,
@@ -35,7 +35,7 @@ class AllOrderBySheet extends StatelessWidget {
           ),
           ..._options.map((e) {
             return Transform.scale(
-              scale: 1.1, // radioyu büyütür
+              scale: 1.1,
               child: RadioListTile<MyTasksOrderBy>(
                 value: e,
                 groupValue: groupValue,

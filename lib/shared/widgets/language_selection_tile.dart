@@ -9,12 +9,14 @@ class LanguageSelectionTile extends StatelessWidget {
   final String title;
   final String iconPath;
   final String code;
+  final bool goBack;
 
   const LanguageSelectionTile({
     super.key,
     required this.title,
     required this.iconPath,
     required this.code,
+    this.goBack = false,
   });
 
   @override
@@ -26,6 +28,7 @@ class LanguageSelectionTile extends StatelessWidget {
       return InkWell(
         onTap: () {
           languageController.changeLanguage(code);
+          if (goBack) Get.back();
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),

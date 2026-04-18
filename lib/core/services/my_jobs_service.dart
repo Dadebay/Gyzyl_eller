@@ -23,8 +23,11 @@ class MyJobsService {
     String? search,
     int? status,
     String? sort,
+    double? lat,
+    double? lng,
     bool requestedInput = false,
     bool processingInput = false,
+    bool selected = false,
     bool requiresToken = true,
   }) async {
     final Map<String, String> queryParams = {
@@ -38,13 +41,25 @@ class MyJobsService {
     if (processingInput) {
       queryParams['processingInput'] = 'true';
     }
+    if (requestedInput || processingInput || selected) {
+      queryParams['selected'] = selected.toString();
+    }
 
     if (sort != null) {
       queryParams['sort'] = sort;
       queryParams['sort_by'] = sort;
     }
 
-    // queryParams['my_jobs'] = myJobs ? 'true' : 'false';
+    if (lat != null) {
+      queryParams['lat'] = lat.toStringAsFixed(6);
+      queryParams['latitude'] = lat.toStringAsFixed(6);
+      queryParams['user_lat'] = lat.toStringAsFixed(6);
+    }
+    if (lng != null) {
+      queryParams['lng'] = lng.toStringAsFixed(6);
+      queryParams['longitude'] = lng.toStringAsFixed(6);
+      queryParams['user_lng'] = lng.toStringAsFixed(6);
+    }
 
     if (minPrice != null) {
       queryParams['min_price'] = minPrice.toInt().toString();
@@ -69,13 +84,11 @@ class MyJobsService {
     }
 
     if (dates != null && dates.isNotEmpty) {
-      queryParams['dates'] =
-          dates.map((d) => DateFormat('yyyy-MM-dd').format(d)).join(',');
+      queryParams['dates'] = dates.map((d) => DateFormat('yyyy-MM-dd').format(d)).join(',');
       // Also set date_from and date_to for compatibility if 2 dates are provided
       if (dates.length >= 2) {
         queryParams['date_from'] = DateFormat('yyyy-MM-dd').format(dates[0]);
-        queryParams['date_to'] =
-            DateFormat('yyyy-MM-dd').format(dates[dates.length - 1]);
+        queryParams['date_to'] = DateFormat('yyyy-MM-dd').format(dates[dates.length - 1]);
       } else if (dates.length == 1) {
         queryParams['date_from'] = DateFormat('yyyy-MM-dd').format(dates[0]);
         queryParams['date_to'] = DateFormat('yyyy-MM-dd').format(dates[0]);
@@ -92,9 +105,7 @@ class MyJobsService {
       queryParams['etrap_id'] = etrapIds.join(',');
     }
 
-    final String queryString = queryParams.entries
-        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-        .join('&');
+    final String queryString = queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
     final String endpoint = 'api/jobs?$queryString';
 
     print('-----------------------------------------');
@@ -104,8 +115,7 @@ class MyJobsService {
     print('-----------------------------------------');
 
     try {
-      final response =
-          await _api.getRequest(endpoint, requiresToken: requiresToken);
+      final response = await _api.getRequest(endpoint, requiresToken: requiresToken);
       print('Jobs API Response: $response');
 
       if (response != null) {
@@ -145,24 +155,28 @@ class MyJobsService {
   }
 
   Future<dynamic> deleteJob(int jobId, {String? reason}) async {
-    final String endpoint =
-        'api/user/masters/jobs/delete/$jobId'; // Adjust endpoint based on API
+    final String endpoint = 'api/user/job/delete-done/$jobId';
+
+    print('--- Deleting Job ---');
+    print('Job ID: $jobId');
+    print('Endpoint: $endpoint');
 
     try {
       final response = await _api.handleApiRequest(
         endpoint,
         method: 'POST',
-        body: {'reason': reason ?? ''},
+        body: {},
         requiresToken: true,
       );
+      print('Delete job response: $response');
       return response;
     } catch (e) {
+      print('Error deleting job: $e');
       rethrow;
     }
   }
 
-  Future<dynamic> sendJobRequest(int jobId,
-      {required double price, required String comment}) async {
+  Future<dynamic> sendJobRequest(int jobId, {required double price, required String comment}) async {
     final String endpoint = 'api/user/job-request/$jobId';
 
     final body = {
@@ -199,9 +213,7 @@ class MyJobsService {
       if (response != null) {
         final data = response['data'] ?? response['rows'];
         if (data is List) {
-          return data
-              .map((e) => SavedRequestModel.fromJson(e as Map<String, dynamic>))
-              .toList();
+          return data.map((e) => SavedRequestModel.fromJson(e as Map<String, dynamic>)).toList();
         }
       }
       return [];
@@ -343,8 +355,7 @@ class MyJobsService {
     }
   }
 
-  Future<dynamic> createOrder(
-      {required int bankId, required String amount}) async {
+  Future<dynamic> createOrder({required int bankId, required String amount}) async {
     final lang = Get.locale?.languageCode ?? 'tk';
     final String endpoint = 'api/user/$lang/create-order';
     final body = {"bank_id": bankId, "summ": amount, "device": "DESKTOP"};
@@ -371,9 +382,7 @@ class MyJobsService {
       final response = await _api.getRequest(endpoint, requiresToken: false);
       print('DEBUG: Categories response: $response');
       if (response != null && response['data'] != null) {
-        return (response['data'] as List)
-            .map((e) => CategoryModel.fromJson(e))
-            .toList();
+        return (response['data'] as List).map((e) => CategoryModel.fromJson(e)).toList();
       }
       return [];
     } catch (e) {
@@ -399,6 +408,99 @@ class MyJobsService {
     } catch (e) {
       print('Error in getLocations: $e');
       return [];
+    }
+  }
+
+  Future<void> saveMasterSearch({
+    required List<int> catIds,
+    required List<int> etrapIds,
+    required double? minPrice,
+    required double? maxPrice,
+  }) async {
+    const String endpoint = 'api/user/master/save-search';
+    final body = {
+      'cats': catIds,
+      'etraps': etrapIds,
+      'min_price': minPrice,
+      'max_price': maxPrice,
+    };
+    print('🚀 [MyJobsService] POST - Save Master Search');
+    print('Endpoint: $endpoint');
+    print('Request Body: $body');
+    try {
+      final response = await _api.handleApiRequest(
+        endpoint,
+        method: 'POST',
+        body: body,
+        requiresToken: true,
+      );
+      print('✅ [MyJobsService] Save Response: $response');
+    } catch (e) {
+      print('❌ [MyJobsService] Error in saveMasterSearch: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getMasterSavedSearch() async {
+    const String endpoint = 'api/user/master/save-search';
+    print('🚀 [MyJobsService] GET - Fetch Master Saved Search');
+    print('Endpoint: $endpoint');
+    try {
+      final response = await _api.getRequest(endpoint, requiresToken: true);
+      print('✅ [filterget] Response: $response');
+
+      if (response != null) {
+        final Map<String, dynamic> result = {};
+
+        // The response contains 'data' which is a list. We take the first item if it exists.
+        final List? dataList = response['data'] as List?;
+        if (dataList == null || dataList.isEmpty) return null;
+
+        final firstItem = dataList.first as Map<String, dynamic>;
+
+        // Parse Categories (extracted from gyzyl_cat_id field)
+        final dynamic catsData = firstItem['cats'];
+        if (catsData is List) {
+          result['cats'] = catsData.map((e) => int.tryParse((e is Map ? e['gyzyl_cat_id'] : e).toString()) ?? 0).where((id) => id != 0).toList();
+        }
+
+        // Parse Etraps (extracted from etrap_id field)
+        final dynamic etrapsData = firstItem['etraps'];
+        if (etrapsData is List) {
+          result['etraps'] = etrapsData.map((e) => int.tryParse((e is Map ? e['etrap_id'] : e).toString()) ?? 0).where((id) => id != 0).toList();
+        }
+
+        // Parse Min Price
+        final dynamic minPriceData = firstItem['min_price'];
+        if (minPriceData != null) {
+          result['min_price'] = double.tryParse(minPriceData.toString());
+        }
+
+        // Parse Max Price
+        final dynamic maxPriceData = firstItem['max_price'];
+        if (maxPriceData != null) {
+          result['max_price'] = double.tryParse(maxPriceData.toString());
+        }
+
+        return result;
+      }
+      return null;
+    } catch (e) {
+      print('Error in getMasterSavedSearch: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getMyRequestOnJob(int jobId) async {
+    final String endpoint = 'api/user/job-requests/$jobId';
+    print('🚀 [MyJobsService] GET - My Request on Job');
+    print('Endpoint: $endpoint');
+    try {
+      final response = await _api.getRequest(endpoint, requiresToken: true);
+      print('✅ [MyJobsService] Request Details Response: $response');
+      return response;
+    } catch (e) {
+      print('❌ [MyJobsService] Error in getMyRequestOnJob: $e');
+      return null;
     }
   }
 }

@@ -68,27 +68,23 @@ class WelayatFilterPage extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              location.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (selectedEtrapCount > 0)
-                              Text(
-                                "$selectedEtrapCount ${"etrap_selected".tr}",
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: ColorConstants.blue,
-                                ),
-                              ),
-                          ],
+                        child: Text(
+                          location.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
+                      if (selectedEtrapCount > 0)
+                        Text(
+                          selectedEtrapCount.toString(),
+                          style: const TextStyle(
+                            color: ColorConstants.kPrimaryColor2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      const SizedBox(width: 8),
                       const HugeIcon(
                         icon: HugeIcons.strokeRoundedArrowRight01,
                         color: ColorConstants.greyColor,

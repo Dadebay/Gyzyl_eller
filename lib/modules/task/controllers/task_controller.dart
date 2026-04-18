@@ -1,7 +1,9 @@
 // ignore_for_file: empty_catches
 
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
+import 'package:location/location.dart' as loc;
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:gyzyleller/core/models/job_model.dart';
 import 'package:gyzyleller/core/models/my_tasks_order_by.dart';
@@ -36,6 +38,11 @@ class TaskController extends GetxController {
 
   final Rx<MyTasksOrderBy> orderBy = MyTasksOrderBy.sene.obs;
   final RxnInt status = RxnInt(null);
+
+  // Location for nearest sort
+  final _locationPlugin = loc.Location();
+  double? _currentLat;
+  double? _currentLng;
 
   // Track active tab index
   final RxInt activeTabIndex = 0.obs;
@@ -104,12 +111,17 @@ class TaskController extends GetxController {
     isRequestedLoading.value = true;
 
     try {
+      debugPrint(
+          '[TaskController][Requested] API start page=$_requestedPage isRefresh=$isRefresh selected=false status=${status.value} sort=${orderBy.value.apiValue}');
       final response = await _jobsService.getMyJobs(
         page: _requestedPage,
         limit: _limit,
         status: status.value,
         sort: orderBy.value.apiValue,
+        lat: orderBy.value == MyTasksOrderBy.nearest ? _currentLat : null,
+        lng: orderBy.value == MyTasksOrderBy.nearest ? _currentLng : null,
         requestedInput: true,
+        selected: false,
         requiresToken: true,
         catIds: reqCatIds,
         welayatIds: reqWelayatIds,
@@ -119,6 +131,8 @@ class TaskController extends GetxController {
         maxPrice: reqMaxPrice.value,
         search: reqSearch.value,
       );
+      debugPrint(
+          '[TaskController][Requested] API success count=${response.data.count} jobs=${response.data.jobs.length} nextPage=${_requestedPage + 1}');
 
       if (isRefresh) {
         requestedJobs.clear();
@@ -142,6 +156,7 @@ class TaskController extends GetxController {
         requestedRefreshController.loadNoData();
       }
     } catch (e) {
+      debugPrint('[TaskController][Requested] API error: $e');
       isRequestedLoading.value = false;
       isRequestedFirstLoad.value = false;
       if (isRefresh) {
@@ -165,12 +180,17 @@ class TaskController extends GetxController {
     isProcessingLoading.value = true;
 
     try {
+      debugPrint(
+          '[TaskController][Processing] API start page=$_processingPage isRefresh=$isRefresh selected=true status=${status.value} sort=${orderBy.value.apiValue}');
       final response = await _jobsService.getMyJobs(
         page: _processingPage,
         limit: _limit,
         status: status.value,
         sort: orderBy.value.apiValue,
+        lat: orderBy.value == MyTasksOrderBy.nearest ? _currentLat : null,
+        lng: orderBy.value == MyTasksOrderBy.nearest ? _currentLng : null,
         processingInput: true,
+        selected: true,
         requiresToken: true,
         catIds: procCatIds,
         welayatIds: procWelayatIds,
@@ -180,6 +200,8 @@ class TaskController extends GetxController {
         maxPrice: procMaxPrice.value,
         search: procSearch.value,
       );
+      debugPrint(
+          '[TaskController][Processing] API success count=${response.data.count} jobs=${response.data.jobs.length} nextPage=${_processingPage + 1}');
 
       if (isRefresh) {
         processingJobs.clear();
@@ -204,6 +226,7 @@ class TaskController extends GetxController {
         processingRefreshController.loadNoData();
       }
     } catch (e) {
+      debugPrint('[TaskController][Processing] API error: $e');
       isProcessingLoading.value = false;
       isProcessingFirstLoad.value = false;
       if (isRefresh) {
@@ -216,6 +239,33 @@ class TaskController extends GetxController {
 
   void changeOrderBy(MyTasksOrderBy value) {
     orderBy.value = value;
+    status.value = value.statusFilter;
+    if (value == MyTasksOrderBy.nearest) {
+      _fetchLocationThenRefresh();
+    } else {
+      fetchRequestedJobs(isRefresh: true);
+      fetchProcessingJobs(isRefresh: true);
+    }
+  }
+
+  Future<void> _fetchLocationThenRefresh() async {
+    try {
+      bool serviceEnabled = await _locationPlugin.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await _locationPlugin.requestService();
+        if (!serviceEnabled) return;
+      }
+      loc.PermissionStatus permission = await _locationPlugin.hasPermission();
+      if (permission == loc.PermissionStatus.denied) {
+        permission = await _locationPlugin.requestPermission();
+        if (permission != loc.PermissionStatus.granted) return;
+      }
+      final locationData = await _locationPlugin.getLocation();
+      _currentLat = locationData.latitude;
+      _currentLng = locationData.longitude;
+    } catch (e) {
+      debugPrint('[TaskController] Location error: $e');
+    }
     fetchRequestedJobs(isRefresh: true);
     fetchProcessingJobs(isRefresh: true);
   }
@@ -318,6 +368,18 @@ class TaskController extends GetxController {
       procSelectedDates.clear();
       procSearch.value = "";
       fetchProcessingJobs(isRefresh: true);
+    }
+  }
+
+  bool get isAnyFilterActive {
+    if (activeTabIndex.value == 0) {
+      return reqCatIds.isNotEmpty ||
+          reqWelayatIds.isNotEmpty ||
+          reqEtrapIds.isNotEmpty;
+    } else {
+      return procCatIds.isNotEmpty ||
+          procWelayatIds.isNotEmpty ||
+          procEtrapIds.isNotEmpty;
     }
   }
 }

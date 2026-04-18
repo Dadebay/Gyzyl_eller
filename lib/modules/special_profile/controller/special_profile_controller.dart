@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -16,11 +18,11 @@ class SpecialProfileController extends GetxController {
   final RxBool isUploadingProfileImage = false.obs;
   final RxList<ReviewModel> reviews = <ReviewModel>[].obs;
   final RxBool isLoadingReviews = false.obs;
+  final RxBool isLoadingProfile = true.obs;
 
   final ImagePicker _picker = ImagePicker();
   final AuthStorage _authStorage = AuthStorage();
-  final RxBool isEditingName = false.obs;
-  final RxBool isChecked = false.obs;
+  final RxBool isChecked = true.obs;
 
   void _showLoadingDialog(String messageKey) {
     Get.dialog(
@@ -131,25 +133,27 @@ class SpecialProfileController extends GetxController {
   void onInit() {
     super.onInit();
     loadInitialProfileData();
-    if (Get.arguments != null) {
-      if (Get.arguments is Map<String, dynamic>) {
-        profile.value = SpecialProfileModel.fromJson(Get.arguments);
-      }
+
+    // Trigger full fetch if we're entering our own profile section
+    if (Get.arguments == null) {
+      refreshProfile();
+    } else if (Get.arguments is Map<String, dynamic>) {
+      profile.value = SpecialProfileModel.fromJson(Get.arguments);
+      fetchReviews();
     }
   }
 
   void loadInitialProfileData() {
     final user = _authStorage.getUser();
-    if (user != null) {
-      profile.value = profile.value.copyWith(
-        id: user['id']?.toString(),
-        userId: user['id']?.toString(), // needed for review fetching
-        name: user['username'],
-        imageUrl: user['image'] != null
-            ? ApiConstants.imageURL + user['image']
-            : null,
-      );
-    }
+    // Create a fresh model — clears any leftover specialist data (bio, experience, etc.)
+    profile.value = SpecialProfileModel(
+      id: user?['id']?.toString(),
+      userId: user?['id']?.toString(),
+      name: user?['username'],
+      imageUrl: user?['image'] != null
+          ? ApiConstants.imageURL + user!['image']
+          : null,
+    );
   }
 
   void setProfileFromData(Map<String, dynamic> data) {
@@ -175,28 +179,34 @@ class SpecialProfileController extends GetxController {
     );
   }
 
-  void toggleEditName(String? newName) {
-    if (isEditingName.value && newName != null) {
-      profile.value = profile.value.copyWith(name: newName);
-    }
-    isEditingName.value = !isEditingName.value;
-  }
-
   /// Re-fetches the master profile using get-master-by-id for full data.
   Future<void> fetchProfileData() async {
-    final ApiService apiService = ApiService();
-    final response = await apiService.getRequest(ApiConstants.specialProfile);
-    if (response != null && response['data'] != null) {
-      final masterId = response['data']['id']?.toString();
-      if (masterId != null) {
-        final detailResponse =
-            await apiService.getRequest(ApiConstants.getMasterById(masterId));
-        if (detailResponse != null && detailResponse['data'] != null) {
-          setProfileFromData(detailResponse['data'] as Map<String, dynamic>);
-          return;
+    // Only show shimmer on initial load (when we have no real profile data yet)
+    final bool isFirstLoad = profile.value.id == null &&
+        (profile.value.shortBio == null || profile.value.shortBio!.isEmpty);
+    if (isFirstLoad && !isLoadingProfile.value) {
+      isLoadingProfile.value = true;
+    }
+
+    try {
+      final ApiService apiService = ApiService();
+      final response = await apiService.getRequest(ApiConstants.specialProfile);
+      if (response != null && response['data'] != null) {
+        final masterId = response['data']['id']?.toString();
+        if (masterId != null) {
+          final detailResponse =
+              await apiService.getRequest(ApiConstants.getMasterById(masterId));
+          if (detailResponse != null && detailResponse['data'] != null) {
+            setProfileFromData(detailResponse['data'] as Map<String, dynamic>);
+            return;
+          }
         }
+        setProfileFromData(response['data'] as Map<String, dynamic>);
       }
-      setProfileFromData(response['data'] as Map<String, dynamic>);
+    } catch (e) {
+      print('❌ [SpecialProfileController] fetchProfileData error: $e');
+    } finally {
+      isLoadingProfile.value = false;
     }
   }
 
@@ -219,8 +229,11 @@ class SpecialProfileController extends GetxController {
   }
 
   Future<void> refreshProfile() async {
-    await fetchProfileData();
-    await fetchReviews();
+    // Run both profile and review fetches concurrently for performance
+    await Future.wait([
+      fetchProfileData(),
+      fetchReviews(),
+    ]);
 
     // Refresh Settings Header if available
     if (Get.isRegistered<SettingsController>()) {
@@ -463,15 +476,33 @@ class SpecialProfileController extends GetxController {
       final bool isSuccess = _isSuccessfulSaveResponse(response);
 
       if (isSuccess) {
-        // Save master profile ID if returned
+        // 1. Optimistic Update: Update local profile state immediately
+        // Use the server-uploaded image URL (not the local file path)
+        String? optimisticImageUrl = profile.value.imageUrl;
+        if (imageUrl != null) {
+          optimisticImageUrl = imageUrl.startsWith('http')
+              ? imageUrl
+              : ApiConstants.imageURL + imageUrl;
+        }
+
+        profile.value = profile.value.copyWith(
+          name: name,
+          shortBio: shortBio,
+          longBio: longBio,
+          experience: experience,
+          legalizationType: legalizationType,
+          imageUrl: optimisticImageUrl,
+        );
+
+        // 2. Save master profile ID if returned
         if (response is Map<String, dynamic> &&
             response['data'] != null &&
             response['data']['id'] != null) {
           _authStorage.saveMasterProfileId(response['data']['id'].toString());
         }
 
-        // Force a full refresh before navigating
-        await refreshProfile();
+        // 3. Instant Navigation: Close the loading dialog and the current page
+        if (Get.isDialogOpen == true) Get.back();
 
         if (isEdit) {
           Get.back();
@@ -481,13 +512,22 @@ class SpecialProfileController extends GetxController {
         }
 
         _showSuccessSnackBar('success_subtitle');
+
+        // 4. Update SettingsController so it knows we have a specialist profile
+        if (Get.isRegistered<SettingsController>()) {
+          final sc = Get.find<SettingsController>();
+          sc.hasSpecialProfile.value = true;
+          sc.fetchBalance();
+        }
+
+        // 5. Background Refresh: Sync everything with the server in the background
+        refreshProfile();
       } else {
+        if (Get.isDialogOpen == true) Get.back();
         _showConnectionSnackBar();
       }
     } catch (e) {
-      if (Get.isDialogOpen == true) {
-        Get.back();
-      }
+      if (Get.isDialogOpen == true) Get.back();
       print('❌ [saveMasterProfile] Error: $e');
       _showConnectionSnackBar();
     }

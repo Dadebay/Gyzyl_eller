@@ -32,6 +32,7 @@ class SpecialProfileEditView extends StatefulWidget {
 class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
   final SpecialProfileController controller =
       Get.find<SpecialProfileController>();
+  final SettingsController settingsController = Get.find<SettingsController>();
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController shortBioController = TextEditingController();
@@ -46,9 +47,37 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
   // Silinen dosyaların id'leri
   List<int> _deletedFileIds = [];
 
+  bool _submitted = false;
+  String _nameError = '';
+  String _workTejribeError = '';
+  String _legalizationError = '';
+  String _longBioError = '';
+
+  bool _validateFields() {
+    final nameErr =
+        nameController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final workErr =
+        workTejribeController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final legalErr =
+        _selectedLegalizationType == null ? 'field_required'.tr : '';
+    final longBioErr =
+        longBioController.text.trim().isEmpty ? 'field_required'.tr : '';
+    setState(() {
+      _submitted = true;
+      _nameError = nameErr;
+      _workTejribeError = workErr;
+      _legalizationError = legalErr;
+      _longBioError = longBioErr;
+    });
+    return nameErr.isEmpty &&
+        workErr.isEmpty &&
+        legalErr.isEmpty &&
+        longBioErr.isEmpty;
+  }
+
   static const List<String> _legalizationValues = [
-    'entrepreneur',
     'individual',
+    'entrepreneur',
     'private',
     'business_entity',
     'other',
@@ -147,9 +176,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
     if (!mounted || !deleted) return;
 
     if (Get.isRegistered<SettingsController>()) {
-      final settingsController = Get.find<SettingsController>();
-      settingsController.hasSpecialProfile.value = false;
-      settingsController.loadUser();
+      Get.find<SettingsController>().clearMasterProfile();
     }
 
     final HomeController homeController = Get.isRegistered<HomeController>()
@@ -242,28 +269,43 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProfileAvatar(
-                controller: controller, nameController: nameController),
-            const SizedBox(height: 15),
+            ProfileAvatar(controller: controller),
+            const SizedBox(height: 30),
             BioTextField(
-              controller: shortBioController,
-              hintText: 'short_bio_hint'.tr,
+              controller: nameController,
+              hintText: 'Ulanyjy ady'.tr,
               onChanged: (value) {},
-            ),
-            const SizedBox(height: 15),
-            _buildLegalizationDropdown(),
-            const SizedBox(height: 15),
-            BioTextField(
-              controller: longBioController,
-              hintText: 'long_bio_hint'.tr,
-              maxLines: 5,
-              onChanged: (value) {},
+              errorText: _submitted ? _nameError : null,
             ),
             const SizedBox(height: 15),
             BioTextField(
               controller: workTejribeController,
               hintText: 'work_tejribe'.tr,
               onChanged: (String value) {},
+              errorText: _submitted ? _workTejribeError : null,
+            ),
+            const SizedBox(height: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLegalizationDropdown(),
+                if (_submitted && _legalizationError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 4),
+                    child: Text(
+                      _legalizationError,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            BioTextField(
+              controller: longBioController,
+              hintText: 'long_bio_hint'.tr,
+              maxLines: 5,
+              onChanged: (value) {},
+              errorText: _submitted ? _longBioError : null,
             ),
             const SizedBox(height: 15),
             InfoCard(
@@ -370,6 +412,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
             const SizedBox(height: 10),
             CustomElevatedButton(
               onPressed: () async {
+                if (!_validateFields()) return;
                 if (!controller.isChecked.value) {
                   CustomWidgets.showSnackBar(
                     'error_title',
@@ -407,6 +450,9 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: (_submitted && _legalizationError.isNotEmpty)
+            ? Border.all(color: Colors.red, width: 1)
+            : null,
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12),

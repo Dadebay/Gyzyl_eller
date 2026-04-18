@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:gyzyleller/core/services/api.dart';
@@ -114,28 +114,34 @@ Future<void> showContactUsDialog(BuildContext context) async {
                               const SizedBox(height: 20),
                           itemBuilder: (_, pos) {
                             final contact = body['contacts'][pos];
+                            final value = contact['value']?.toString() ?? '';
+                            final name =
+                                (contact['name'] ?? contact['type'] ?? value)
+                                    .toString()
+                                    .toLowerCase();
+                            final icon = _contactIcon(name, value);
                             return InkWell(
                               onTap: () {
-                                final value = contact['value']?.toString();
-                                if (value != null && value.startsWith('http')) {
+                                if (value.startsWith('http')) {
                                   launchUrl(Uri.parse(value),
                                       mode: LaunchMode.externalApplication);
+                                } else if (value.startsWith('tel:') ||
+                                    value.startsWith('+') ||
+                                    RegExp(r'^[0-9]').hasMatch(value)) {
+                                  launchUrl(Uri.parse('tel:$value'));
                                 }
                               },
                               child: Row(
                                 children: [
-                                  if (contact['icon'] != null)
-                                    CachedNetworkImage(
-                                      height: 18,
-                                      width: 18,
-                                      fit: BoxFit.contain,
-                                      imageUrl:
-                                          '${Api().urlSimple}${contact['icon']}',
-                                    ),
-                                  const SizedBox(width: 6),
+                                  HugeIcon(
+                                    icon: icon,
+                                    size: 22,
+                                    color: ColorConstants.kPrimaryColor2,
+                                  ),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      contact['value'].toString(),
+                                      value,
                                       style: const TextStyle(fontSize: 16),
                                     ),
                                   ),
@@ -156,4 +162,30 @@ Future<void> showContactUsDialog(BuildContext context) async {
       );
     },
   );
+}
+
+IconData _contactIcon(String name, String value) {
+  final combined = '$name $value'.toLowerCase();
+  if (combined.contains('instagram')) return HugeIcons.strokeRoundedInstagram;
+  if (combined.contains('tiktok')) return HugeIcons.strokeRoundedTiktok;
+  if (combined.contains('telegram')) return HugeIcons.strokeRoundedTelegram;
+  if (combined.contains('youtube')) return HugeIcons.strokeRoundedYoutube;
+  if (combined.contains('facebook')) return HugeIcons.strokeRoundedFacebook01;
+  if (combined.contains('twitter') || combined.contains('x.com')) {
+    return HugeIcons.strokeRoundedNewTwitter;
+  }
+  if (combined.contains('whatsapp')) return HugeIcons.strokeRoundedWhatsapp;
+  if (combined.contains('linkedin')) return HugeIcons.strokeRoundedLinkedin01;
+  if (combined.contains('mail') || combined.contains('@')) {
+    return HugeIcons.strokeRoundedMail01;
+  }
+  if (combined.contains('phone') ||
+      combined.contains('tel') ||
+      combined.contains('+')) {
+    return HugeIcons.strokeRoundedCall;
+  }
+  if (combined.contains('web') || combined.contains('http')) {
+    return HugeIcons.strokeRoundedGlobe;
+  }
+  return HugeIcons.strokeRoundedLink01;
 }

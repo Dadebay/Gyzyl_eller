@@ -18,19 +18,24 @@ class InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.only(left: 15, top: 15, bottom: 15, right: 10),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
-          Icon(icon, color: ColorConstants.kPrimaryColor2),
-          const SizedBox(width: 10),
+          Icon(
+            icon,
+            color: ColorConstants.kPrimaryColor2,
+            size: 18,
+          ),
+          const SizedBox(width: 5),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15),
+              style: TextStyle(
+                  color: textColor, fontWeight: FontWeight.bold, fontSize: 15),
             ),
           ),
         ],

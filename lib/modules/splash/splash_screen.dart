@@ -1,16 +1,15 @@
 import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/bottomnavbar/bindings/home_binding.dart';
-import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
 import 'package:gyzyleller/modules/bottomnavbar/views/bottom_nav_bar_view.dart';
-
 import 'package:gyzyleller/modules/onboarding/views/lang_view.dart';
 import 'package:gyzyleller/shared/constants/image_constants.dart';
+import 'package:gyzyleller/shared/no_internet_screen.dart';
 
 const String kMasterTopicRu = 'MASTER_TOPIC_RU';
 const String kMasterTopicTk = 'MASTER_TOPIC_TK';
@@ -42,32 +41,38 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  final HomeController controller = Get.put(HomeController());
-
   Future<void> _checkOnboardingStatus() async {
     await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+
+    // Internet barmy-ýok barla: DNS cache aldatmasyn diýip real TCP bağlantı synanyşylýar
+    bool hasInternet = false;
+    try {
+      final socket = await Socket.connect(
+        'ayterek.ajayyptilsimatlar.com',
+        80,
+        timeout: const Duration(seconds: 5),
+      );
+      socket.destroy();
+      hasInternet = true;
+    } catch (_) {
+      hasInternet = false;
+    }
 
     if (!mounted) return;
 
-    try {
-      final result = await InternetAddress.lookup('example.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        return;
-      }
-    } catch (_) {
+    if (!hasInternet) {
+      Get.offAll(() => const NoInternetScreen());
       return;
     }
 
     final box = GetStorage();
-    bool isFirstLaunch = box.read('isFirstLaunch') ?? true;
+    final bool isFirstLaunch = box.read('isFirstLaunch') ?? true;
 
     if (isFirstLaunch) {
-      print('👋 First launch detected. Navigating to onboarding...');
-      // Mark as seen immediately so it doesn't show again on next launch
       await box.write('isFirstLaunch', false);
       Get.off(() => LanguagePageFirst());
     } else {
-      print('🏠 Onboarding already seen. Navigating to Home...');
       Get.off(() => const BottomNavBar(), binding: HomeBinding());
     }
   }
@@ -75,13 +80,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorConstants.whiteColor,
-      body: Center(
-        child: Image.asset(
-          ImageConstants.logoSplash,
-          width: 200,
-          height: 200,
-        ),
+      body: Image.asset(
+        ImageConstants.splashBackground,
+        fit: BoxFit.cover,
+        height: MediaQuery.of(context).size.height,
       ),
     );
   }

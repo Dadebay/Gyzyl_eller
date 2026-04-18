@@ -38,10 +38,18 @@ class ApiService {
         return responseJson;
       } else {
         print('Response Body: $decodedBody');
-        final responseJson =
-            decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
-        _handleApiError(response.statusCode,
-            responseJson['message']?.toString() ?? 'anErrorOccurred'.tr);
+        final dynamic responseJson =
+            decodedBody.isNotEmpty ? _decodeJsonSafe(decodedBody) : {};
+
+        String message = 'anErrorOccurred'.tr;
+        if (responseJson is Map<String, dynamic> &&
+            responseJson['message'] != null) {
+          message = responseJson['message'].toString();
+        } else if (responseJson is String && responseJson.trim().isNotEmpty) {
+          message = responseJson;
+        }
+
+        _handleApiError(response.statusCode, message);
         return null;
       }
     } on SocketException catch (e) {
@@ -51,6 +59,14 @@ class ApiService {
     } catch (e) {
       print('ApiService Error in getRequest: $e');
       return null;
+    }
+  }
+
+  dynamic _decodeJsonSafe(String body) {
+    try {
+      return json.decode(body);
+    } catch (_) {
+      return body;
     }
   }
 

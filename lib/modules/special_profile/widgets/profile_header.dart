@@ -1,8 +1,8 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
@@ -51,9 +51,12 @@ class ProfileHeader extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             StatBox(
-              icon: SvgPicture.asset(IconConstants.Isolation_Mode,
-                  width: 26, height: 25),
-              label: 'created_tasks'.tr,
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedChampion,
+                color: ColorConstants.kPrimaryColor2,
+                size: 26,
+              ),
+              label: "created_tasks".tr,
               value: totalJobsCount.toString(),
             ),
             // Avatar
@@ -85,9 +88,12 @@ class ProfileHeader extends StatelessWidget {
               ),
             ),
             StatBox(
-              icon: SvgPicture.asset(IconConstants.Isolation_Mode2,
-                  width: 26, height: 25),
-              label: 'completed_jobs'.tr,
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedAssignments,
+                color: ColorConstants.kPrimaryColor2,
+                size: 26,
+              ),
+              label: "completed_jobs".tr,
               value: doneJobsCount.toString(),
             ),
           ],
@@ -97,12 +103,14 @@ class ProfileHeader extends StatelessWidget {
           name,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 3),
-        Text(
-          shortBio,
-          style: const TextStyle(fontSize: 14, color: ColorConstants.fonts),
-          textAlign: TextAlign.center,
-        ),
+        if (experience != null && experience!.isNotEmpty) ...[
+          const SizedBox(height: 3),
+          Text(
+            experience!,
+            style: const TextStyle(fontSize: 14, color: ColorConstants.fonts),
+            textAlign: TextAlign.center,
+          ),
+        ],
         const SizedBox(height: 5),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -146,47 +154,6 @@ class ProfileHeader extends StatelessWidget {
             ),
           ],
         ),
-        if (experience != null && experience!.isNotEmpty) ...[
-          const SizedBox(height: 25),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const HugeIcon(
-                      icon: HugeIcons.strokeRoundedWorkHistory,
-                      color: ColorConstants.blackColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'work_tejribe'.tr,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: ColorConstants.blackColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 28.0),
-                  child: Text(
-                    experience!,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: ColorConstants.fonts,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }

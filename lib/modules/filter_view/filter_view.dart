@@ -43,7 +43,8 @@ class FilterBottomSheet extends StatefulWidget {
   State<FilterBottomSheet> createState() => _FilterBottomSheetState();
 }
 
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
+class _FilterBottomSheetState extends State<FilterBottomSheet>
+    with SingleTickerProviderStateMixin {
   _FilterPage _currentPage = _FilterPage.main;
 
   final List<int> _selectedCatIds = [];
@@ -51,7 +52,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   final List<int> _selectedEtrapIds = [];
   DateTime? _startDate;
   DateTime? _endDate;
-  RangeValues _priceRange = const RangeValues(0, 10000);
+  RangeValues _priceRange = const RangeValues(0, 1000000);
 
   CategoryModel? _activeCategory;
   LocationModel? _activeWelayat;
@@ -83,11 +84,55 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     }
     _priceRange = RangeValues(
       widget.initialMinPrice ?? 0,
-      widget.initialMaxPrice ?? 10000,
+      widget.initialMaxPrice ?? 1000000,
     );
     _fetchCount();
     _fetchLocations();
     _fetchCategories();
+    if (_selectedCatIds.isEmpty) {
+      _fetchSavedSearch();
+    }
+  }
+
+  Future<void> _fetchSavedSearch() async {
+    try {
+      final savedData = await _jobsService.getMasterSavedSearch();
+      if (savedData != null && mounted) {
+        setState(() {
+          // Categories
+          final List<int> savedCats = (savedData['cats'] as List<int>?) ?? [];
+          if (_selectedCatIds.isEmpty && savedCats.isNotEmpty) {
+            _selectedCatIds.addAll(savedCats);
+          }
+
+          // Etraps
+          final List<int> savedEtraps =
+              (savedData['etraps'] as List<int>?) ?? [];
+          if (_selectedEtrapIds.isEmpty && savedEtraps.isNotEmpty) {
+            _selectedEtrapIds.addAll(savedEtraps);
+          }
+
+          // Price
+          final double? minPrice = savedData['min_price'] as double?;
+          final double? maxPrice = savedData['max_price'] as double?;
+          if (minPrice != null && maxPrice != null) {
+            _priceRange = RangeValues(minPrice, maxPrice);
+          }
+        });
+        _fetchCount();
+      }
+    } catch (e) {
+      print('Error fetching saved search in view: $e');
+    }
+  }
+
+  void _saveSearch() {
+    _jobsService.saveMasterSearch(
+      catIds: _selectedCatIds,
+      etrapIds: _selectedEtrapIds,
+      minPrice: _priceRange.start,
+      maxPrice: _priceRange.end,
+    );
   }
 
   Future<void> _fetchCategories() async {
@@ -134,7 +179,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         search: widget.initialSearch,
         requestedInput: widget.requestedInput,
         processingInput: widget.processingInput,
-        requiresToken: widget.requestedInput || widget.processingInput,
+        requiresToken: true,
       );
       if (!mounted) return;
       setState(() {
@@ -497,6 +542,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     setState(() {
       _selectedCatIds.removeWhere(activeIds.contains);
     });
+    _saveSearch();
     _scheduleFetchCount();
   }
 
@@ -520,6 +566,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     setState(() {
       _selectedEtrapIds.removeWhere(activeIds.contains);
     });
+    _saveSearch();
     _scheduleFetchCount();
   }
 
@@ -625,13 +672,24 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             SizedBox(
               width: 40,
               child: !showBackButton
-                  ? IconButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedCancel01,
-                        size: 24,
-                        color: Colors.black,
+                  ? AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) => ScaleTransition(
+                        scale: animation,
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      ),
+                      child: IconButton(
+                        key: const ValueKey('close'),
+                        padding: EdgeInsets.zero,
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const HugeIcon(
+                          icon: HugeIcons.strokeRoundedCancel01,
+                          size: 24,
+                          color: Colors.black,
+                        ),
                       ),
                     )
                   : null,
@@ -643,13 +701,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   Widget _buildContent() {
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+
     String selectedYearText = '';
     if (_startDate != null && _endDate != null) {
       selectedYearText = isSameDay(_startDate, _endDate)
-          ? _startDate!.year.toString()
-          : " 20${_startDate!.year % 100} - 20${_endDate!.year % 100}";
+          ? fmt(_startDate!)
+          : '${fmt(_startDate!)} - ${fmt(_endDate!)}';
     } else if (_startDate != null) {
-      selectedYearText = _startDate!.year.toString();
+      selectedYearText = fmt(_startDate!);
     }
 
     switch (_currentPage) {
@@ -657,13 +718,49 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         return MainFilterPage(
           onCategoryTap: _goToCategoryPage,
           categoryValue: _getCategoryValueText(),
+          categoryCount: _selectedCatIds.length,
+          onClearCategory: _selectedCatIds.isNotEmpty
+              ? () {
+                  setState(() => _selectedCatIds.clear());
+                  _saveSearch();
+                  _scheduleFetchCount();
+                }
+              : null,
           onLocationTap: _goToLocationPage,
           locationValue: _getLocationValueText(),
+          locationCount: _selectedWelayatIds.length + _selectedEtrapIds.length,
+          onClearLocation:
+              (_selectedWelayatIds.isNotEmpty || _selectedEtrapIds.isNotEmpty)
+                  ? () {
+                      setState(() {
+                        _selectedWelayatIds.clear();
+                        _selectedEtrapIds.clear();
+                      });
+                      _saveSearch();
+                      _scheduleFetchCount();
+                    }
+                  : null,
           onPriceTap: _goToPricePage,
-          priceValue:
-              "${_priceRange.start.toInt()} TMT – ${_priceRange.end.toInt()} TMT",
+          priceValue: "${_priceRange.start.toInt()} TMT – ${_priceRange.end.toInt()} TMT",
+          onClearPrice: (_priceRange.start != 0 || _priceRange.end != 1000000)
+              ? () {
+                  setState(() => _priceRange = const RangeValues(0, 1000000));
+                  _saveSearch();
+                  _scheduleFetchCount();
+                }
+              : null,
           onYearTap: _showCustomYearPicker,
           selectedYear: selectedYearText,
+          onClearYear: (_startDate != null || _endDate != null)
+              ? () {
+                  setState(() {
+                    _startDate = null;
+                    _endDate = null;
+                  });
+                  _saveSearch();
+                  _scheduleFetchCount();
+                }
+              : null,
         );
       case _FilterPage.category:
         if (_isCategoriesLoading) {
@@ -679,6 +776,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           onCategorySelected: _goToSubcategoryPage,
           onClear: () {
             setState(() => _selectedCatIds.clear());
+            _saveSearch();
             _scheduleFetchCount();
           },
         );
@@ -713,13 +811,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         return PriceFilterPage(
           priceRange: _priceRange,
           minPrice: 0,
-          maxPrice: 10000,
+          maxPrice: 1000000,
           onPriceChanged: (values) {
             setState(() => _priceRange = values);
             _scheduleFetchCount();
           },
           onClear: () {
-            setState(() => _priceRange = const RangeValues(0, 10000));
+            setState(() => _priceRange = const RangeValues(0, 1000000));
+            _saveSearch();
             _scheduleFetchCount();
           },
           onApply: _goBack,
@@ -745,6 +844,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               _selectedWelayatIds.clear();
               _selectedEtrapIds.clear();
             });
+            _saveSearch();
             _scheduleFetchCount();
           },
           onApply: _goBack,
@@ -787,6 +887,26 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return "all".tr;
   }
 
+  int _getSelectedCountForCurrentPage() {
+    switch (_currentPage) {
+      case _FilterPage.category:
+        return _selectedCatIds.length;
+      case _FilterPage.subcategory:
+        if (_activeCategory == null) return 0;
+        final activeSubIds =
+            _activeCategory!.subcategories.map((s) => s.id).toSet();
+        return _selectedCatIds.where(activeSubIds.contains).length;
+      case _FilterPage.welayat:
+        return _selectedEtrapIds.length + _selectedWelayatIds.length;
+      case _FilterPage.etrap:
+        if (_activeWelayat == null) return 0;
+        final activeEtrapIds = _activeWelayat!.etraps.map((e) => e.id).toSet();
+        return _selectedEtrapIds.where(activeEtrapIds.contains).length;
+      default:
+        return 0;
+    }
+  }
+
   Widget _buildBottomButtons(double width) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -810,10 +930,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     _selectedCatIds.clear();
                     _selectedWelayatIds.clear();
                     _selectedEtrapIds.clear();
-                    _priceRange = const RangeValues(0, 10000);
+                    _priceRange = const RangeValues(0, 1000000);
                     _startDate = null;
                     _endDate = null;
                   });
+                  _saveSearch();
                   _scheduleFetchCount();
                   widget.onApply({
                     'catIds': <int>[],
@@ -846,8 +967,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ),
               onPressed: () {
                 if (_currentPage != _FilterPage.main) {
+                  // Save if we are leaving a filter-related sub-page
+                  if (_currentPage == _FilterPage.category ||
+                      _currentPage == _FilterPage.subcategory ||
+                      _currentPage == _FilterPage.etrap ||
+                      _currentPage == _FilterPage.price) {
+                    _saveSearch();
+                  }
                   _goBack();
                 } else {
+                  _saveSearch();
                   widget.onApply({
                     'catIds': _selectedCatIds,
                     'welayatIds': _selectedWelayatIds,
@@ -863,7 +992,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               },
               child: Text(
                 (_currentPage != _FilterPage.main)
-                    ? "${"saylamak".tr} (${_isCountLoading ? "..." : _resultCount})"
+                    ? _getSelectedCountForCurrentPage() > 0
+                        ? "${"saylamak".tr} (${_getSelectedCountForCurrentPage()})"
+                        : "saylamak".tr
                     : "jobs_found".trParams({
                         "count":
                             _isCountLoading ? "..." : _resultCount.toString()

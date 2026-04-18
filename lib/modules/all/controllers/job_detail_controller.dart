@@ -30,12 +30,14 @@ class JobDetailController extends GetxController {
 
       if (ok) {
         isCompleteRequestSent.value = true;
-        CustomWidgets.showSnackBar(
-          'Dogry',
-          'Ýumuş üstünlikli tamamlandy',
-          ColorConstants.greenColor,
-        );
-        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Optimistic update: mark job as finished locally for instant UI transition
+        if (job.value != null) {
+          job.value = job.value!.copyWith(finished: true);
+        }
+
+        // Background refresh to sync with server
+        fetchJobDetail(job.value!.id);
       } else {
         CustomWidgets.showSnackBar(
           'Ýalňyşlyk',
@@ -86,31 +88,36 @@ class JobDetailController extends GetxController {
   final RxList<SavedRequestModel> templates = <SavedRequestModel>[].obs;
   final RxBool isLoadingTemplates = false.obs;
   final RxBool isSavingTemplate = false.obs;
+  final RxnInt chatIdFromApi = RxnInt();
 
   @override
   void onInit() {
     super.onInit();
 
-    isLoggedIn.value = AuthStorage().isLoggedIn;
-    fetchBalance();
-    fetchTemplates();
+    // Use microtask to avoid "setState() or markNeedsBuild() called during build" errors
+    // which can happen if these synchronous updates trigger Obx widgets in the current build frame.
+    Future.microtask(() {
+      isLoggedIn.value = AuthStorage().isLoggedIn;
+      fetchBalance();
+      fetchTemplates();
 
-    final dynamic args = Get.arguments;
-    int? jobId;
+      final dynamic args = Get.arguments;
+      int? jobId;
 
-    if (args is int) {
-      jobId = args;
-    } else if (args is Map<String, dynamic>) {
-      jobId = args['id'];
-      canDelete.value = args['canDelete'] ?? false;
-    }
+      if (args is int) {
+        jobId = args;
+      } else if (args is Map<String, dynamic>) {
+        jobId = args['id'];
+        canDelete.value = args['canDelete'] ?? false;
+      }
 
-    if (jobId != null) {
-      fetchJobDetail(jobId);
-    } else {
-      isLoading.value = false;
-      error.value = 'Job ID is missing';
-    }
+      if (jobId != null) {
+        fetchJobDetail(jobId);
+      } else {
+        isLoading.value = false;
+        error.value = 'Job ID is missing';
+      }
+    });
 
     pageController.addListener(_updateCurrentPage);
     commentController.addListener(() {
@@ -131,15 +138,46 @@ class JobDetailController extends GetxController {
   }
 
   Future<void> fetchJobDetail(int jobId) async {
-    isLoading.value = true;
+    // Only show full-page loading on initial fetch
+    final bool isInitialLoad = job.value == null;
+    if (isInitialLoad) {
+      isLoading.value = true;
+    }
     error.value = '';
+
     try {
       final response = await _jobsService.getJobDetail(jobId);
       job.value = response.job;
-      isLoading.value = false;
+      // Auto-correct canDelete: disable for worker-selected, completed, deleted, archive
+      if (canDelete.value) {
+        const nonDeletable = {3, 4, 5, 6};
+        canDelete.value = !nonDeletable.contains(job.value?.status);
+      }
+      if (job.value?.selected == true) {
+        _fetchRequestDetails(jobId);
+      }
+
+      if (isInitialLoad) isLoading.value = false;
     } catch (e) {
       error.value = e.toString();
-      isLoading.value = false;
+      if (isInitialLoad) {
+        isLoading.value = false;
+      }
+    }
+  }
+
+  Future<void> _fetchRequestDetails(int jobId) async {
+    try {
+      final response = await _jobsService.getMyRequestOnJob(jobId);
+      if (response != null && response['chat_id'] != null) {
+        chatIdFromApi.value = int.tryParse(response['chat_id'].toString());
+        // Also update the job model's chatId if we found it
+        if (job.value != null && chatIdFromApi.value != null) {
+          job.value = job.value!.copyWith(chatId: chatIdFromApi.value);
+        }
+      }
+    } catch (e) {
+      print('Error fetching request details: $e');
     }
   }
 
@@ -153,12 +191,14 @@ class JobDetailController extends GetxController {
 
       if (ok) {
         isCompleteRequestSent.value = true;
-        CustomWidgets.showSnackBar(
-          'Dogry',
-          'Ýumuş üstünlikli tamamlandy',
-          ColorConstants.kPrimaryColor2,
-        );
-        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Optimistic update: mark job as finished locally
+        if (job.value != null) {
+          job.value = job.value!.copyWith(finished: true);
+        }
+
+        // Background refresh
+        fetchJobDetail(job.value!.id);
       } else {
         CustomWidgets.showSnackBar(
           'Ýalňyşlyk',
@@ -263,8 +303,8 @@ class JobDetailController extends GetxController {
       // await _createChatForJob(job.value!.id, comment);
     } catch (e) {
       Get.back();
-      CustomWidgets.showSnackBar(
-          'error_title'.tr, '${'offer_not_sent'.tr}: $e', ColorConstants.redColor);
+      CustomWidgets.showSnackBar('error_title'.tr, '${'offer_not_sent'.tr}: $e',
+          ColorConstants.redColor);
     } finally {
       isSubmittingRequest.value = false;
     }
@@ -299,8 +339,8 @@ class JobDetailController extends GetxController {
         await _jobsService.deleteSavedRequest(template.id);
         templates.removeAt(index);
       } catch (e) {
-        CustomWidgets.showSnackBar(
-            'error_title'.tr, 'template_not_deleted'.tr, ColorConstants.redColor);
+        CustomWidgets.showSnackBar('error_title'.tr, 'template_not_deleted'.tr,
+            ColorConstants.redColor);
       }
     }
   }

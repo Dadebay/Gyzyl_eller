@@ -34,9 +34,37 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
   String? _selectedLegalizationType;
   List<Map<String, dynamic>> _fileMetadata = [];
 
+  bool _submitted = false;
+  String _nameError = '';
+  String _workTejribeError = '';
+  String _legalizationError = '';
+  String _longBioError = '';
+
+  bool _validateFields() {
+    final nameErr =
+        nameController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final workErr =
+        workTejribeController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final legalErr =
+        _selectedLegalizationType == null ? 'field_required'.tr : '';
+    final longBioErr =
+        longBioController.text.trim().isEmpty ? 'field_required'.tr : '';
+    setState(() {
+      _submitted = true;
+      _nameError = nameErr;
+      _workTejribeError = workErr;
+      _legalizationError = legalErr;
+      _longBioError = longBioErr;
+    });
+    return nameErr.isEmpty &&
+        workErr.isEmpty &&
+        legalErr.isEmpty &&
+        longBioErr.isEmpty;
+  }
+
   static const List<String> _legalizationValues = [
-    'entrepreneur',
     'individual',
+    'entrepreneur',
     'private',
     'business_entity',
     'other',
@@ -51,6 +79,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
   @override
   void initState() {
     super.initState();
+    controller.isChecked.value = false;
     nameController.text = controller.profile.value.name ?? '';
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
@@ -86,30 +115,46 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProfileAvatar(
-                controller: controller, nameController: nameController),
-            const SizedBox(height: 15),
+            ProfileAvatar(controller: controller),
+            const SizedBox(height: 30),
             BioTextField(
-              controller: shortBioController,
-              hintText: 'short_bio_hint'.tr,
+              controller: nameController,
+              hintText: 'Ulanyjy ady'.tr,
               onChanged: (value) {},
-            ),
-            const SizedBox(height: 15),
-            _buildLegalizationDropdown(),
-            const SizedBox(height: 15),
-            BioTextField(
-              controller: longBioController,
-              hintText: 'long_bio_hint'.tr,
-              maxLines: 5,
-              onChanged: (value) {},
+              errorText: _submitted ? _nameError : null,
             ),
             const SizedBox(height: 15),
             BioTextField(
               controller: workTejribeController,
               hintText: 'work_tejribe'.tr,
               onChanged: (String value) {},
+              errorText: _submitted ? _workTejribeError : null,
             ),
             const SizedBox(height: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLegalizationDropdown(),
+                if (_submitted && _legalizationError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 4),
+                    child: Text(
+                      _legalizationError,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            BioTextField(
+              controller: longBioController,
+              hintText: 'long_bio_hint'.tr,
+              maxLines: 5,
+              onChanged: (value) {},
+              errorText: _submitted ? _longBioError : null,
+            ),
+            const SizedBox(height: 15),
+
             InfoCard(
               icon: Icons.access_time,
               text: 'read_the_rules'.tr,
@@ -165,7 +210,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
                             TextSpan(
                               text: 'agreement_text'.tr,
                               style: const TextStyle(
-                                color: ColorConstants.blue,
+                                color: ColorConstants.kPrimaryColor2,
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w400,
                                 decoration: TextDecoration.underline,
@@ -206,6 +251,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             const SizedBox(height: 10),
             CustomElevatedButton(
               onPressed: () async {
+                if (!_validateFields()) return;
                 if (!controller.isChecked.value) {
                   CustomWidgets.showSnackBar(
                     'error_title',
@@ -237,13 +283,16 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
 
   Widget _buildLegalizationDropdown() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: (_submitted && _legalizationError.isNotEmpty)
+            ? Border.all(color: Colors.red, width: 1)
+            : null,
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -254,7 +303,8 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             value: _selectedLegalizationType,
             hint: Text(
               'legalization_type_hint'.tr,
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
+              style: const TextStyle(
+                  color: ColorConstants.secondary, fontSize: 14),
             ),
             icon: const Icon(
               Icons.keyboard_arrow_down,

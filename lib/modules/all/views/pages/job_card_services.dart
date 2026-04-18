@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
@@ -9,12 +10,22 @@ import 'package:gyzyleller/modules/all/views/pages/new_tag.dart';
 import 'package:gyzyleller/modules/all/views/pages/small_info.dart';
 import 'package:gyzyleller/modules/all/views/pages/info_row_red.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
+import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 
 class JobCard extends StatelessWidget {
   final JobModel job;
   final bool isNew;
   final bool showDelete;
   final VoidCallback? onDeleted;
+  final String? customTagLabel;
+  final Color? customTagTextColor;
+  final Color? customTagBgColor;
+  final Widget? customTagIcon;
+  final bool hideTag;
+  final bool fromAllView;
+  final bool fromTaskView;
+  final int taskTabIndex; // 0 = sol (requested), 1 = sag (processing)
+  final VoidCallback? onOpened;
 
   const JobCard({
     super.key,
@@ -22,6 +33,15 @@ class JobCard extends StatelessWidget {
     this.isNew = false,
     this.showDelete = false,
     this.onDeleted,
+    this.customTagLabel,
+    this.customTagTextColor,
+    this.customTagBgColor,
+    this.customTagIcon,
+    this.hideTag = false,
+    this.fromAllView = false,
+    this.fromTaskView = false,
+    this.taskTabIndex = 0,
+    this.onOpened,
   });
 
   String _formatDate(String dateStr) {
@@ -39,7 +59,8 @@ class JobCard extends StatelessWidget {
       if (job.startDate != null && job.startDate!.isNotEmpty) {
         try {
           final taskDate = DateTime.parse(job.startDate!);
-          final dateFormat = DateFormat('EEEE, dd MMMM', Localizations.localeOf(context).toString());
+          final dateFormat = DateFormat(
+              'EEEE, dd MMMM', Localizations.localeOf(context).toString());
           final timeStr = DateFormat('HH:mm').format(taskDate);
           return "${job.whenToDo.tr} (${dateFormat.format(taskDate)}) $timeStr";
         } catch (_) {}
@@ -52,13 +73,18 @@ class JobCard extends StatelessWidget {
         final taskDate = DateTime.parse(job.startDate!);
         final now = DateTime.now();
         final tomorrow = now.add(const Duration(days: 1));
-        final dateFormat = DateFormat('EEEE, dd MMMM', Localizations.localeOf(context).toString());
+        final dateFormat = DateFormat(
+            'EEEE, dd MMMM', Localizations.localeOf(context).toString());
 
-        if (taskDate.year == now.year && taskDate.month == now.month && taskDate.day == now.day) {
+        if (taskDate.year == now.year &&
+            taskDate.month == now.month &&
+            taskDate.day == now.day) {
           return "${"date_today".tr} (${dateFormat.format(now)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
-        if (taskDate.year == tomorrow.year && taskDate.month == tomorrow.month && taskDate.day == tomorrow.day) {
+        if (taskDate.year == tomorrow.year &&
+            taskDate.month == tomorrow.month &&
+            taskDate.day == tomorrow.day) {
           return "${"date_tomorrow".tr} (${dateFormat.format(tomorrow)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
@@ -68,7 +94,7 @@ class JobCard extends StatelessWidget {
     }
 
     if (job.whenToDo == 'urgent' || job.whenToDo.isEmpty) {
-      return 'Iň çalt wagtda'.tr;
+      return 'urgent_label'.tr;
     }
 
     if (job.whenToDo == 'special_date') {
@@ -92,7 +118,9 @@ class JobCard extends StatelessWidget {
       final startDate = DateTime.parse(start!);
       final endDate = DateTime.parse(end!);
       final formatter = DateFormat('dd.MM.yyyy');
-      if (startDate.year == endDate.year && startDate.month == endDate.month && startDate.day == endDate.day) {
+      if (startDate.year == endDate.year &&
+          startDate.month == endDate.month &&
+          startDate.day == endDate.day) {
         return "${DateFormat('dd.MM.yyyy HH:mm').format(startDate)} - ${DateFormat('HH:mm').format(endDate)}";
       }
       return "${formatter.format(startDate)} - ${formatter.format(endDate)}";
@@ -103,8 +131,22 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool canDeleteJob = showDelete && job.status != 3;
     return InkWell(
-      onTap: () => Get.to(() => const JobDetailView(), arguments: {'id': job.id, 'responsesCount': job.responsesCount}),
+      onTap: () {
+        onOpened?.call();
+        Get.to(
+          () => const JobDetailView(),
+          arguments: {
+            'id': job.id,
+            'responsesCount': job.responsesCount,
+            'canDelete': canDeleteJob,
+            'fromAllView': fromAllView,
+            'fromTaskView': fromTaskView,
+            'taskTabIndex': taskTabIndex,
+          },
+        );
+      },
       child: Card(
         color: ColorConstants.whiteColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -117,21 +159,40 @@ class JobCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(_formatDate(job.createdAt), style: const TextStyle(color: ColorConstants.secondary, fontSize: 13)),
+                  Text(_formatDate(job.createdAt),
+                      style: const TextStyle(
+                          color: ColorConstants.secondary, fontSize: 13)),
                   const Spacer(),
-                  if (showDelete)
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: onDeleted,
-                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                  if (canDeleteJob)
+                    GestureDetector(
+                      onTap: () async {
+                        final deleted = await DialogUtils()
+                            .showDeleteJobDialog(context, job.id);
+                        if (deleted == true && onDeleted != null) {
+                          onDeleted!();
+                        }
+                      },
+                      child: SvgPicture.asset(IconConstants.deletee),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text(job.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColorConstants.fonts)),
+              Text(job.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: ColorConstants.fonts)),
               const SizedBox(height: 10),
-              NewTag(status: job.status),
+              NewTag(
+                status: job.status,
+                hideTag: hideTag,
+                customLabel: customTagLabel,
+                customTextColor: customTagTextColor,
+                customBgColor: customTagBgColor,
+                customIcon: customTagIcon,
+              ),
               const SizedBox(height: 10),
               const Divider(height: 2, color: ColorConstants.background),
               const SizedBox(height: 12),
@@ -153,7 +214,9 @@ class JobCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text("job_date_label".tr, style: const TextStyle(color: ColorConstants.fonts, fontSize: 12)),
+                  Text("job_date_label".tr,
+                      style: const TextStyle(
+                          color: ColorConstants.fonts, fontSize: 12)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -170,12 +233,19 @@ class JobCard extends StatelessWidget {
                 children: [
                   SmallInfo(
                     icon: IconConstants.payment,
-                    text: (job.minPrice == 0 && job.maxPrice == 0) ? 'not_priced'.tr : '${job.minPrice} TMT - ${job.maxPrice} TMT',
+                    text: (job.minPrice == 0 && job.maxPrice == 0)
+                        ? 'not_priced'.tr
+                        : '${job.minPrice} TMT - ${job.maxPrice} TMT',
                   ),
                   const SizedBox(width: 16),
-                  SmallInfo(icon: IconConstants.builder, text: "${job.responsesCount ?? 0}", color: job.requestId != null ? Colors.red : null),
+                  SmallInfo(
+                    icon: IconConstants.builder,
+                    text: "${job.responsesCount ?? 0}",
+                    color: ColorConstants.secondary,
+                  ),
                   const SizedBox(width: 16),
-                  SmallInfo(icon: IconConstants.eye, text: "${job.viewCount ?? 0}"),
+                  SmallInfo(
+                      icon: IconConstants.eye, text: "${job.viewCount ?? 0}"),
                 ],
               ),
             ],

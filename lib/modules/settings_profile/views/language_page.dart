@@ -26,46 +26,25 @@ class LanguagePage extends StatelessWidget {
         ),
       ),
       backgroundColor: ColorConstants.background,
-      body: Column(
+      body: const Column(
         children: [
-          const SizedBox(height: 12),
-          const LanguageSelectionTile(
+          SizedBox(height: 12),
+          LanguageSelectionTile(
             title: 'Türkmençe',
             iconPath: IconConstants.tmflag,
             code: 'tk',
+            goBack: true,
           ),
-          const SizedBox(height: 12),
-          const LanguageSelectionTile(
+          SizedBox(height: 12),
+          LanguageSelectionTile(
             title: 'Русский',
             iconPath: IconConstants.ruflag,
             code: 'ru',
+            goBack: true,
           ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstants.kPrimaryColor2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  "save".tr,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: ColorConstants.whiteColor,
-                  ),
-                ),
-              ),
-            ),
-          )
+
+          //   ),
+          // )
         ],
       ),
     );

@@ -11,6 +11,7 @@ import 'package:gyzyleller/modules/special_profile/views/special_profile_edit_vi
 import 'package:gyzyleller/modules/special_profile/views/all_reviews_screen.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_header.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
+import 'package:gyzyleller/modules/special_profile/widgets/special_profile_shimmer.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as p;
@@ -52,7 +53,9 @@ class _SpecialProfileState extends State<SpecialProfile> {
   @override
   void initState() {
     super.initState();
-    _controller.fetchReviews();
+    // Always refresh when entering the profile view.
+    // The controller is permanent, so onInit only runs once.
+    _controller.refreshProfile();
   }
 
   String get _shortText {
@@ -89,6 +92,10 @@ class _SpecialProfileState extends State<SpecialProfile> {
       backgroundColor: ColorConstants.background,
       appBar: _buildAppBar(),
       body: Obx(() {
+        if (_controller.isLoadingProfile.value) {
+          return const SpecialProfileShimmer();
+        }
+
         final profile = _controller.profile.value;
         final allFiles = _buildAbsoluteUrls(profile.serverImages);
         final images = allFiles.where((f) => _isImage(f)).toList();

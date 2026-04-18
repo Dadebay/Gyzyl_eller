@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart'; // Import SettingsController
@@ -36,7 +37,7 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    refreshData();
+    SchedulerBinding.instance.addPostFrameCallback((_) => refreshData());
   }
 
   void refreshData() {

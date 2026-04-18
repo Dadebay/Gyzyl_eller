@@ -87,19 +87,22 @@ class SettingsView extends GetView<SettingsController> {
               }
               return const SizedBox.shrink();
             }),
-            _buildMenuItemSay(
-              context,
-              'my_account_title'.tr,
-              IconConstants.leaderboard,
-              () {
-                if (!controller.isLoggedIn) {
-                  Get.to(() => const LoginView(), binding: LoginBinding());
-                } else {
-                  Get.to(() => const WalletView());
-                }
-              },
-            ),
-            const SizedBox(height: 10.0),
+            Obx(() {
+              if (!controller.isLoggedIn) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  _buildMenuItemSay(
+                    context,
+                    'my_account_title'.tr,
+                    IconConstants.leaderboard,
+                    () {
+                      Get.to(() => const WalletView());
+                    },
+                  ),
+                  const SizedBox(height: 10.0),
+                ],
+              );
+            }),
             _buildMenuItem(
               context,
               'language'.tr,
