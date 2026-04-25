@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:gyzyleller/core/services/api_service.dart';
@@ -172,6 +173,28 @@ class MyJobsService {
       return response;
     } catch (e) {
       print('Error deleting job: $e');
+      rethrow;
+    }
+  }
+
+  Future<dynamic> deleteJobRequest(int jobId) async {
+    final String endpoint = 'api/user/job/delete-done/$jobId';
+
+    print('--- Deleting Job Request ---');
+    print('Job ID: $jobId');
+    print('Endpoint: $endpoint');
+
+    try {
+      final response = await _api.handleApiRequest(
+        endpoint,
+        method: 'POST',
+        body: {},
+        requiresToken: true,
+      );
+      print('Delete job request response: $response');
+      return response;
+    } catch (e) {
+      print('Error deleting job request: $e');
       rethrow;
     }
   }

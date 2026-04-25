@@ -1,3 +1,6 @@
+import 'package:feather_icons/feather_icons.dart';
+import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
+import 'package:collection/collection.dart';
 // ignore_for_file: deprecated_member_use, unused_element
 import 'dart:io';
 import 'dart:typed_data';
@@ -41,6 +44,8 @@ import 'package:gyzyleller/core/models/location_model.dart';
 import 'package:gyzyleller/modules/chats/views/chat_detail_view.dart';
 
 class JobDetailView extends StatelessWidget {
+  // DEBUG: job.answers listesini konsola yazdır
+
   const JobDetailView({super.key});
 
   @override
@@ -88,7 +93,7 @@ class JobDetailView extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'delete'.tr,
+                            'deletee'.tr,
                             style: const TextStyle(
                               color: Colors.black,
                               fontSize: 13,
@@ -111,7 +116,8 @@ class JobDetailView extends StatelessWidget {
                   ],
                   onSelected: (value) async {
                     if (value == 'delete' && controller.job.value != null) {
-                      final deleted = await DialogUtils().showDeleteJobDialog(context, controller.job.value!.id);
+                      final bool isProposal = controller.fromTaskView.value && controller.taskTabIndex.value == 0;
+                      final deleted = await DialogUtils().showDeleteJobDialog(context, controller.job.value!.id, isRequest: isProposal);
                       if (deleted == true) {
                         Get.back();
                       }
@@ -193,6 +199,135 @@ class JobDetailView extends StatelessWidget {
         final job = controller.job.value;
         if (job == null) return Center(child: Text("no_data_found".tr));
 
+        // Eğer review/comment varsa göster, yoksa job.review alanını kullan
+        Widget? reviewCard;
+        Widget? reviewApproveBox;
+        final reviewAnswer = job.answers.firstWhereOrNull(
+          (a) => a.type == 'review' || a.type == 'comment',
+        );
+        String? reviewText;
+        int rating = 0;
+        print('[JOB_DETAIL][REVIEW] reviewAnswer found: ${reviewAnswer != null}');
+        print('[JOB_DETAIL][REVIEW] reviewAnswer.type: ${reviewAnswer?.type}');
+        print('[JOB_DETAIL][REVIEW] reviewAnswer.value: ${reviewAnswer?.value}');
+        print('[JOB_DETAIL][REVIEW] reviewAnswer.rating: ${reviewAnswer?.rating}');
+        print('[JOB_DETAIL][REVIEW] job.review: ${job.review}');
+        print('[JOB_DETAIL][REVIEW] job.reviewRating: ${job.reviewRating}');
+        if (reviewAnswer != null && reviewAnswer.value != null && reviewAnswer.value!.isNotEmpty) {
+          reviewText = reviewAnswer.value;
+          if (reviewAnswer.rating != null) {
+            rating = reviewAnswer.rating!;
+          }
+        } else if (job.review != null && job.review!.isNotEmpty) {
+          reviewText = job.review;
+          if (job.reviewRating != null) {
+            rating = job.reviewRating!;
+          }
+        }
+        print('[JOB_DETAIL][REVIEW] selected reviewText: $reviewText');
+        print('[JOB_DETAIL][REVIEW] selected rating: $rating');
+        final int? myUserId = AuthStorage().getUserId();
+        final bool isSelectedUser = myUserId != null && job.selectedUserId != null && myUserId == job.selectedUserId;
+        if (reviewText != null && reviewText.isNotEmpty) {
+          if (isSelectedUser) {
+            reviewApproveBox = Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                // border: Border.all(color: const Color(0xFFE3E8F1)),
+              ),
+              child: Row(
+                children: [
+                  const HugeIcon(icon: HugeIcons.strokeRoundedTick03, color: Color(0xFF4BB543), size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'review_approved'.tr,
+                      style: const TextStyle(
+                        color: Color(0xFF1B2B50),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          reviewCard = Card(
+            margin: const EdgeInsets.only(top: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            color: Colors.white,
+            elevation: 0.5,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 24, bottom: 16, left: 12, right: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.grey[200],
+                        backgroundImage: (job.image != null && job.image!.isNotEmpty) ? NetworkImage(job.image!) as ImageProvider : null,
+                        child: (job.image == null || job.image!.isEmpty) ? const Icon(Icons.person, color: Colors.grey, size: 22) : null,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          job.username,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFF1B2B50),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Row(
+                        children: List.generate(5, (i) {
+                          return Icon(
+                            i < rating ? Icons.star : Icons.star_border,
+                            color: i < rating ? Color(0xFFFFC700) : Color(0xFFE3E8F1),
+                            size: 22,
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    reviewText,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF1B2B50),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    (() {
+                      try {
+                        final dateTime = DateTime.parse(job.createdAt);
+                        return DateFormat('dd.MM.yyyy').format(dateTime);
+                      } catch (_) {
+                        return job.createdAt;
+                      }
+                    })(),
+                    style: const TextStyle(
+                      color: Color(0xFFB0B8C1),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final List<String> images = [];
         if (job.images.isNotEmpty) {
           for (final img in job.images) {
@@ -234,8 +369,7 @@ class JobDetailView extends StatelessWidget {
         String displayCreatedAt = job.createdAt;
         try {
           final dateTime = DateTime.parse(job.createdAt);
-          final month = 'month_${dateTime.month}'.tr;
-          displayCreatedAt = "${dateTime.day} $month ${dateTime.year}, ${DateFormat('HH:mm').format(dateTime)}";
+          displayCreatedAt = DateFormat('dd.MM.yyyy').format(dateTime);
         } catch (_) {}
 
         return SmartRefresher(
@@ -313,16 +447,26 @@ class JobDetailView extends StatelessWidget {
                 'bash_mag'.tr,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.blue),
               ),
-              const SizedBox(height: 14),
-              NewTag(
-                status: job.status,
-                hideTag: detailTag?.hideTag ?? false,
-                customLabel: detailTag?.label,
-                customTextColor: detailTag?.textColor,
-                customBgColor: detailTag?.bgColor,
-                customIcon: detailTag?.icon,
-              ),
               const SizedBox(height: 16),
+              Builder(
+                builder: (context) {
+                  bool shouldHideTag = detailTag?.hideTag ?? false;
+                  if (detailTag?.label == 'status_viewed'.tr) {
+                    shouldHideTag = true;
+                  }
+                  print('[JOB_DETAIL][TAG] status: ${job.status}');
+                  print('[JOB_DETAIL][TAG] label: ${detailTag?.label}');
+                  print('[JOB_DETAIL][TAG] hideTag: $shouldHideTag');
+                  return NewTag(
+                    status: job.status,
+                    hideTag: shouldHideTag,
+                    customLabel: detailTag?.label,
+                    customTextColor: detailTag?.textColor,
+                    customBgColor: detailTag?.bgColor,
+                    customIcon: detailTag?.icon,
+                  );
+                },
+              ),
               if (jobStatusEnum == MyTasksStatus.retEdilen) ...[
                 Text(
                   'duzgun'.tr,
@@ -330,14 +474,40 @@ class JobDetailView extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
               ],
+              const SizedBox(height: 12),
+              job.status == 3 && AuthStorage().isLoggedIn == true
+                  ? Container(
+                      padding: EdgeInsets.all(10),
+                      margin: EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                      child: Row(
+                        // crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 14),
+                            child: Icon(
+                              FeatherIcons.info,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Expanded(child: Text('executor_selected_info'.tr, maxLines: 2, style: const TextStyle(fontSize: 15, color: ColorConstants.fonts, fontWeight: FontWeight.bold))),
+                        ],
+                      ),
+                    )
+                  : SizedBox.shrink(),
               _buildOtherInfoSection(context, job),
-              const SizedBox(height: 15),
+              const SizedBox(height: 10),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Obx(() {
                     final currentJob = controller.job.value;
                     if (currentJob == null) return const SizedBox.shrink();
+
+                    // Hide offer button if job.status == tamamlanan (4) or expired (7)
+                    if (currentJob.status == 4 || currentJob.status == 7) {
+                      return const SizedBox.shrink();
+                    }
 
                     return AnimatedSwitcher(
                       duration: const Duration(milliseconds: 400),
@@ -359,37 +529,41 @@ class JobDetailView extends StatelessWidget {
                               ? Column(
                                   key: const ValueKey('offer_sent'),
                                   children: [
-                                    if (controller.isOfferSent.value)
-                                      _buildOfferSuccessBox(
-                                        price: controller.sentPrice.value,
-                                        comment: controller.sentComment.value,
-                                      )
-                                    else
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                        decoration: BoxDecoration(
-                                          color: ColorConstants.whiteColor,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.access_time, color: ColorConstants.blackColor),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              "offer_sent".tr,
-                                              style: const TextStyle(
-                                                color: ColorConstants.blackColor,
-                                                fontWeight: FontWeight.w400,
+                                    if (!(currentJob.selected && !currentJob.finished)) ...[
+                                      if (controller.isOfferSent.value)
+                                        _buildOfferSuccessBox(
+                                          price: controller.sentPrice.value,
+                                          comment: controller.sentComment.value,
+                                        )
+                                      else
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                          decoration: BoxDecoration(
+                                            color: ColorConstants.whiteColor,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.access_time, color: ColorConstants.blackColor),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                "offer_sent".tr,
+                                                style: const TextStyle(
+                                                  color: ColorConstants.blackColor,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    const SizedBox(height: 16),
-                                    if (currentJob.selected) ...[
+                                      const SizedBox(height: 16),
+                                    ],
+                                    if (currentJob.selected || currentJob.chatId != null || controller.chatIdFromApi.value != null) ...[
                                       _buildActionButtons(context, currentJob),
                                       const SizedBox(height: 16),
+                                    ],
+                                    if (currentJob.selected) ...[
                                       if (controller.isCompleteRequestSent.value)
                                         const SizedBox.shrink()
                                       else
@@ -436,45 +610,64 @@ class JobDetailView extends StatelessWidget {
                                     ],
                                   ],
                                 )
-                              : SizedBox(
+                              : Column(
                                   key: const ValueKey('make_offer'),
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      if (!controller.isLoggedIn.value) {
-                                        Get.to(() => const LoginView(), binding: LoginBinding());
-                                        return;
-                                      }
-                                      _checkMasterAndExecute(context, "make_offer".tr, () {
-                                        controller.showingTemplates.value = false;
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) => const JobRequestBottomSheet(),
-                                        );
-                                      });
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: ColorConstants.kPrimaryColor2,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                  children: [
+                                    _buildCommissionInfo(controller),
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          if (!controller.isLoggedIn.value) {
+                                            Get.to(() => const LoginView(), binding: LoginBinding());
+                                            return;
+                                          }
+                                          final currentJob = controller.job.value;
+                                          final minRequired = currentJob != null ? currentJob.minPrice : 0;
+                                          if (controller.userBalance.value < minRequired) {
+                                            DialogUtils().showInsufficientBalanceDialog(context);
+                                            return;
+                                          }
+                                          _checkMasterAndExecute(context, "make_offer".tr, () {
+                                            controller.showingTemplates.value = false;
+                                            showModalBottomSheet(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              backgroundColor: Colors.transparent,
+                                              builder: (context) => const JobRequestBottomSheet(),
+                                            );
+                                          });
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: ColorConstants.kPrimaryColor2,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          elevation: 0,
+                                        ),
+                                        child: Text(
+                                          "make_offer".tr,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
-                                      elevation: 0,
                                     ),
-                                    child: Text(
-                                      "make_offer".tr,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
+                                  ],
                                 ),
                     );
                   }),
+                  const SizedBox(height: 10),
+                  if (reviewApproveBox != null) ...[
+                    reviewApproveBox,
+                  ],
+                  if (reviewCard != null) ...[
+                    reviewCard,
+                  ],
                   const SizedBox(height: 20),
                   Obx(() => controller.isLoggedIn.value
                       ? SizedBox(
@@ -545,70 +738,106 @@ class JobDetailView extends StatelessWidget {
     );
   }
 
+  Widget _buildCommissionInfo(JobDetailController controller) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ColorConstants.background,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline,
+            color: ColorConstants.secondary,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Işiň bahasy ${controller.basePercent.value}%. Müşderi tarapyndan saýlanan bolsaňyz, pul balansyňyzdan alnar.",
+              style: const TextStyle(
+                fontSize: 15,
+                color: ColorConstants.secondary,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionButtons(BuildContext context, JobModel job) {
-    final bool hasChat = job.chatId != null;
-    print("hasChat id  --------------hasChat$hasChat");
+    final controller = Get.find<JobDetailController>();
+    final String? chatId = job.chatId?.toString() ?? controller.chatIdFromApi.value?.toString();
+    final bool hasChat = chatId != null;
+    final bool hasPhone = job.phone != null && job.phone!.isNotEmpty;
+
     return Row(
       children: [
-        Expanded(
-          child: SizedBox(
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: () => _makePhoneCall(job.phone),
-              icon: const HugeIcon(
-                icon: HugeIcons.strokeRoundedCall,
-                color: Colors.white,
-                size: 20,
-              ),
-              label: Text(
-                'call_button'.tr,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+        if (hasPhone)
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => _makePhoneCall(job.phone),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedCall,
                   color: Colors.white,
+                  size: 20,
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ColorConstants.kSecondaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                label: Text(
+                  'call_button'.tr,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-                elevation: 0,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorConstants.kSecondaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
               ),
             ),
           ),
-        ),
-        // if (hasChat) ...[
-        const SizedBox(width: 12),
-        Expanded(
-          child: SizedBox(
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: () => _navigateToChat(job),
-              icon: const HugeIcon(
-                icon: HugeIcons.strokeRoundedBubbleChat,
-                color: Colors.white,
-                size: 20,
-              ),
-              label: Text(
-                'chat_button'.tr,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+        if (hasPhone && hasChat) const SizedBox(width: 12),
+        if (hasChat)
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToChat(job),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedBubbleChat,
                   color: Colors.white,
+                  size: 20,
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ColorConstants.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                label: Text(
+                  'chat_button'.tr,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-                elevation: 0,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorConstants.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
               ),
             ),
           ),
-        ),
-        // ],
       ],
     );
   }
@@ -625,8 +854,18 @@ class JobDetailView extends StatelessWidget {
   }
 
   void _navigateToChat(JobModel job) {
-    if (job.chatId == null) return;
-    final String chatId = job.chatId.toString();
+    final JobDetailController controller = Get.find<JobDetailController>();
+    final String? chatId = job.chatId?.toString() ?? controller.chatIdFromApi.value?.toString();
+
+    if (chatId == null) {
+      print('❌ [JobDetail] chatId is null, cannot navigate to chat');
+      return;
+    }
+
+    print('🚀 [JobDetail] Navigating to Chat: $chatId');
+
+    final String productImage = job.images.isNotEmpty ? job.images.first : '';
+    final LatLng? pos = controller.parsePosition(job.position);
 
     Get.to(
       () => ChatDetailView(
@@ -635,15 +874,20 @@ class JobDetailView extends StatelessWidget {
         userName: job.username,
         userPicture: job.image ?? '',
         productId: job.id.toString(),
-        productImage: '',
-        productPrice: "${job.minPrice} - ${job.maxPrice} TMT",
-        productTitle: '',
-        productStatus: '1',
+        productImage: productImage,
+        productPrice: (job.minPrice == 0 && job.maxPrice == 0) ? "not_priced".tr : "${job.minPrice} - ${job.maxPrice} TMT",
+        productTitle: job.name,
+        productStatus: job.status.toString(),
         lastSeen: '',
         blocked: false,
-        notification: true,
+        notification: false, // Changed to false as this is a real chat session
+        postLat: pos?.latitude.toString(),
+        postLng: pos?.longitude.toString(),
       ),
-    );
+    )?.then((_) {
+      // Refresh chats when coming back, similar to ChatsView
+      controller.fetchJobDetail(job.id);
+    });
   }
 
   void _checkMasterAndExecute(BuildContext context, String actionTitle, VoidCallback onExecute) {
@@ -1025,6 +1269,7 @@ class JobDetailView extends StatelessWidget {
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: ColorConstants.blue,
+                fontFamily: 'Gil',
                 fontSize: 16,
               ),
             ),
@@ -1127,7 +1372,7 @@ class JobDetailView extends StatelessWidget {
   Widget _buildAnswerRow(String question, String answer) {
     return RichText(
       text: TextSpan(
-        style: const TextStyle(fontSize: 14, color: Colors.black, height: 1.4),
+        style: const TextStyle(fontSize: 14, color: Colors.black, height: 1.4, fontFamily: 'Gilroy'),
         children: [
           TextSpan(
             text: "$question: ",

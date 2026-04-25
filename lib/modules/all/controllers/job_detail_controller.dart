@@ -71,6 +71,7 @@ class JobDetailController extends GetxController {
   final TextEditingController commentController = TextEditingController();
   final RxString currentCommentText = ''.obs;
   final RxBool isSubmittingRequest = false.obs;
+  final RxBool commentHasError = false.obs;
 
   final RxBool isOfferSent = false.obs;
   final RxString sentPrice = ''.obs;
@@ -89,6 +90,9 @@ class JobDetailController extends GetxController {
   final RxBool isLoadingTemplates = false.obs;
   final RxBool isSavingTemplate = false.obs;
   final RxnInt chatIdFromApi = RxnInt();
+  final RxBool fromTaskView = false.obs;
+  final RxInt taskTabIndex = 0.obs;
+  final RxInt basePercent = 10.obs;
 
   @override
   void onInit() {
@@ -109,6 +113,11 @@ class JobDetailController extends GetxController {
       } else if (args is Map<String, dynamic>) {
         jobId = args['id'];
         canDelete.value = args['canDelete'] ?? false;
+        if (args.containsKey('chatId')) {
+          chatIdFromApi.value = int.tryParse(args['chatId'].toString());
+        }
+        fromTaskView.value = args['fromTaskView'] ?? false;
+        taskTabIndex.value = args['taskTabIndex'] ?? 0;
       }
 
       if (jobId != null) {
@@ -122,6 +131,9 @@ class JobDetailController extends GetxController {
     pageController.addListener(_updateCurrentPage);
     commentController.addListener(() {
       currentCommentText.value = commentController.text;
+      if (commentHasError.value && commentController.text.trim().isNotEmpty) {
+        commentHasError.value = false;
+      }
     });
   }
 
@@ -148,12 +160,19 @@ class JobDetailController extends GetxController {
     try {
       final response = await _jobsService.getJobDetail(jobId);
       job.value = response.job;
+      basePercent.value = response.basePercent;
       // Auto-correct canDelete: disable for worker-selected, completed, deleted, archive
       if (canDelete.value) {
-        const nonDeletable = {3, 4, 5, 6};
-        canDelete.value = !nonDeletable.contains(job.value?.status);
+        final int? myId = AuthStorage().getUserId();
+        final bool isOtherSelected = job.value?.status == 3 && job.value?.selectedUserId != null && myId != null && job.value?.selectedUserId != myId;
+
+        if (job.value?.status == 3 && !isOtherSelected) {
+          canDelete.value = false;
+        } else {
+          canDelete.value = true;
+        }
       }
-      if (job.value?.selected == true) {
+      if (job.value?.selected == true || job.value?.requestId != null) {
         _fetchRequestDetails(jobId);
       }
 
@@ -265,14 +284,12 @@ class JobDetailController extends GetxController {
     String comment = commentController.text.trim();
 
     if (price == null || price <= 0) {
-      CustomWidgets.showSnackBar(
-          'error_title'.tr, 'enter_valid_price'.tr, ColorConstants.redColor);
+      CustomWidgets.showSnackBar('error_title'.tr, 'enter_valid_price'.tr, ColorConstants.redColor);
       return;
     }
 
     if (comment.isEmpty) {
-      CustomWidgets.showSnackBar(
-          'error_title'.tr, 'enter_description'.tr, ColorConstants.redColor);
+      commentHasError.value = true;
       return;
     }
 
@@ -303,8 +320,7 @@ class JobDetailController extends GetxController {
       // await _createChatForJob(job.value!.id, comment);
     } catch (e) {
       Get.back();
-      CustomWidgets.showSnackBar('error_title'.tr, '${'offer_not_sent'.tr}: $e',
-          ColorConstants.redColor);
+      CustomWidgets.showSnackBar('error_title'.tr, '${'offer_not_sent'.tr}: $e', ColorConstants.redColor);
     } finally {
       isSubmittingRequest.value = false;
     }
@@ -320,8 +336,7 @@ class JobDetailController extends GetxController {
       fetchTemplates(); // Refetch to get the correct ID from backend
       showSuccessBanner.value = true;
     } catch (e) {
-      CustomWidgets.showSnackBar(
-          'error_title'.tr, 'template_not_saved'.tr, ColorConstants.redColor);
+      CustomWidgets.showSnackBar('error_title'.tr, 'template_not_saved'.tr, ColorConstants.redColor);
     } finally {
       isSavingTemplate.value = false;
     }
@@ -339,8 +354,7 @@ class JobDetailController extends GetxController {
         await _jobsService.deleteSavedRequest(template.id);
         templates.removeAt(index);
       } catch (e) {
-        CustomWidgets.showSnackBar('error_title'.tr, 'template_not_deleted'.tr,
-            ColorConstants.redColor);
+        CustomWidgets.showSnackBar('error_title'.tr, 'template_not_deleted'.tr, ColorConstants.redColor);
       }
     }
   }
@@ -376,12 +390,10 @@ class JobDetailController extends GetxController {
       );
 
       if (result.isSuccess) {
-        CustomWidgets.showSnackBar(
-            'OK', 'Faýl ýüklenildi', ColorConstants.greenColor);
+        CustomWidgets.showSnackBar('OK', 'Faýl ýüklenildi', ColorConstants.greenColor);
       }
     } catch (e) {
-      CustomWidgets.showSnackBar(
-          'Ýalňyşlyk', 'Faýl ýüklenilmedi', ColorConstants.redColor);
+      CustomWidgets.showSnackBar('Ýalňyşlyk', 'Faýl ýüklenilmedi', ColorConstants.redColor);
     }
   }
 

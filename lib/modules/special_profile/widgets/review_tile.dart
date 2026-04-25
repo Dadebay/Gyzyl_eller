@@ -7,12 +7,15 @@ import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
+import 'full_screen_image_page.dart';
 
 /// A single review card displayed in the professional profile review section.
 class ReviewTile extends StatefulWidget {
   final ReviewModel review;
+  final bool? isOwner;
 
-  const ReviewTile({super.key, required this.review});
+  const ReviewTile({super.key, required this.review, this.isOwner});
 
   @override
   State<ReviewTile> createState() => _ReviewTileState();
@@ -20,8 +23,23 @@ class ReviewTile extends StatefulWidget {
 
 class _ReviewTileState extends State<ReviewTile> {
   bool _isExpanded = false;
+  late List<ReviewReply> _localReplies;
 
   ReviewModel get review => widget.review;
+
+  @override
+  void initState() {
+    super.initState();
+    _localReplies = List.from(widget.review.replies);
+  }
+
+  @override
+  void didUpdateWidget(covariant ReviewTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.review != oldWidget.review) {
+      _localReplies = List.from(widget.review.replies);
+    }
+  }
 
   String get _formattedDate {
     try {
@@ -29,6 +47,129 @@ class _ReviewTileState extends State<ReviewTile> {
     } catch (_) {
       return '';
     }
+  }
+
+  bool get _isOwner {
+    if (Get.isRegistered<SpecialProfileController>()) {
+      final ctrl = Get.find<SpecialProfileController>();
+      final result = ctrl.isMyProfile;
+      print('🔍 [ReviewTile._isOwner] isMyProfile=$result');
+      print(
+          '🔍 [ReviewTile._isOwner] profile.userId=${ctrl.profile.value.userId}');
+      print('🔍 [ReviewTile._isOwner] profile.id=${ctrl.profile.value.id}');
+      return result;
+    }
+    print('🔍 [ReviewTile._isOwner] SpecialProfileController NOT registered');
+    return false;
+  }
+
+  void _showReplyDialog() {
+    final TextEditingController textController = TextEditingController();
+    Get.dialog(
+      StatefulBuilder(builder: (context, setDialogState) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('reply_to_review'.tr,
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: ColorConstants.fonts)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: textController,
+                  maxLines: 4,
+                  maxLength: 300,
+                  onChanged: (value) => setDialogState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'write_reply'.tr,
+                    hintStyle:
+                        TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                    filled: true,
+                    fillColor: ColorConstants.background,
+                    counterText: "",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    "${textController.text.length}/300",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: Text('cancel'.tr,
+                          style: const TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (textController.text.trim().isEmpty) return;
+                        final savedText = textController.text.trim();
+                        Get.back();
+                        final success =
+                            await Get.find<SpecialProfileController>()
+                                .replyToReview(review.id, savedText);
+                        if (success && mounted) {
+                          setState(() {
+                            _localReplies.add(ReviewReply(
+                              id: '',
+                              reviewId: review.id,
+                              reply: savedText,
+                              createdAt: DateTime.now(),
+                            ));
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColorConstants.kPrimaryColor2,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text('send'.tr,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
   }
 
   @override
@@ -54,20 +195,32 @@ class _ReviewTileState extends State<ReviewTile> {
           Row(
             children: [
               // Avatar
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.grey[200],
-                backgroundImage:
-                    (review.image != null && review.image!.isNotEmpty)
-                        ? NetworkImage(review.image!) as ImageProvider
-                        : null,
-                child: (review.image == null || review.image!.isEmpty)
-                    ? const HugeIcon(
-                        icon: HugeIcons.strokeRoundedUser,
-                        color: ColorConstants.greyColor,
-                        size: 20,
-                      )
+              GestureDetector(
+                onTap: (review.image != null && review.image!.isNotEmpty)
+                    ? () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                FullScreenImagePage(imageUrl: review.image!),
+                          ),
+                        );
+                      }
                     : null,
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage:
+                      (review.image != null && review.image!.isNotEmpty)
+                          ? NetworkImage(review.image!) as ImageProvider
+                          : null,
+                  child: (review.image == null || review.image!.isEmpty)
+                      ? const HugeIcon(
+                          icon: HugeIcons.strokeRoundedUser,
+                          color: ColorConstants.greyColor,
+                          size: 20,
+                        )
+                      : null,
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -157,31 +310,88 @@ class _ReviewTileState extends State<ReviewTile> {
           ),
 
           // ── Master reply (if any) ─────────────────────────────────────
-          if (review.replies.isNotEmpty) ...[
-            const SizedBox(height: 8),
+          Builder(builder: (_) {
+            print(
+                '🔍 [ReviewTile.build] reviewId=${review.id}, _localReplies.length=${_localReplies.length}, _isOwner=$_isOwner');
+            return const SizedBox.shrink();
+          }),
+          if (_localReplies.isNotEmpty) ...[
             Container(
-              padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.only(top: 12, left: 16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: ColorConstants.background,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+                border: Border.all(color: Colors.grey.withOpacity(0.15)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'master_reply'.tr,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: ColorConstants.kPrimaryColor2),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.subdirectory_arrow_right_rounded,
+                        size: 16,
+                        color: ColorConstants.kPrimaryColor2,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'master_reply'.tr,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: ColorConstants.kPrimaryColor2),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    review.replies.first.reply,
+                    _localReplies.first.reply,
                     style: const TextStyle(
-                        fontSize: 13, color: ColorConstants.fonts),
+                        fontSize: 14, color: ColorConstants.fonts, height: 1.4),
                   ),
                 ],
+              ),
+            ),
+          ] else if (_isOwner) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: _showReplyDialog,
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: ColorConstants.background,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: ColorConstants.secondary.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.reply_rounded,
+                        size: 16,
+                        color: ColorConstants.secondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'reply'.tr,
+                        style: const TextStyle(
+                            color: ColorConstants.secondary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],

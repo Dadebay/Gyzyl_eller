@@ -25,10 +25,8 @@ class BottomNavBar extends StatefulWidget {
 
 class _BottomNavBarState extends State<BottomNavBar> {
   final HomeController homeController = Get.put(HomeController());
-  final ChatController chatController =
-      Get.put(ChatController(), permanent: true);
-  final NotificationController notifController =
-      Get.put(NotificationController(), permanent: true);
+  final ChatController chatController = Get.put(ChatController(), permanent: true);
+  final NotificationController notifController = Get.put(NotificationController(), permanent: true);
 
   @override
   void initState() {
@@ -63,18 +61,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
     return UpgradeAlert(
       upgrader: Upgrader(languageCode: 'ru'),
-      dialogStyle: Platform.isAndroid
-          ? UpgradeDialogStyle.material
-          : UpgradeDialogStyle.cupertino,
+      dialogStyle: Platform.isAndroid ? UpgradeDialogStyle.material : UpgradeDialogStyle.cupertino,
       child: Obx(() => Scaffold(
             appBar: PreferredSize(
-              preferredSize: Size.fromHeight(
-                  homeController.bottomNavBarSelectedIndex.value == 3
-                      ? kToolbarHeight
-                      : 0),
+              preferredSize: Size.fromHeight(homeController.bottomNavBarSelectedIndex.value == 3 ? kToolbarHeight : 0),
               child: CustomAppBar(
-                title: ListConstants
-                    .pageNames[homeController.bottomNavBarSelectedIndex.value],
+                title: ListConstants.pageNames[homeController.bottomNavBarSelectedIndex.value],
               ),
             ),
             body: pages[homeController.bottomNavBarSelectedIndex.value],
@@ -88,12 +80,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
               icons: ListConstants.mainIcons,
               selectedIcons: ListConstants.selectedIcons,
               labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
-              badges: [
-                0,
-                0,
-                chatController.unreadCount.value,
-                chatController.notifCount.value
-              ],
+              badges: [0, 0, chatController.unreadCount.value, chatController.notifCount.value],
             ),
           )),
     );

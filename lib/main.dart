@@ -6,7 +6,6 @@ import 'package:gyzyleller/core/init/translation_service.dart';
 import 'package:gyzyleller/core/services/analytics_service.dart';
 import 'package:gyzyleller/core/services/fcm_token_provider.dart';
 import 'package:gyzyleller/core/services/fcm_token_synchronizer.dart';
-import 'package:gyzyleller/core/theme/custom_dark_theme.dart';
 import 'package:gyzyleller/core/theme/custom_light_theme.dart';
 import 'package:gyzyleller/modules/splash/splash_screen.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
@@ -18,6 +17,12 @@ FirebaseAnalytics get analytics => FirebaseAnalytics.instance;
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  print('🔔 [FCM BACKGROUND] Message receivedddddddd:');
+  print('   Dataaaaaaaa: ${message.data}');
+  print('   Notification Titleeee: ${message.notification?.title}');
+  print('   Notification Bodyrrrrrrrr: ${message.notification?.body}');
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -26,15 +31,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   try {
     final localNotifications = LocalNotificationsService.instance();
-    await localNotifications.init();
-    final title =
-        message.notification?.title ?? message.data['title'] as String?;
-    final body = message.notification?.body ?? message.data['body'] as String?;
-    if (title != null || body != null) {
+    await localNotifications.init(isBackground: true);
+
+    final title = message.data['title'] as String?;
+    final body = message.data['body'] as String?;
+
+    // Firebase Messaging on Android natively displays background notifications
+    // if `message.notification` is not null. We only manually show a local
+    // notification if the server sent a pure data payload (notification is null).
+    if (message.notification == null && (title != null || body != null)) {
       await localNotifications.showNotification(
           title, body, jsonEncode(message.data));
     }
-  } catch (_) {}
+  } catch (e) {
+    print('❌ [FCM BACKGROUND] Error showing notification: $e');
+  }
 }
 
 Future<void> main() async {

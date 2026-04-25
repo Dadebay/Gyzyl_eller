@@ -274,6 +274,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
             BioTextField(
               controller: nameController,
               hintText: 'Ulanyjy ady'.tr,
+              maxLength: 60,
               onChanged: (value) {},
               errorText: _submitted ? _nameError : null,
             ),
@@ -281,6 +282,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
             BioTextField(
               controller: workTejribeController,
               hintText: 'work_tejribe'.tr,
+              maxLength: 160,
               onChanged: (String value) {},
               errorText: _submitted ? _workTejribeError : null,
             ),
@@ -304,6 +306,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
               controller: longBioController,
               hintText: 'long_bio_hint'.tr,
               maxLines: 5,
+              maxLength: 1200,
               onChanged: (value) {},
               errorText: _submitted ? _longBioError : null,
             ),

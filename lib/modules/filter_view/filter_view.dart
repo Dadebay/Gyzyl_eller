@@ -9,6 +9,7 @@ import 'package:gyzyleller/modules/filter_view/widgets/welayat_filter_page.dart'
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
 
 enum _FilterPage { main, category, subcategory, price, welayat, etrap }
@@ -95,6 +96,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
   }
 
   Future<void> _fetchSavedSearch() async {
+    if (!AuthStorage().isLoggedIn) return;
     try {
       final savedData = await _jobsService.getMasterSavedSearch();
       if (savedData != null && mounted) {
@@ -127,11 +129,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
   }
 
   void _saveSearch() {
+    if (!AuthStorage().isLoggedIn) return;
     _jobsService.saveMasterSearch(
       catIds: _selectedCatIds,
       etrapIds: _selectedEtrapIds,
-      minPrice: _priceRange.start,
-      maxPrice: _priceRange.end,
+      minPrice: _priceRange.start == 0 ? null : _priceRange.start,
+      maxPrice: _priceRange.end == 1000000 ? null : _priceRange.end,
     );
   }
 
@@ -171,15 +174,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
         catIds: _selectedCatIds,
         welayatIds: _selectedWelayatIds,
         etrapIds: _selectedEtrapIds,
-        minPrice: _priceRange.start,
-        maxPrice: _priceRange.end,
+        minPrice: _priceRange.start == 0 ? null : _priceRange.start,
+        maxPrice: _priceRange.end == 1000000 ? null : _priceRange.end,
         dates: _startDate != null
             ? [_startDate!, if (_endDate != null) _endDate!]
             : null,
         search: widget.initialSearch,
         requestedInput: widget.requestedInput,
         processingInput: widget.processingInput,
-        requiresToken: true,
+        requiresToken: AuthStorage().isLoggedIn,
       );
       if (!mounted) return;
       setState(() {
@@ -741,7 +744,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                     }
                   : null,
           onPriceTap: _goToPricePage,
-          priceValue: "${_priceRange.start.toInt()} TMT – ${_priceRange.end.toInt()} TMT",
+          priceValue:
+              "${_priceRange.start.toInt()} TMT – ${_priceRange.end.toInt()} TMT",
           onClearPrice: (_priceRange.start != 0 || _priceRange.end != 1000000)
               ? () {
                   setState(() => _priceRange = const RangeValues(0, 1000000));
@@ -805,7 +809,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
             _scheduleFetchCount();
           },
           onSelectAll: _selectAllActiveSubcategories,
-          onClear: _clearActiveSubcategories,
+          onClear: () {
+            setState(() => _selectedCatIds.clear());
+            _saveSearch();
+            _scheduleFetchCount();
+          },
         );
       case _FilterPage.price:
         return PriceFilterPage(
@@ -864,7 +872,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
             _scheduleFetchCount();
           },
           onSelectAll: _selectAllActiveEtraps,
-          onClear: _clearActiveEtraps,
+          onClear: () {
+            setState(() => _selectedEtrapIds.clear());
+            _saveSearch();
+            _scheduleFetchCount();
+          },
           onApply: _goBack,
         );
     }
@@ -980,12 +992,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                   widget.onApply({
                     'catIds': _selectedCatIds,
                     'welayatIds': _selectedWelayatIds,
+                    'etrap_id': _selectedEtrapIds,
                     'etrapIds': _selectedEtrapIds,
-                    'minPrice': _priceRange.start,
-                    'maxPrice': _priceRange.end,
+                    'minPrice':
+                        _priceRange.start == 0 ? null : _priceRange.start,
+                    'maxPrice':
+                        _priceRange.end == 1000000 ? null : _priceRange.end,
                     'dates': _startDate != null
                         ? [_startDate!, if (_endDate != null) _endDate!]
                         : null,
+                    'search': widget.initialSearch,
                   });
                   Navigator.pop(context);
                 }

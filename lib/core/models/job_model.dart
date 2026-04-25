@@ -19,9 +19,7 @@ class JobData {
   JobData({required this.count, required this.jobs});
 
   factory JobData.fromJson(Map<String, dynamic> json) {
-    final jobs = (json['jobs'] as List? ?? [])
-        .map((item) => JobModel.fromJson(item))
-        .toList();
+    final jobs = (json['jobs'] as List? ?? []).map((item) => JobModel.fromJson(item)).toList();
 
     int parsedCount = int.tryParse(json['count']?.toString() ?? '') ?? 0;
 
@@ -38,11 +36,7 @@ class JobData {
     final pagination = json['pagination'];
     if (parsedCount == 0 && pagination is Map<String, dynamic>) {
       parsedCount = int.tryParse(
-            (pagination['count'] ??
-                        pagination['total'] ??
-                        pagination['total_count'])
-                    ?.toString() ??
-                '',
+            (pagination['count'] ?? pagination['total'] ?? pagination['total_count'])?.toString() ?? '',
           ) ??
           0;
     }
@@ -62,13 +56,19 @@ class JobData {
 class JobDetailResponseModel {
   final bool success;
   final JobModel job;
+  final int basePercent;
 
-  JobDetailResponseModel({required this.success, required this.job});
+  JobDetailResponseModel({
+    required this.success,
+    required this.job,
+    this.basePercent = 10,
+  });
 
   factory JobDetailResponseModel.fromJson(Map<String, dynamic> json) {
     return JobDetailResponseModel(
       success: json['success'] ?? false,
       job: JobModel.fromJson(json['data'] ?? {}),
+      basePercent: int.tryParse((json['base_percent'] ?? 10).toString()) ?? 10,
     );
   }
 }
@@ -99,6 +99,8 @@ class JobModel {
   final List<JobFileModel> files;
   final List<String> catPath;
   final List<JobAnswer> answers;
+  final String? review;
+  final int? reviewRating;
   final int? responsesCount;
   final int? viewCount;
   final String? position;
@@ -136,6 +138,8 @@ class JobModel {
     this.files = const [],
     this.catPath = const [],
     this.answers = const [],
+    this.review,
+    this.reviewRating,
     this.responsesCount,
     this.viewCount,
     this.position,
@@ -151,9 +155,7 @@ class JobModel {
   factory JobModel.fromJson(Map<String, dynamic> json) {
     return JobModel(
       id: json['id'] ?? 0,
-      userId: json['user_id'] != null
-          ? int.tryParse(json['user_id'].toString())
-          : null,
+      userId: json['user_id'] != null ? int.tryParse(json['user_id'].toString()) : null,
       catId: json['cat_id'] ?? 0,
       name: json['name'] ?? '',
       desc: json['desc'] ?? '',
@@ -172,65 +174,31 @@ class JobModel {
           ? json['category_name']
           : (json['cat_name']?.toString().isNotEmpty == true
               ? json['cat_name']
-              : (json['category'] != null &&
-                      json['category'] is Map &&
-                      json['category']['name'] != null
+              : (json['category'] != null && json['category'] is Map && json['category']['name'] != null
                   ? json['category']['name']
-                  : (json['cat_path'] is List &&
-                          (json['cat_path'] as List).isNotEmpty
-                      ? (json['cat_path'] as List).last.toString()
-                      : ''))),
+                  : (json['cat_path'] is List && (json['cat_path'] as List).isNotEmpty ? (json['cat_path'] as List).last.toString() : ''))),
       welayat: json['welayat'] ?? '',
       etrap: json['etrap'] ?? '',
       username: json['username'] ?? '',
       image: json['image']?.toString(),
-      images: (json['images'] as List? ?? [])
-          .map((e) => e is Map ? (e['image']?.toString() ?? '') : e.toString())
-          .where((e) => e.isNotEmpty)
-          .toList(),
-      files: (json['files'] as List? ?? [])
-          .map((item) => JobFileModel.fromJson(item))
-          .toList(),
-      catPath:
-          (json['cat_path'] as List? ?? []).map((e) => e.toString()).toList(),
-      answers: (json['answers'] as List? ?? [])
-          .map((item) => JobAnswer.fromJson(item))
-          .toList(),
-      responsesCount: int.tryParse((json['responses_count'] ??
-                      json['request_count'] ??
-                      json['responses'])
-                  ?.toString() ??
-              '0') ??
-          0,
-      unseenRequestCount: int.tryParse(
-              (json['unseen_request_count'] ?? json['unseenRequestCount'])
-                      ?.toString() ??
-                  '0') ??
-          0,
+      images: (json['images'] as List? ?? []).map((e) => e is Map ? (e['image']?.toString() ?? '') : e.toString()).where((e) => e.isNotEmpty).toList(),
+      files: (json['files'] as List? ?? []).map((item) => JobFileModel.fromJson(item)).toList(),
+      catPath: (json['cat_path'] as List? ?? []).map((e) => e.toString()).toList(),
+      answers: (json['answers'] as List? ?? []).map((item) => JobAnswer.fromJson(item)).toList(),
+      review: json['review']?.toString(),
+      reviewRating: json['review_rating'] != null ? int.tryParse(json['review_rating'].toString()) : null,
+      responsesCount: int.tryParse((json['responses_count'] ?? json['request_count'] ?? json['responses'])?.toString() ?? '0') ?? 0,
+      unseenRequestCount: int.tryParse((json['unseen_request_count'] ?? json['unseenRequestCount'])?.toString() ?? '0') ?? 0,
       viewCount: int.tryParse(json['view_count']?.toString() ?? '0') ?? 0,
       position: json['position']?.toString(),
-      requestId: json['request_id'] != null
-          ? int.tryParse(json['request_id'].toString())
-          : (json['requestId'] != null
-              ? int.tryParse(json['requestId'].toString())
-              : null),
+      requestId: json['request_id'] != null ? int.tryParse(json['request_id'].toString()) : (json['requestId'] != null ? int.tryParse(json['requestId'].toString()) : null),
       selectedUserId: json['selected_user_id'] != null
           ? int.tryParse(json['selected_user_id'].toString())
-          : (json['selectedUserId'] != null
-              ? int.tryParse(json['selectedUserId'].toString())
-              : (json['selected_user'] is Map
-                  ? int.tryParse((json['selected_user']['id'] ?? '').toString())
-                  : null)),
-      hasSeen: json['has_seen'] == true ||
-          json['has_seen'] == 1 ||
-          json['has_seen']?.toString().toLowerCase() == 'true',
+          : (json['selectedUserId'] != null ? int.tryParse(json['selectedUserId'].toString()) : (json['selected_user'] is Map ? int.tryParse((json['selected_user']['id'] ?? '').toString()) : null)),
+      hasSeen: json['has_seen'] == true || json['has_seen'] == 1 || json['has_seen']?.toString().toLowerCase() == 'true',
       finished: json['finished'] ?? false,
       selected: json['selected'] ?? false,
-      chatId: json['chat_id'] != null
-          ? int.tryParse(json['chat_id'].toString())
-          : (json['chatId'] != null
-              ? int.tryParse(json['chatId'].toString())
-              : null),
+      chatId: json['chat_id'] != null ? int.tryParse(json['chat_id'].toString()) : (json['chatId'] != null ? int.tryParse(json['chatId'].toString()) : null),
     );
   }
 
@@ -260,6 +228,8 @@ class JobModel {
     List<JobFileModel>? files,
     List<String>? catPath,
     List<JobAnswer>? answers,
+    String? review,
+    int? reviewRating,
     int? responsesCount,
     int? viewCount,
     String? position,
@@ -297,6 +267,8 @@ class JobModel {
       files: files ?? this.files,
       catPath: catPath ?? this.catPath,
       answers: answers ?? this.answers,
+      review: review ?? this.review,
+      reviewRating: reviewRating ?? this.reviewRating,
       responsesCount: responsesCount ?? this.responsesCount,
       viewCount: viewCount ?? this.viewCount,
       position: position ?? this.position,
@@ -324,6 +296,7 @@ class JobAnswer {
   final int? locationId;
   final String? lat;
   final String? lng;
+  final int? rating;
 
   JobAnswer({
     required this.questionId,
@@ -338,6 +311,7 @@ class JobAnswer {
     this.locationId,
     this.lat,
     this.lng,
+    this.rating,
   });
 
   factory JobAnswer.fromJson(Map<String, dynamic> json) {
@@ -347,17 +321,45 @@ class JobAnswer {
       type: json['type'] ?? '',
       formName: json['form_name']?.toString(),
       formId: json['form_id'],
-      options: (json['options'] as List?)
-          ?.map((e) => JobAnswerOption.fromJson(e))
-          .toList(),
+      options: (json['options'] as List?)?.map((e) => JobAnswerOption.fromJson(e)).toList(),
       value: json['value']?.toString(),
       date: json['date']?.toString(),
       time: json['time']?.toString(),
-      locationId: json['location_id'] != null
-          ? int.tryParse(json['location_id'].toString())
-          : null,
+      locationId: json['location_id'] != null ? int.tryParse(json['location_id'].toString()) : null,
       lat: json['lat']?.toString(),
       lng: json['lng']?.toString(),
+      rating: json['rating'] != null ? int.tryParse(json['rating'].toString()) : null,
+    );
+  }
+  JobAnswer copyWith({
+    int? questionId,
+    String? question,
+    String? type,
+    String? formName,
+    int? formId,
+    List<JobAnswerOption>? options,
+    String? value,
+    String? date,
+    String? time,
+    int? locationId,
+    String? lat,
+    String? lng,
+    int? rating,
+  }) {
+    return JobAnswer(
+      questionId: questionId ?? this.questionId,
+      question: question ?? this.question,
+      type: type ?? this.type,
+      formName: formName ?? this.formName,
+      formId: formId ?? this.formId,
+      options: options ?? this.options,
+      value: value ?? this.value,
+      date: date ?? this.date,
+      time: time ?? this.time,
+      locationId: locationId ?? this.locationId,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      rating: rating ?? this.rating,
     );
   }
 }

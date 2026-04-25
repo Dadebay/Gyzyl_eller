@@ -46,12 +46,17 @@ class _NoInternetScreenState extends State<NoInternetScreen> {
         children: [
           Align(
             alignment: const Alignment(0, -0.50),
-            child: SizedBox(
-              width: 220,
-              height: 200,
-              child: Image.asset(
-                ImageConstants.splashLogo,
-                fit: BoxFit.contain,
+            child: Container(
+              width: 160,
+              height: 160,
+              alignment: Alignment.center,
+              child: ClipOval(
+                child: Image.asset(
+                  ImageConstants.splashLogo,
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),

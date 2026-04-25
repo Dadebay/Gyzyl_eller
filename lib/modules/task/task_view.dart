@@ -120,6 +120,7 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
             //               newMinPrice: filters['minPrice'],
             //               newMaxPrice: filters['maxPrice'],
             //               newDates: filters['dates'],
+            //               newSearch: filters['search'],
             //             );
             //           },
             //         ),
@@ -209,98 +210,7 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
       body: TabBarView(
         controller: _tabController,
         children: [
-          Obx(() {
-            if (controller.isRequestedFirstLoad.value) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: ColorConstants.blue,
-                  backgroundColor: ColorConstants.background,
-                  strokeWidth: 4.0,
-                ),
-              );
-            }
-
-            return SmartRefresher(
-              header: const MaterialClassicHeader(
-                color: ColorConstants.blue,
-                backgroundColor: ColorConstants.background,
-              ),
-              controller: controller.requestedRefreshController,
-              enablePullDown: true,
-              enablePullUp: controller.hasRequestedMore.value,
-              onRefresh: () => controller.fetchRequestedJobs(isRefresh: true),
-              onLoading: () => controller.fetchRequestedJobs(),
-              child: controller.requestedJobs.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 60),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const HugeIcon(
-                            icon: HugeIcons.strokeRoundedJobSearch,
-                            size: 80,
-                            color: ColorConstants.greyColor,
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            "no_tasks_found".tr,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "no_offers_subtitle".tr,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey.shade600,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                      itemCount: controller.requestedJobs.length,
-                      itemBuilder: (context, index) {
-                        final job = controller.requestedJobs[index];
-                        final tag = _TaskRequestedTagResolver().resolve(job);
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: JobCard(
-                            job: job,
-                            isNew: false,
-                            showDelete: true,
-                            fromTaskView: true,
-                            taskTabIndex: 0,
-                            hideTag: tag.hideTag,
-                            customTagLabel: tag.label,
-                            customTagTextColor: tag.textColor,
-                            customTagBgColor: tag.bgColor,
-                            customTagIcon: tag.icon,
-                            onDeleted: () => controller.fetchRequestedJobs(isRefresh: true),
-                          ),
-                        );
-                      },
-                    ),
-            );
-          }),
+          page1(),
           Obx(() {
             if (controller.isProcessingFirstLoad.value) {
               return const Center(
@@ -324,7 +234,7 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
               onLoading: () => controller.fetchProcessingJobs(),
               child: controller.processingJobs.isEmpty
                   ? Padding(
-                      padding: const EdgeInsets.only(top: 60),
+                      padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -335,22 +245,12 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            "no_tasks_found".tr,
+                            "no_tasks_found_is".tr,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
                               color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "no_jobs_subtitle".tr,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey.shade600,
-                              height: 1.5,
                             ),
                           ),
                         ],
@@ -396,6 +296,92 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
         ],
       ),
     );
+  }
+
+  Obx page1() {
+    return Obx(() {
+      if (controller.isRequestedFirstLoad.value) {
+        return const Center(
+          child: CircularProgressIndicator(
+            color: ColorConstants.blue,
+            backgroundColor: ColorConstants.background,
+            strokeWidth: 4.0,
+          ),
+        );
+      }
+
+      return SmartRefresher(
+        header: const MaterialClassicHeader(
+          color: ColorConstants.blue,
+          backgroundColor: ColorConstants.background,
+        ),
+        controller: controller.requestedRefreshController,
+        enablePullDown: true,
+        enablePullUp: controller.hasRequestedMore.value,
+        onRefresh: () => controller.fetchRequestedJobs(isRefresh: true),
+        onLoading: () => controller.fetchRequestedJobs(),
+        child: controller.requestedJobs.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const HugeIcon(
+                      icon: HugeIcons.strokeRoundedJobSearch,
+                      size: 80,
+                      color: ColorConstants.greyColor,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "no_tasks_found_tek".tr,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                itemCount: controller.requestedJobs.length,
+                itemBuilder: (context, index) {
+                  final job = controller.requestedJobs[index];
+                  final tag = _TaskRequestedTagResolver().resolve(job);
+                  final bool canDeleteJob = (job.status != 3 || job.selectedUserId == null || job.finished);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: JobCard(
+                      job: job,
+                      isNew: false,
+                      showDelete: !canDeleteJob,
+                      fromTaskView: true,
+                      taskTabIndex: 0,
+                      hideTag: tag.hideTag,
+                      customTagLabel: tag.label,
+                      customTagTextColor: tag.textColor,
+                      customTagBgColor: tag.bgColor,
+                      customTagIcon: tag.icon,
+                      onDeleted: () => controller.fetchRequestedJobs(isRefresh: true),
+                    ),
+                  );
+                },
+              ),
+      );
+    });
   }
 }
 

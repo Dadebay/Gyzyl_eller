@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
+
 class LocalNotificationsService {
   LocalNotificationsService._internal();
 
@@ -22,17 +25,20 @@ class LocalNotificationsService {
   );
 
   final _androidChannel = const AndroidNotificationChannel(
-    'channel_id',
-    'Channel name',
-    description: 'Android push notification channel',
+    'master_channel',
+    'Aytereks\'s message',
+    description:
+        'Bu kanal Ayterek programmasynyň möhüm bildirişleri üçin ulanylýar.',
     importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
   );
 
   bool _isFlutterLocalNotificationInitialized = false;
 
   int _notificationIdCounter = 0;
 
-  Future<void> init() async {
+  Future<void> init({bool isBackground = false}) async {
     if (_isFlutterLocalNotificationInitialized) {
       return;
     }
@@ -60,6 +66,13 @@ class LocalNotificationsService {
       }
     });
 
+    if (!isBackground) {
+      await _flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    }
+
     await _flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
@@ -73,12 +86,26 @@ class LocalNotificationsService {
     String? body,
     String? payload,
   ) async {
+    print(
+        '🔔 [LOCAL NOTIF] Showing notification: $title / $body (Importance: MAX, Priority: MAX)');
     AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       _androidChannel.id,
       _androidChannel.name,
       channelDescription: _androidChannel.description,
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
+      playSound: true,
+      enableVibration: true,
+      color: ColorConstants.kPrimaryColor,
+      styleInformation: BigTextStyleInformation(
+        body ?? '',
+        htmlFormatBigText: true,
+        contentTitle: title,
+        htmlFormatTitle: true,
+        htmlFormatContent: true,
+        htmlFormatContentTitle: true,
+      ),
+      icon: '@mipmap/ic_launcher',
     );
 
     const iosDetails = DarwinNotificationDetails();

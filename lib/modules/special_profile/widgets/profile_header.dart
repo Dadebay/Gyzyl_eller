@@ -7,6 +7,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'stat_box.dart';
+import 'full_screen_image_page.dart';
 
 class ProfileHeader extends StatelessWidget {
   final String name;
@@ -49,6 +50,7 @@ class ProfileHeader extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             StatBox(
               icon: const HugeIcon(
@@ -59,32 +61,45 @@ class ProfileHeader extends StatelessWidget {
               label: "created_tasks".tr,
               value: totalJobsCount.toString(),
             ),
+
             // Avatar
-            Container(
-              width: 100,
-              height: 100,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: (imageUrl != null && imageUrl!.startsWith('http'))
-                    ? CachedNetworkImage(
-                        imageUrl: imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => _buildShimmer(),
-                        errorWidget: (context, url, error) => const HugeIcon(
+            GestureDetector(
+              onTap: (imageUrl != null && imageUrl!.startsWith('http'))
+                  ? () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              FullScreenImagePage(imageUrl: imageUrl!),
+                        ),
+                      );
+                    }
+                  : null,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: (imageUrl != null && imageUrl!.startsWith('http'))
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => _buildShimmer(),
+                          errorWidget: (context, url, error) => const HugeIcon(
+                            icon: HugeIcons.strokeRoundedUser,
+                            color: ColorConstants.greyColor,
+                            size: 60,
+                          ),
+                        )
+                      : const HugeIcon(
                           icon: HugeIcons.strokeRoundedUser,
                           color: ColorConstants.greyColor,
                           size: 60,
                         ),
-                      )
-                    : const HugeIcon(
-                        icon: HugeIcons.strokeRoundedUser,
-                        color: ColorConstants.greyColor,
-                        size: 60,
-                      ),
+                ),
               ),
             ),
             StatBox(
@@ -101,13 +116,13 @@ class ProfileHeader extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           name,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         if (experience != null && experience!.isNotEmpty) ...[
           const SizedBox(height: 3),
           Text(
             experience!,
-            style: const TextStyle(fontSize: 14, color: ColorConstants.fonts),
+            style: const TextStyle(fontSize: 16, color: ColorConstants.fonts),
             textAlign: TextAlign.center,
           ),
         ],
@@ -124,7 +139,7 @@ class ProfileHeader extends StatelessWidget {
             Text(
               _formattedDate,
               style: const TextStyle(
-                  fontSize: 14, color: ColorConstants.blackColor),
+                  fontSize: 16, color: ColorConstants.blackColor),
             ),
           ],
         ),

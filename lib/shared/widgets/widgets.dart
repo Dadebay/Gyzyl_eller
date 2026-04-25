@@ -271,4 +271,92 @@ class CustomWidgets {
       barrierDismissible: true,
     );
   }
+
+  static void showWarningProfileDialog() {
+    bool isButtonEnabled = false;
+    int secondsRemaining = 5;
+
+    Get.dialog(
+      StatefulBuilder(builder: (context, setDialogState) {
+        // Start timer only once
+        if (!isButtonEnabled && secondsRemaining == 5) {
+          Future.doWhile(() async {
+            await Future.delayed(const Duration(seconds: 1));
+            if (secondsRemaining > 0) {
+              setDialogState(() {
+                secondsRemaining--;
+                if (secondsRemaining == 0) {
+                  isButtonEnabled = true;
+                }
+              });
+              return secondsRemaining > 0;
+            }
+            return false;
+          });
+        }
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          contentPadding: const EdgeInsets.all(20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'create_profile_warning_title'.tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: ColorConstants.kPrimaryColor2,
+                ),
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'create_profile_warning_description'.tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: isButtonEnabled
+                        ? ColorConstants.kPrimaryColor2
+                        : Colors.grey[200],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: isButtonEnabled ? () => Get.back() : null,
+                  child: Text(
+                    isButtonEnabled
+                        ? 'understood'.tr
+                        : '${'understood'.tr} ($secondsRemaining)',
+                    style: TextStyle(
+                      color: isButtonEnabled ? Colors.white : Colors.grey[500],
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+      barrierDismissible: false,
+    );
+  }
 }

@@ -54,11 +54,43 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
         column: sorting.column,
         direction: sorting.direction,
       );
+
+      // Parse reviews
+      final parsedReviews = rawList
+          .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      // Fetch replies for each review using separate endpoint
+      for (var i = 0; i < parsedReviews.length; i++) {
+        try {
+          final replyList =
+              await _apiService.getReviewReplies(parsedReviews[i].id);
+          if (replyList.isNotEmpty) {
+            final replies = replyList
+                .map((r) => ReviewReply.fromJson(r as Map<String, dynamic>))
+                .toList();
+            parsedReviews[i] = ReviewModel(
+              id: parsedReviews[i].id,
+              userId: parsedReviews[i].userId,
+              jobId: parsedReviews[i].jobId,
+              review: parsedReviews[i].review,
+              rating: parsedReviews[i].rating,
+              requestId: parsedReviews[i].requestId,
+              createdAt: parsedReviews[i].createdAt,
+              username: parsedReviews[i].username,
+              image: parsedReviews[i].image,
+              replies: replies,
+            );
+          }
+        } catch (e) {
+          print(
+              '⚠️ [AllReviewsScreen] failed to fetch replies for review ${parsedReviews[i].id}: $e');
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _reviews = rawList
-              .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
-              .toList();
+          _reviews = parsedReviews;
           _isLoading = false;
         });
       }

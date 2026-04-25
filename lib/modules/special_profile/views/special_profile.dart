@@ -152,8 +152,8 @@ class _SpecialProfileState extends State<SpecialProfile> {
         'specialist_profile_title'.tr,
         style: const TextStyle(
             color: ColorConstants.fonts,
-            fontSize: 18,
-            fontWeight: FontWeight.w500),
+            fontSize: 20,
+            fontWeight: FontWeight.w600),
       ),
       centerTitle: true,
       elevation: 0,

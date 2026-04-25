@@ -7,7 +7,7 @@ class ImageConstants {
   static const String docMock3 = 'assets/images/doc_mock3.png';
   static const String dockMock1 = 'assets/images/dock_mock1.png';
   static const String logoSplash = 'assets/images/logo.jpg';
-  static const String splashLogo = 'assets/images/ayterek mastera logo.png';
+  static const String splashLogo = 'assets/images/logo.png';
   static const String splashBackground = 'assets/images/splashscreen.png';
   static const String onboarding11 = 'assets/images/onboarding11.png';
   static const String onboarding13 = 'assets/images/tazeonb.jpg';

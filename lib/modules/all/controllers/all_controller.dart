@@ -26,6 +26,7 @@ class AllController extends GetxController {
   final Rx<MyTasksOrderBy> orderBy = MyTasksOrderBy.sene.obs;
   final RxnInt status = RxnInt(null);
   final RxBool isFetchingLocation = false.obs;
+  final RxBool shouldShowFilterShowcase = false.obs;
 
   // Location for nearest sort
   final _locationPlugin = loc.Location();
@@ -56,6 +57,16 @@ class AllController extends GetxController {
     super.onInit();
     isLoggedIn.value = AuthStorage().isLoggedIn;
     _loadFilters();
+
+    // Listen to login/logout events to refresh filter state
+    ever(isLoggedIn, (bool loggedIn) {
+      print('🔄 [AllController] isLoggedIn changed to: $loggedIn');
+      if (loggedIn) {
+        _initApiFilters().then((_) => fetchJobs(isRefresh: true));
+      } else {
+        clearFilters();
+      }
+    });
 
     // Initialize categories from API if logged in, otherwise start empty
     if (isLoggedIn.value) {
@@ -92,8 +103,17 @@ class AllController extends GetxController {
         final double? minP = savedData['min_price'] as double?;
         final double? maxP = savedData['max_price'] as double?;
 
-        if (minP != null) minPrice.value = minP;
-        if (maxP != null) maxPrice.value = maxP;
+        if (minP != null && minP != 0) {
+          minPrice.value = minP;
+        } else {
+          minPrice.value = null;
+        }
+
+        if (maxP != null && maxP != 1000000) {
+          maxPrice.value = maxP;
+        } else {
+          maxPrice.value = null;
+        }
 
         hasSavedSearch.value = savedCats.isNotEmpty || savedEtraps.isNotEmpty;
         print('✅ [AllController] API Filters initialized: $savedData');
@@ -118,18 +138,28 @@ class AllController extends GetxController {
 
   void _loadFilters() {
     try {
-      // Categories are now loaded via API only in _initApiFilters()
+      // For guest users, do not persist filters between app launches.
+      if (!AuthStorage().isLoggedIn) {
+        _clearPersistedFilters();
+        return;
+      }
 
+      // Categories are now loaded via API only in _initApiFilters()
       final savedWelayatIds = _storage.read<List>('all_filter_welayatIds');
       if (savedWelayatIds != null) {
         welayatIds.assignAll(savedWelayatIds.cast<int>());
       }
 
       final savedEtrapIds = _storage.read<List>('all_filter_etrapIds');
-      if (savedEtrapIds != null) etrapIds.assignAll(savedEtrapIds.cast<int>());
+      if (savedEtrapIds != null) {
+        etrapIds.assignAll(savedEtrapIds.cast<int>());
+      }
 
-      minPrice.value = _storage.read<double>('all_filter_minPrice');
-      maxPrice.value = _storage.read<double>('all_filter_maxPrice');
+      final savedMinPrice = _storage.read<double>('all_filter_minPrice');
+      minPrice.value = (savedMinPrice == 0) ? null : savedMinPrice;
+
+      final savedMaxPrice = _storage.read<double>('all_filter_maxPrice');
+      maxPrice.value = (savedMaxPrice == 1000000) ? null : savedMaxPrice;
 
       final savedDates = _storage.read<List>('all_filter_dates');
       if (savedDates != null) {
@@ -140,6 +170,22 @@ class AllController extends GetxController {
     } catch (_) {
       clearFilters();
     }
+  }
+
+  void _clearPersistedFilters() {
+    _storage.remove('all_filter_welayatIds');
+    _storage.remove('all_filter_etrapIds');
+    _storage.remove('all_filter_minPrice');
+    _storage.remove('all_filter_maxPrice');
+    _storage.remove('all_filter_dates');
+    _storage.remove('all_filter_search');
+
+    welayatIds.clear();
+    etrapIds.clear();
+    minPrice.value = null;
+    maxPrice.value = null;
+    selectedDates.clear();
+    search.value = "";
   }
 
   Future<void> fetchBalance() async {

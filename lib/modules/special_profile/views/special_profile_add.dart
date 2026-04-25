@@ -84,6 +84,14 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
     _selectedLegalizationType = controller.profile.value.legalizationType;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          CustomWidgets.showWarningProfileDialog();
+        }
+      });
+    });
   }
 
   @override
@@ -120,6 +128,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             BioTextField(
               controller: nameController,
               hintText: 'Ulanyjy ady'.tr,
+              maxLength: 60,
               onChanged: (value) {},
               errorText: _submitted ? _nameError : null,
             ),
@@ -127,6 +136,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             BioTextField(
               controller: workTejribeController,
               hintText: 'work_tejribe'.tr,
+              maxLength: 160,
               onChanged: (String value) {},
               errorText: _submitted ? _workTejribeError : null,
             ),
@@ -150,6 +160,7 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
               controller: longBioController,
               hintText: 'long_bio_hint'.tr,
               maxLines: 5,
+              maxLength: 1200,
               onChanged: (value) {},
               errorText: _submitted ? _longBioError : null,
             ),

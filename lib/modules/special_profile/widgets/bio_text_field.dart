@@ -5,6 +5,7 @@ class BioTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final int maxLines;
+  final int? maxLength;
   final ValueChanged<String> onChanged;
   final String? errorText;
 
@@ -13,6 +14,7 @@ class BioTextField extends StatefulWidget {
     required this.controller,
     required this.hintText,
     this.maxLines = 1,
+    this.maxLength,
     required this.onChanged,
     this.errorText,
   });
@@ -58,9 +60,11 @@ class _BioTextFieldState extends State<BioTextField> {
             controller: widget.controller,
             focusNode: _focusNode,
             maxLines: widget.maxLines,
+            maxLength: widget.maxLength,
             onChanged: widget.onChanged,
             textAlignVertical: TextAlignVertical.center,
             decoration: InputDecoration(
+              counterText: '',
               labelText: hasContent ? widget.hintText : null,
               hintText: hasContent ? null : widget.hintText,
               floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -75,17 +79,31 @@ class _BioTextFieldState extends State<BioTextField> {
             ),
           ),
         ),
-        if (widget.errorText != null && widget.errorText!.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 4, top: 4),
-            child: Text(
-              widget.errorText!,
-              style: const TextStyle(
-                color: Colors.red,
-                fontSize: 12,
+        Padding(
+          padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: (widget.errorText != null && widget.errorText!.isNotEmpty)
+                    ? Text(
+                        widget.errorText!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      )
+                    : const SizedBox.shrink(),
               ),
-            ),
+              if (widget.maxLength != null)
+                Text(
+                  '${widget.controller.text.length}/${widget.maxLength}',
+                  style: const TextStyle(
+                    color: ColorConstants.secondary,
+                    fontSize: 12,
+                  ),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }

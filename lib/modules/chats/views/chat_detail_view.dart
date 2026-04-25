@@ -18,6 +18,9 @@ import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:hugeicons/hugeicons.dart';
+import 'package:gyzyleller/shared/widgets/services_map_screen.dart';
+import 'package:gyzyleller/core/models/location_model.dart' as lm;
 
 class ChatDetailView extends StatefulWidget {
   const ChatDetailView({
@@ -223,7 +226,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     return GestureDetector(
       onTap: () {
         Get.to(
-          () => SpecialProfile(),
+          () => const SpecialProfile(),
           arguments: {
             'id': widget.userId,
             'username': widget.userName,
@@ -350,6 +353,10 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           PopupMenuItem(
             value: 'report',
             child: Text('report'.tr),
+          ),
+          PopupMenuItem(
+            value: 'location',
+            child: Text('location_share'.tr),
           ),
         ],
       );
@@ -967,11 +974,11 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           GestureDetector(
             onTap: _sendMessage,
             child: Container(
-              width: 60,
+              width: 50,
               height: 50,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: ColorConstants.kPrimaryColor2,
+                color: ColorConstants.greyColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: SvgPicture.asset('assets/icons/send.svg'),
@@ -996,13 +1003,14 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
     return GestureDetector(
       onTap: coords != null
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => _LocationMapScreen(
-                    coords: coords!,
-                    title: isMe ? 'me'.tr : widget.userName,
+          ? () => Get.to(
+                () => ServicesMapScreen(
+                  location: lm.Location(
+                    latitude: coords!.latitude,
+                    longitude: coords!.longitude,
                   ),
+                  placeName: isMe ? 'me'.tr : widget.userName,
+                  catName: widget.productTitle,
                 ),
               )
           : null,
@@ -1185,44 +1193,3 @@ class _FullScreenImage extends StatelessWidget {
   }
 }
 
-class _LocationMapScreen extends StatelessWidget {
-  const _LocationMapScreen({required this.coords, required this.title});
-  final ll.LatLng coords;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(title,
-            style: const TextStyle(color: Colors.black, fontSize: 16)),
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: coords,
-          initialZoom: 15,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: Api().mapApi,
-          ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: coords,
-                width: 40,
-                height: 40,
-                child:
-                    const Icon(Icons.location_on, color: Colors.red, size: 40),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}

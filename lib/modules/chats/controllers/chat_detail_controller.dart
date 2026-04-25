@@ -8,6 +8,7 @@ import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:http/http.dart' as http;
 // ignore: library_prefixes
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:location/location.dart' as loc;
 
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
 import '../../../core/services/api.dart';
@@ -330,18 +331,44 @@ class ChatDetailController extends GetxController {
   // ─── Send location ───
   Future<void> sendLocation(String? postLat, String? postLng) async {
     if (isSendingLocation.value) return;
-    if (postLat == null ||
-        postLat == 'null' ||
-        postLat.isEmpty ||
-        postLng == null ||
-        postLng == 'null' ||
-        postLng.isEmpty) {
-      debugPrint('[ChatDetail] sendLocation: koord ýok');
-      return;
-    }
     isSendingLocation.value = true;
     try {
-      await sendMessage('Location: $postLat,$postLng');
+      // 1. Try post location
+      if (postLat != null &&
+          postLat != 'null' &&
+          postLat.isNotEmpty &&
+          postLng != null &&
+          postLng != 'null' &&
+          postLng.isNotEmpty) {
+        await sendMessage('Location: $postLat,$postLng');
+        return;
+      }
+
+      // 2. Try current location
+      final loc.Location location = loc.Location();
+      bool serviceEnabled;
+      loc.PermissionStatus permissionGranted;
+      loc.LocationData locationData;
+
+      serviceEnabled = await location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) return;
+      }
+
+      permissionGranted = await location.hasPermission();
+      if (permissionGranted == loc.PermissionStatus.denied) {
+        permissionGranted = await location.requestPermission();
+        if (permissionGranted != loc.PermissionStatus.granted) return;
+      }
+
+      locationData = await location.getLocation();
+      if (locationData.latitude != null && locationData.longitude != null) {
+        await sendMessage(
+            'Location: ${locationData.latitude},${locationData.longitude}');
+      }
+    } catch (e) {
+      debugPrint('[ChatDetailController] sendLocation error: $e');
     } finally {
       isSendingLocation.value = false;
     }

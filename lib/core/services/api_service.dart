@@ -9,9 +9,7 @@ enum HttpMethod { get, post, put, delete }
 class ApiService {
   final _auth = AuthStorage();
 
-  Future<dynamic> getRequest(String endpoint,
-      {bool requiresToken = true,
-      void Function(dynamic)? handleSuccess}) async {
+  Future<dynamic> getRequest(String endpoint, {bool requiresToken = true, void Function(dynamic)? handleSuccess}) async {
     try {
       final token = _auth.token;
       final headers = <String, String>{
@@ -32,18 +30,15 @@ class ApiService {
       print('-----------------------------------------');
 
       if (response.statusCode == 200) {
-        final responseJson =
-            decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
+        final responseJson = decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
         handleSuccess?.call(responseJson);
         return responseJson;
       } else {
         print('Response Body: $decodedBody');
-        final dynamic responseJson =
-            decodedBody.isNotEmpty ? _decodeJsonSafe(decodedBody) : {};
+        final dynamic responseJson = decodedBody.isNotEmpty ? _decodeJsonSafe(decodedBody) : {};
 
         String message = 'anErrorOccurred'.tr;
-        if (responseJson is Map<String, dynamic> &&
-            responseJson['message'] != null) {
+        if (responseJson is Map<String, dynamic> && responseJson['message'] != null) {
           message = responseJson['message'].toString();
         } else if (responseJson is String && responseJson.trim().isNotEmpty) {
           message = responseJson;
@@ -70,14 +65,11 @@ class ApiService {
     }
   }
 
-  Future<dynamic> postMultipartRequest(
-      String endpoint, Map<String, dynamic> body,
-      {List<XFile>? xFiles, String fileField = 'photo'}) async {
+  Future<dynamic> postMultipartRequest(String endpoint, Map<String, dynamic> body, {List<XFile>? xFiles, String fileField = 'photo'}) async {
     List<http.MultipartFile> multipartFiles = [];
     if (xFiles != null) {
       for (XFile file in xFiles) {
-        multipartFiles
-            .add(await http.MultipartFile.fromPath(fileField, file.path));
+        multipartFiles.add(await http.MultipartFile.fromPath(fileField, file.path));
       }
     }
 
@@ -113,15 +105,10 @@ class ApiService {
   }
 
   Future<dynamic> handleApiRequest(String endpoint,
-      {required Map<String, dynamic> body,
-      required String method,
-      required bool requiresToken,
-      bool isForm = false,
-      List<http.MultipartFile>? multipartFiles}) async {
+      {required Map<String, dynamic> body, required String method, required bool requiresToken, bool isForm = false, List<http.MultipartFile>? multipartFiles}) async {
     try {
       final token = _auth.token;
-      final uriString =
-          endpoint.startsWith('http') ? endpoint : '${Api().urlLink}$endpoint';
+      final uriString = endpoint.startsWith('http') ? endpoint : '${Api().urlLink}$endpoint';
 
       final uri = Uri.parse(uriString);
       late http.BaseRequest request;
@@ -135,12 +122,14 @@ class ApiService {
         if (multipartFiles != null) {
           (request as http.MultipartRequest).files.addAll(multipartFiles);
         }
+        print('Request Body (Form): $body');
       } else {
         request = http.Request(method, uri);
-        request.headers[HttpHeaders.contentTypeHeader] =
-            'application/json; charset=UTF-8';
+        request.headers[HttpHeaders.contentTypeHeader] = 'application/json; charset=UTF-8';
         if (body.isNotEmpty) {
-          (request as http.Request).body = jsonEncode(body);
+          final bodyString = jsonEncode(body);
+          (request as http.Request).body = bodyString;
+          print('Request Body: $bodyString');
         }
       }
 
@@ -174,8 +163,7 @@ class ApiService {
         if (statusCode == 409) {
         } else {
           String message = 'anErrorOccurred'.tr;
-          if (errorJson is Map<String, dynamic> &&
-              errorJson.containsKey('message')) {
+          if (errorJson is Map<String, dynamic> && errorJson.containsKey('message')) {
             message = errorJson['message']?.toString() ?? message;
           } else if (errorJson is String) {
             message = errorJson;
@@ -186,8 +174,7 @@ class ApiService {
         return statusCode;
       }
     } on SocketException {
-      CustomWidgets.showSnackBar('Internet Hatası'.tr,
-          'Internet baglanşygyňyzy barlaň'.tr, Colors.red);
+      CustomWidgets.showSnackBar('Internet Hatası'.tr, 'Internet baglanşygyňyzy barlaň'.tr, Colors.red);
       rethrow;
     } catch (e) {
       rethrow;
@@ -215,8 +202,7 @@ class ApiService {
 
   /// Fetches reviews for a master profile by their user ID.
   /// Calls `master-reviews/{userId}` and returns a list of raw JSON maps.
-  Future<List<dynamic>> getMasterReviews(String userId,
-      {String? column, String? direction}) async {
+  Future<List<dynamic>> getMasterReviews(String userId, {String? column, String? direction}) async {
     String endpoint = 'api/master-reviews/$userId';
     final Map<String, String> queryParams = {};
     if (column != null) queryParams['column'] = column;
@@ -224,19 +210,55 @@ class ApiService {
     if (queryParams.isNotEmpty) {
       endpoint += '?${Uri(queryParameters: queryParams).query}';
     }
-    print('📡 [ApiService] getMasterReviews → $endpoint');
+    print('📡 [getMasterReviews] ========================================');
+    print('📡 [getMasterReviews] endpoint=$endpoint');
     try {
       final response = await getRequest(endpoint);
+      print('📡 [getMasterReviews] full response=$response');
       if (response != null && response['data'] != null) {
         final list = response['data'] as List<dynamic>;
-        print(
-            '✅ [ApiService] getMasterReviews → ${list.length} reviews received');
+        print('📡 [getMasterReviews] ${list.length} reviews received');
+        for (var i = 0; i < list.length; i++) {
+          print('📡 [getMasterReviews] review[$i]=${list[i]}');
+          if (list[i] is Map) {
+            print('📡 [getMasterReviews] review[$i].replies=${list[i]['replies']}');
+          }
+        }
+        print('📡 [getMasterReviews] ========================================');
         return list;
       }
-      print('⚠️ [ApiService] getMasterReviews → response[data] is null');
+      print('⚠️ [getMasterReviews] response[data] is null');
+      print('📡 [getMasterReviews] ========================================');
       return [];
     } catch (e) {
-      print('❌ [ApiService] getMasterReviews error: $e');
+      print('❌ [getMasterReviews] error: $e');
+      print('📡 [getMasterReviews] ========================================');
+      return [];
+    }
+  }
+
+  /// Fetches replies for a specific review by review ID.
+  /// Calls `api/review-replies/{reviewId}` and returns a list of raw JSON maps.
+  Future<List<dynamic>> getReviewReplies(String reviewId) async {
+    final String endpoint = 'api/review-replies/$reviewId';
+    print('📡 [getReviewReplies] reviewId=$reviewId, endpoint=$endpoint');
+    try {
+      final response = await getRequest(endpoint);
+      print('📡 [getReviewReplies] full response=$response');
+      if (response != null && response['data'] != null) {
+        final list = response['data'] as List<dynamic>;
+        print('📡 [getReviewReplies] ${list.length} replies received');
+        return list;
+      }
+      // Some APIs return the list directly
+      if (response is List) {
+        print('📡 [getReviewReplies] ${response.length} replies (direct list)');
+        return response;
+      }
+      print('⚠️ [getReviewReplies] no replies data');
+      return [];
+    } catch (e) {
+      print('❌ [getReviewReplies] error: $e');
       return [];
     }
   }
@@ -264,9 +286,7 @@ class ApiService {
       final response = await dioClient.post(
         fullUrl,
         data: formData,
-        onSendProgress: onSendProgress != null
-            ? (sent, total) => onSendProgress(sent, total)
-            : null,
+        onSendProgress: onSendProgress != null ? (sent, total) => onSendProgress(sent, total) : null,
       );
 
       final data = response.data;

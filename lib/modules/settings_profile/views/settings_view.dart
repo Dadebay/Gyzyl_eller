@@ -15,6 +15,7 @@ import 'package:gyzyleller/modules/login/views/login_view.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/user_profile_controller.dart';
+import 'package:gyzyleller/modules/special_profile/widgets/full_screen_image_page.dart';
 import 'package:gyzyleller/modules/settings_profile/views/language_page.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:gyzyleller/modules/onboarding/views/onboarding_view.dart';
@@ -65,7 +66,7 @@ class SettingsView extends GetView<SettingsController> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            Obx(() => _buildUserHeader()),
+            Obx(() => _buildUserHeader(context)),
             const SizedBox(height: 20.0),
             Obx(() {
               if (controller.isLoggedIn) {
@@ -73,9 +74,7 @@ class SettingsView extends GetView<SettingsController> {
                   children: [
                     _buildMenuItem(
                       context,
-                      controller.hasSpecialProfile.value
-                          ? 'professional_profile'.tr
-                          : 'create_professional_profile'.tr,
+                      controller.hasSpecialProfile.value ? 'professional_profile'.tr : 'create_professional_profile'.tr,
                       IconConstants.new_releases,
                       () {
                         controller.navigateToSpecialProfile();
@@ -88,7 +87,9 @@ class SettingsView extends GetView<SettingsController> {
               return const SizedBox.shrink();
             }),
             Obx(() {
-              if (!controller.isLoggedIn) return const SizedBox.shrink();
+              if (!controller.isLoggedIn || !controller.hasSpecialProfile.value) {
+                return const SizedBox.shrink();
+              }
               return Column(
                 children: [
                   _buildMenuItemSay(
@@ -154,8 +155,7 @@ class SettingsView extends GetView<SettingsController> {
                 'logout'.tr,
                 IconConstants.logout,
                 () async {
-                  final bool? confirmLogout =
-                      await DialogUtils().showDeleteProfileDialog(context);
+                  final bool? confirmLogout = await DialogUtils().showDeleteProfileDialog(context);
                   if (confirmLogout == true) {
                     await controller.logout();
                   }
@@ -167,7 +167,7 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildUserHeader() {
+  Widget _buildUserHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -184,35 +184,45 @@ class SettingsView extends GetView<SettingsController> {
       ),
       child: Row(
         children: <Widget>[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(37),
-            child: Container(
-              width: 74,
-              height: 74,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: ColorConstants.background,
+          GestureDetector(
+            onTap: (controller.imageUrl != null && controller.imageUrl!.startsWith('http'))
+                ? () {
+                    Navigator.of(Get.context ?? context).push(
+                      MaterialPageRoute(
+                        builder: (_) => FullScreenImagePage(imageUrl: controller.imageUrl!),
+                      ),
+                    );
+                  }
+                : null,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(37),
+              child: Container(
+                width: 74,
+                height: 74,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ColorConstants.background,
+                ),
+                child: (controller.imageUrl != null && controller.imageUrl!.startsWith('http'))
+                    ? CachedNetworkImage(
+                        imageUrl: controller.imageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => _buildImageShimmer(),
+                        errorWidget: (context, url, _) => SvgPicture.asset(
+                          IconConstants.person,
+                          width: 53,
+                          height: 54,
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: SvgPicture.asset(
+                          IconConstants.person,
+                          width: 53,
+                          height: 54,
+                        ),
+                      ),
               ),
-              child: (controller.imageUrl != null &&
-                      controller.imageUrl!.startsWith('http'))
-                  ? CachedNetworkImage(
-                      imageUrl: controller.imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => _buildImageShimmer(),
-                      errorWidget: (context, url, _) => SvgPicture.asset(
-                        IconConstants.person,
-                        width: 53,
-                        height: 54,
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: SvgPicture.asset(
-                        IconConstants.person,
-                        width: 53,
-                        height: 54,
-                      ),
-                    ),
             ),
           ),
           const SizedBox(width: 16.0),
@@ -280,8 +290,7 @@ class SettingsView extends GetView<SettingsController> {
     return const SizedBox();
   }
 
-  Widget _buildMenuItem(
-      BuildContext context, String title, String iconPath, VoidCallback onTap) {
+  Widget _buildMenuItem(BuildContext context, String title, String iconPath, VoidCallback onTap) {
     return Container(
       height: 50,
       decoration: BoxDecoration(
@@ -331,8 +340,7 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildMenuItemSay(
-      BuildContext context, String title, String iconPath, VoidCallback onTap) {
+  Widget _buildMenuItemSay(BuildContext context, String title, String iconPath, VoidCallback onTap) {
     return Container(
       height: 50,
       decoration: BoxDecoration(

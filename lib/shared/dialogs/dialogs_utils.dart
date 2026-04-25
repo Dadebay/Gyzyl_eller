@@ -7,11 +7,11 @@ import 'package:kartal/kartal.dart';
 import '../extensions/packages.dart';
 
 import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
+import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:get/get.dart';
 
 class DialogUtils {
-  static void showNoConnectionDialog(
-      {required VoidCallback onRetry, required BuildContext context}) {
+  static void showNoConnectionDialog({required VoidCallback onRetry, required BuildContext context}) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
@@ -24,8 +24,7 @@ class DialogUtils {
               'noConnection1'.tr,
               textAlign: TextAlign.start,
               maxLines: 1,
-              style: context.general.textTheme.bodyLarge!
-                  .copyWith(fontSize: 15, fontWeight: FontWeight.bold),
+              style: context.general.textTheme.bodyLarge!.copyWith(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -33,8 +32,7 @@ class DialogUtils {
                 'noConnection2'.tr,
                 textAlign: TextAlign.start,
                 maxLines: 3,
-                style: context.general.textTheme.bodyMedium!
-                    .copyWith(fontSize: 14),
+                style: context.general.textTheme.bodyMedium!.copyWith(fontSize: 14),
               ),
             ),
           ],
@@ -48,8 +46,7 @@ class DialogUtils {
               'onRetryCancel'.tr,
               textAlign: TextAlign.center,
               maxLines: 1,
-              style: context.general.textTheme.bodyMedium!
-                  .copyWith(fontSize: 13, color: context.greyColor),
+              style: context.general.textTheme.bodyMedium!.copyWith(fontSize: 13, color: context.greyColor),
             ),
           ),
           TextButton(
@@ -58,8 +55,7 @@ class DialogUtils {
               'onRetry'.tr,
               textAlign: TextAlign.center,
               maxLines: 1,
-              style: context.general.textTheme.bodyMedium!
-                  .copyWith(fontSize: 13, color: context.blackColor),
+              style: context.general.textTheme.bodyMedium!.copyWith(fontSize: 13, color: context.blackColor),
             ),
           ),
         ],
@@ -154,7 +150,7 @@ class DialogUtils {
     return null;
   }
 
-  Future<bool?> showDeleteJobDialog(BuildContext context, int jobId) async {
+  Future<bool?> showDeleteJobDialog(BuildContext context, int jobId, {bool isRequest = false}) async {
     return await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -218,13 +214,22 @@ class DialogUtils {
                     const SizedBox(width: 10),
                     TextButton(
                       onPressed: () async {
+                        print('\x1B[34m[DELETE] ▶ jobId=$jobId | isRequest=$isRequest\x1B[0m');
                         try {
                           final MyJobsService jobsService = MyJobsService();
-                          await jobsService.deleteJob(jobId);
+                          if (isRequest) {
+                            print('\x1B[36m[DELETE] calling deleteJobRequest($jobId)...\x1B[0m');
+                            await jobsService.deleteJobRequest(jobId);
+                          } else {
+                            print('\x1B[36m[DELETE] calling deleteJob($jobId)...\x1B[0m');
+                            await jobsService.deleteJob(jobId);
+                          }
+                          print('\x1B[32m[DELETE] ✅ Success — popping true\x1B[0m');
                           Navigator.of(dialogContext).pop(true);
                         } catch (e) {
+                          print('\x1B[31m[DELETE] ❌ Error: $e\x1B[0m');
                           Navigator.of(dialogContext).pop(false);
-                          Get.snackbar('Error', 'Failed to delete job');
+                          Get.snackbar('Error', 'Failed to delete job: $e');
                         }
                       },
                       child: Text(
@@ -332,8 +337,7 @@ class DialogUtils {
     );
   }
 
-  Future<void> showFillProfileDialog(
-      BuildContext context, String actionTitle) async {
+  Future<void> showFillProfileDialog(BuildContext context, String actionTitle) async {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -405,6 +409,91 @@ class DialogUtils {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: ColorConstants.kPrimaryColor2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showInsufficientBalanceDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'insufficient_balance_title'.tr,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                SvgPicture.asset(
+                  'assets/icons/pul.svg',
+                  height: 70,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'insufficient_balance_prompt'.tr,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: Text(
+                        'insufficient_balance_close'.tr,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                        Get.to(() => const WalletView());
+                      },
+                      child: Text(
+                        'insufficient_balance_fill'.tr,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
                         ),
                       ),
                     ),

@@ -26,35 +26,38 @@ class NewTag extends StatelessWidget {
   Widget build(BuildContext context) {
     if (hideTag) return const SizedBox.shrink();
 
-    final bool hasCustom =
-        customLabel != null && customTextColor != null && customBgColor != null;
+    final bool hasCustom = customLabel != null && customTextColor != null && customBgColor != null;
 
     if (!hasCustom && status == null) return const SizedBox.shrink();
 
     if (hasCustom) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: customBgColor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (customIcon != null) ...[
-              customIcon!,
-              const SizedBox(width: 4),
-            ],
-            Text(
-              customLabel!,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: customTextColor,
-              ),
+      return Wrap(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: customBgColor,
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (customIcon != null) ...[
+                  customIcon!,
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  customLabel!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: customTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       );
     }
 
@@ -79,8 +82,7 @@ class NewTag extends StatelessWidget {
           'assets/icons/aktiw.svg',
           width: 14,
           height: 14,
-          colorFilter:
-              const ColorFilter.mode(Color(0xFF165500), BlendMode.srcIn),
+          colorFilter: const ColorFilter.mode(Color(0xFF165500), BlendMode.srcIn),
         );
         textColor = const Color(0xFF165500);
         bgColor = const Color.fromARGB(255, 120, 229, 118);
@@ -141,22 +143,24 @@ class NewTag extends StatelessWidget {
         bgColor = ColorConstants.kPrimaryColor2.withOpacity(0.1);
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          statusIcon,
-          const SizedBox(width: 4),
-          Text(myStatus.displayName,
-              style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
-        ],
-      ),
+    return Wrap(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              statusIcon,
+              const SizedBox(width: 4),
+              Text(myStatus.displayName, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

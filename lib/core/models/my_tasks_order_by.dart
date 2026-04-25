@@ -1,14 +1,18 @@
 import 'package:get/get.dart';
 
 enum MyTasksOrderBy {
+  aktiw,
+
   sene,
   nearest,
   price,
-  teklip,
-  aktiw;
+  teklip;
 
   String get displayName {
     switch (this) {
+      case MyTasksOrderBy.aktiw:
+        return 'sort_show_active'.tr;
+
       case MyTasksOrderBy.sene:
         return 'sort_by_date'.tr;
       case MyTasksOrderBy.nearest:
@@ -17,14 +21,13 @@ enum MyTasksOrderBy {
         return 'price_sort'.tr;
       case MyTasksOrderBy.teklip:
         return 'sort_by_offers'.tr;
-
-      case MyTasksOrderBy.aktiw:
-        return 'sort_show_active'.tr;
     }
   }
 
   String get apiValue {
     switch (this) {
+      case MyTasksOrderBy.aktiw:
+        return 'active';
       case MyTasksOrderBy.sene:
         return 'created_at';
       case MyTasksOrderBy.teklip:
@@ -33,8 +36,6 @@ enum MyTasksOrderBy {
         return 'near';
       case MyTasksOrderBy.price:
         return 'price';
-      case MyTasksOrderBy.aktiw:
-        return 'active';
     }
   }
 

@@ -5,10 +5,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:gyzyleller/core/services/api_service.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
-import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
 import 'package:gyzyleller/core/models/special_profile_model.dart';
 import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
+import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
+import 'package:gyzyleller/modules/bottomnavbar/views/bottom_nav_bar_view.dart';
+import 'package:gyzyleller/modules/bottomnavbar/bindings/home_binding.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 class SpecialProfileController extends GetxController {
@@ -119,14 +122,32 @@ class SpecialProfileController extends GetxController {
 
   bool get isMyProfile {
     final currentUser = _authStorage.getUser();
-    if (currentUser == null) return false;
+    print('🔍 [isMyProfile] currentUser=$currentUser');
+    if (currentUser == null) {
+      print('🔍 [isMyProfile] currentUser is NULL → false');
+      return false;
+    }
     final currentId = currentUser['id']?.toString();
-    if (currentId == null) return false;
+    print('🔍 [isMyProfile] currentId=$currentId, profile.userId=${profile.value.userId}, profile.id=${profile.value.id}');
+    if (currentId == null) {
+      print('🔍 [isMyProfile] currentId is NULL → false');
+      return false;
+    }
+
+    if (profile.value.userId != null) {
+      final result = profile.value.userId == currentId;
+      print('🔍 [isMyProfile] userId comparison: "${profile.value.userId}" == "$currentId" → $result');
+      return result;
+    }
 
     // Default to true if no profile ID (current user section)
-    if (profile.value.id == null) return true;
+    if (profile.value.id == null) {
+      print('🔍 [isMyProfile] profile.id is null → true (default)');
+      return true;
+    }
 
-    return profile.value.id == currentId;
+    print('🔍 [isMyProfile] fallthrough → false');
+    return false;
   }
 
   @override
@@ -212,19 +233,122 @@ class SpecialProfileController extends GetxController {
 
   Future<void> fetchReviews() async {
     final userId = profile.value.userId;
-    if (userId == null || userId.isEmpty) return;
+    print('🔍 [fetchReviews] called with userId=$userId');
+    if (userId == null || userId.isEmpty) {
+      print('🔍 [fetchReviews] userId is null/empty, returning');
+      return;
+    }
 
     isLoadingReviews.value = true;
     try {
       final ApiService apiService = ApiService();
       final rawList = await apiService.getMasterReviews(userId);
-      reviews.value = rawList
+      print('🔍 [fetchReviews] rawList.length=${rawList.length}');
+
+      // Parse reviews first
+      final parsedReviews = rawList
           .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
           .toList();
+
+      // Fetch replies for each review using separate endpoint
+      for (var i = 0; i < parsedReviews.length; i++) {
+        try {
+          final replyList = await apiService.getReviewReplies(parsedReviews[i].id);
+          print('🔍 [fetchReviews] review[${parsedReviews[i].id}] has ${replyList.length} replies from API');
+          if (replyList.isNotEmpty) {
+            final replies = replyList
+                .map((r) => ReviewReply.fromJson(r as Map<String, dynamic>))
+                .toList();
+            // Create new ReviewModel with replies
+            parsedReviews[i] = ReviewModel(
+              id: parsedReviews[i].id,
+              userId: parsedReviews[i].userId,
+              jobId: parsedReviews[i].jobId,
+              review: parsedReviews[i].review,
+              rating: parsedReviews[i].rating,
+              requestId: parsedReviews[i].requestId,
+              createdAt: parsedReviews[i].createdAt,
+              username: parsedReviews[i].username,
+              image: parsedReviews[i].image,
+              replies: replies,
+            );
+          }
+        } catch (e) {
+          print('⚠️ [fetchReviews] failed to fetch replies for review ${parsedReviews[i].id}: $e');
+        }
+      }
+
+      reviews.value = parsedReviews;
+      print('🔍 [fetchReviews] final reviews.length=${reviews.length}');
+      for (var r in reviews) {
+        print('🔍 [fetchReviews] review.id=${r.id}, replies.length=${r.replies.length}');
+      }
     } catch (e) {
       print('❌ [SpecialProfileController] fetchReviews error: $e');
     } finally {
       isLoadingReviews.value = false;
+    }
+  }
+
+  Future<bool> replyToReview(String reviewId, String replyText) async {
+    final String endpoint = 'api/user/master/reply-to-review/$reviewId';
+    print('🔍 [replyToReview] ========================================');
+    print('🔍 [replyToReview] STEP 1: reviewId=$reviewId, replyText=$replyText');
+    print('🔍 [replyToReview] STEP 2: endpoint=$endpoint');
+    try {
+      Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
+      print('🔍 [replyToReview] STEP 3: loader dialog shown');
+
+      final Map<String, dynamic> body = {
+        "reply": replyText,
+      };
+
+      print('🔍 [replyToReview] STEP 4: calling handleApiRequest...');
+      final ApiService apiService = ApiService();
+      dynamic response;
+      try {
+        response = await apiService.handleApiRequest(
+          endpoint,
+          body: body,
+          method: 'POST',
+          requiresToken: true,
+          isForm: false,
+        );
+      } catch (apiError) {
+        print('❌ [replyToReview] STEP 4 FAILED: handleApiRequest threw: $apiError');
+        if (Get.isDialogOpen == true) Get.back();
+        _showConnectionSnackBar();
+        return false;
+      }
+
+      print('🔍 [replyToReview] STEP 5: response type=${response.runtimeType}');
+      print('🔍 [replyToReview] STEP 5: response=$response');
+
+      if (Get.isDialogOpen == true) Get.back();
+      print('🔍 [replyToReview] STEP 6: loader closed');
+
+      final isSuccess = _isSuccessfulSaveResponse(response);
+      print('🔍 [replyToReview] STEP 7: isSuccess=$isSuccess');
+
+      if (isSuccess) {
+        _showSuccessSnackBar('success_subtitle');
+        print('🔍 [replyToReview] STEP 8: calling fetchReviews...');
+        fetchReviews();
+        print('🔍 [replyToReview] STEP 9: returning true ✅');
+        print('🔍 [replyToReview] ========================================');
+        return true;
+      } else {
+        print('🔍 [replyToReview] STEP 8: NOT successful, returning false');
+        print('🔍 [replyToReview] ========================================');
+        _showConnectionSnackBar();
+        return false;
+      }
+    } catch (e) {
+      if (Get.isDialogOpen == true) Get.back();
+      print('❌ [replyToReview] OUTER CATCH Error: $e');
+      print('❌ [replyToReview] ========================================');
+      _showConnectionSnackBar();
+      return false;
     }
   }
 
@@ -501,26 +625,35 @@ class SpecialProfileController extends GetxController {
           _authStorage.saveMasterProfileId(response['data']['id'].toString());
         }
 
-        // 3. Instant Navigation: Close the loading dialog and the current page
-        if (Get.isDialogOpen == true) Get.back();
-
-        if (isEdit) {
-          Get.back();
-        } else {
-          // If adding new, we need to replace current view with profile
-          Get.off(() => const SpecialProfile());
-        }
-
-        _showSuccessSnackBar('success_subtitle');
-
-        // 4. Update SettingsController so it knows we have a specialist profile
+        // 4. Update SettingsController and AllController state before navigation
         if (Get.isRegistered<SettingsController>()) {
           final sc = Get.find<SettingsController>();
           sc.hasSpecialProfile.value = true;
           sc.fetchBalance();
         }
 
-        // 5. Background Refresh: Sync everything with the server in the background
+        final allController = Get.isRegistered<AllController>()
+            ? Get.find<AllController>()
+            : Get.put(AllController(), permanent: true);
+        allController.shouldShowFilterShowcase.value = true;
+
+        // 5. Instant Navigation: Close the loading dialog and move to the target page
+        if (Get.isDialogOpen == true) Get.back();
+
+        if (isEdit) {
+          Get.back();
+        } else {
+          // Navigate to Home (AllView) index 0
+          final HomeController homeController = Get.isRegistered<HomeController>()
+              ? Get.find<HomeController>()
+              : Get.put(HomeController());
+          homeController.changePage(0);
+          Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
+        }
+
+        // _showSuccessSnackBar('success_subtitle'); // REMOVED
+
+        // 6. Background Refresh: Sync everything with the server
         refreshProfile();
       } else {
         if (Get.isDialogOpen == true) Get.back();

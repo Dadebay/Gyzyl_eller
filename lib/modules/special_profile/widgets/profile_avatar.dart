@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
+import 'package:gyzyleller/modules/special_profile/widgets/full_screen_image_page.dart';
 
 class ProfileAvatar extends StatelessWidget {
   final SpecialProfileController controller;
@@ -21,34 +22,53 @@ class ProfileAvatar extends StatelessWidget {
             child: Stack(
               children: [
                 Obx(
-                  () => Container(
-                    padding: const EdgeInsets.all(2),
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.white,
-                      backgroundImage: controller.selectedProfileImage.value !=
-                              null
-                          ? FileImage(controller.selectedProfileImage.value!)
-                          : (controller.profile.value.imageUrl != null
-                              ? NetworkImage(controller.profile.value.imageUrl!)
-                              : null),
-                      child: controller.isUploadingProfileImage.value
-                          ? const SizedBox(
-                              width: 26,
-                              height: 26,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2.4),
-                            )
-                          : (controller.selectedProfileImage.value == null &&
-                                  controller.profile.value.imageUrl == null
-                              ? const Icon(
-                                  Icons.person,
-                                  color: Colors.grey,
-                                  size: 50,
+                  () {
+                    final imageUrl = controller.profile.value.imageUrl;
+                    final hasNetworkImage =
+                        imageUrl != null && imageUrl.isNotEmpty;
+                    return GestureDetector(
+                      onTap: hasNetworkImage
+                          ? () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      FullScreenImagePage(imageUrl: imageUrl!),
+                                ),
+                              );
+                            }
+                          : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.white,
+                          backgroundImage:
+                              controller.selectedProfileImage.value != null
+                                  ? FileImage(
+                                      controller.selectedProfileImage.value!)
+                                  : (hasNetworkImage
+                                      ? NetworkImage(imageUrl!)
+                                      : null),
+                          child: controller.isUploadingProfileImage.value
+                              ? const SizedBox(
+                                  width: 26,
+                                  height: 26,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2.4),
                                 )
-                              : null),
-                    ),
-                  ),
+                              : (controller.selectedProfileImage.value ==
+                                          null &&
+                                      !hasNetworkImage
+                                  ? const Icon(
+                                      Icons.person,
+                                      color: Colors.grey,
+                                      size: 50,
+                                    )
+                                  : null),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 Positioned(
                   bottom: 2,

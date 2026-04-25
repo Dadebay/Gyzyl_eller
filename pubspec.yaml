@@ -34,6 +34,7 @@ dependencies:
   lottie: ^3.1.0
   upgrader: ^10.3.0
   in_app_update: 4.2.2
+  showcaseview: ^3.0.0
 
   #==================== LOCAL STORAGE ====================#
   get_storage: ^2.1.1
@@ -83,32 +84,42 @@ flutter:
   fonts:
     - family: Gilroy
       fonts:
-        - asset: assets/fonts/Gilroy-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Gilroy-SemiBold.ttf
-          weight: 600
+        - asset: assets/fonts/Gilroy-Regular.ttf
         - asset: assets/fonts/Gilroy-Medium.ttf
           weight: 500
-        - asset: assets/fonts/Gilroy-Regular.ttf
-          weight: 400
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Inter-SemiBold.ttf
+        - asset: assets/fonts/Gilroy-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/Inter-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Inter-Regular.ttf
-          weight: 400
-    - family: Helvetica
-      fonts:
-        - asset: assets/fonts/Helvetica-Bold.ttf
+        - asset: assets/fonts/Gilroy-Bold.ttf
           weight: 700
-        - asset: assets/fonts/Helvetica.ttf
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand-Regular.ttf
+        - asset: assets/fonts/Quicksand-Bold.ttf
+          weight: 700
+    - family: Ubuntu
+      fonts:
+        - asset: assets/fonts/Ubuntu-Regular.ttf
+        - asset: assets/fonts/Ubuntu-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Ubuntu-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Ubuntu-Bold.ttf
+          weight: 700
+    - family: Gotham
+      fonts:
+        - asset: assets/fonts/gotham_book.otf
+        - asset: assets/fonts/gotham_thin.otf
+          weight: 100
+        - asset: assets/fonts/gotham_light.otf
+          weight: 200
+        - asset: assets/fonts/gotham_medium.otf
+          weight: 300
+        - asset: assets/fonts/gotham_book.otf
           weight: 400
+        - asset: assets/fonts/gotham_bold.otf
+          weight: 800
+
 flutter_launcher_icons:
   android: true
-  ios: false
-  image_path: "assets/images/logo.jpg"
-  adaptive_icon_background: "#ffffff"
+  ios: true
+  image_path: "assets/images/new_year/app_logo.png"

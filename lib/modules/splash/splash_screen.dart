@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 
 import 'package:gyzyleller/modules/bottomnavbar/bindings/home_binding.dart';
 import 'package:gyzyleller/modules/bottomnavbar/views/bottom_nav_bar_view.dart';
@@ -21,12 +22,32 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    );
+
+    _animation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutQuart),
+    );
+
+    _controller.forward();
     _firebaseToTopic();
     _checkOnboardingStatus();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _firebaseToTopic() async {
@@ -42,7 +63,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkOnboardingStatus() async {
-    await Future.delayed(const Duration(seconds: 3));
+    // Wait for the animation to complete (3 seconds)
+    await Future.delayed(const Duration(milliseconds: 3200));
     if (!mounted) return;
 
     // Internet barmy-ýok barla: DNS cache aldatmasyn diýip real TCP bağlantı synanyşylýar
@@ -80,10 +102,81 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Image.asset(
-        ImageConstants.splashBackground,
-        fit: BoxFit.cover,
-        height: MediaQuery.of(context).size.height,
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              ImageConstants.splashBackground,
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // Progress Bar and Percentage
+          Positioned(
+            left: 40,
+            right: 40,
+            bottom: 80,
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                final value = _animation.value;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Percentage Text
+                    Text(
+                      '${(value * 100).toInt()}%',
+                      style: const TextStyle(
+                        color: ColorConstants.fonts,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Gilroy',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Progress Bar Container
+                    Container(
+                      height: 6,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: ColorConstants.fonts.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Active Progress Line
+                          FractionallySizedBox(
+                            widthFactor: value,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    ColorConstants.kPrimaryColor,
+                                    ColorConstants.blue,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: ColorConstants.kPrimaryColor
+                                        .withOpacity(0.4),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
