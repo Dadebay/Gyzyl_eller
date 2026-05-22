@@ -38,11 +38,15 @@ class _PriceFilterPageState extends State<PriceFilterPage> {
   void initState() {
     super.initState();
     _startController = TextEditingController(
-      text: (widget.priceRange.start == 0) ? '' : widget.priceRange.start.toInt().toString(),
+      text: (widget.priceRange.start == 0)
+          ? ''
+          : widget.priceRange.start.toInt().toString(),
     );
     // end field starts empty when at max (not yet selected by user)
     _endController = TextEditingController(
-      text: (widget.priceRange.end == widget.maxPrice) ? '' : widget.priceRange.end.toInt().toString(),
+      text: (widget.priceRange.end == widget.maxPrice)
+          ? ''
+          : widget.priceRange.end.toInt().toString(),
     );
   }
 
@@ -51,12 +55,16 @@ class _PriceFilterPageState extends State<PriceFilterPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.priceRange != widget.priceRange) {
       if (!_startFocus.hasFocus) {
-        final s = (widget.priceRange.start == 0) ? '' : widget.priceRange.start.toInt().toString();
+        final s = (widget.priceRange.start == 0)
+            ? ''
+            : widget.priceRange.start.toInt().toString();
         if (_startController.text != s) _startController.text = s;
       }
       if (!_endFocus.hasFocus) {
         // if cleared back to max, show empty; otherwise show value
-        final e = (widget.priceRange.end == widget.maxPrice) ? '' : widget.priceRange.end.toInt().toString();
+        final e = (widget.priceRange.end == widget.maxPrice)
+            ? ''
+            : widget.priceRange.end.toInt().toString();
         if (_endController.text != e) _endController.text = e;
       }
     }
@@ -98,7 +106,9 @@ class _PriceFilterPageState extends State<PriceFilterPage> {
   void _onEndSubmitted(String value) {
     final parsed = double.tryParse(value);
     if (parsed == null) {
-      _endController.text = widget.priceRange.end == widget.maxPrice ? '' : widget.priceRange.end.toInt().toString();
+      _endController.text = widget.priceRange.end == widget.maxPrice
+          ? ''
+          : widget.priceRange.end.toInt().toString();
       return;
     }
     final clamped = parsed.clamp(widget.priceRange.start, widget.maxPrice);
@@ -117,7 +127,8 @@ class _PriceFilterPageState extends State<PriceFilterPage> {
             children: [
               Text(
                 "price".tr,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               GestureDetector(
                 onTap: widget.onClear,
@@ -158,21 +169,28 @@ class _PriceFilterPageState extends State<PriceFilterPage> {
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: RangeSlider(
-            values: RangeValues(
-              widget.priceRange.start.clamp(widget.minPrice, PriceFilterPage.kSliderLimit),
-              widget.priceRange.end.clamp(widget.minPrice, PriceFilterPage.kSliderLimit),
+          child: SliderTheme(
+            data: const SliderThemeData(
+              valueIndicatorTextStyle: TextStyle(color: Colors.white),
             ),
-            min: widget.minPrice,
-            max: PriceFilterPage.kSliderLimit,
-            divisions: 100,
-            activeColor: ColorConstants.kPrimaryColor2,
-            inactiveColor: ColorConstants.background,
-            labels: RangeLabels(
-              "${widget.priceRange.start.toInt()}",
-              "${widget.priceRange.end.toInt()}",
+            child: RangeSlider(
+              values: RangeValues(
+                widget.priceRange.start
+                    .clamp(widget.minPrice, PriceFilterPage.kSliderLimit),
+                widget.priceRange.end
+                    .clamp(widget.minPrice, PriceFilterPage.kSliderLimit),
+              ),
+              min: widget.minPrice,
+              max: PriceFilterPage.kSliderLimit,
+              divisions: 100,
+              activeColor: ColorConstants.kPrimaryColor2,
+              inactiveColor: ColorConstants.background,
+              labels: RangeLabels(
+                "${widget.priceRange.start.toInt()}",
+                "${widget.priceRange.end.toInt()}",
+              ),
+              onChanged: widget.onPriceChanged,
             ),
-            onChanged: widget.onPriceChanged,
           ),
         ),
       ],

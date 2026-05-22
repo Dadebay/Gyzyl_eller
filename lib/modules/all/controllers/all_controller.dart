@@ -1,4 +1,4 @@
-// ignore_for_file: empty_catches
+// ignore_for_file: empty_catches, avoid_print
 
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -10,6 +10,8 @@ import 'package:gyzyleller/core/models/job_model.dart';
 import 'package:gyzyleller/core/models/my_tasks_order_by.dart';
 import 'package:gyzyleller/core/models/metadata_models.dart';
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
+import 'package:gyzyleller/core/controllers/balance_controller.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/job_notification_controller.dart';
 
 class AllController extends GetxController {
   final MyJobsService _jobsService = MyJobsService();
@@ -17,7 +19,9 @@ class AllController extends GetxController {
 
   final RxList<JobModel> jobs = <JobModel>[].obs;
   final RxInt totalCount = 0.obs;
-  final RxDouble userBalance = 0.0.obs;
+
+  final BalanceController _balanceController = Get.find<BalanceController>();
+  RxDouble get userBalance => _balanceController.balance;
   final RxBool isLoggedIn = false.obs;
   final RxBool isLoading = false.obs;
   final RxBool isFirstLoad = true.obs;
@@ -50,7 +54,13 @@ class AllController extends GetxController {
   int _page = 0;
   final int _limit = 20;
 
-  final RefreshController refreshController = RefreshController(initialRefresh: false);
+  RefreshController refreshController =
+      RefreshController(initialRefresh: false);
+
+  void resetRefreshController() {
+    refreshController.dispose();
+    refreshController = RefreshController(initialRefresh: false);
+  }
 
   @override
   void onInit() {
@@ -58,11 +68,18 @@ class AllController extends GetxController {
     isLoggedIn.value = AuthStorage().isLoggedIn;
     _loadFilters();
 
+    // Keep notification count badge synchronized whenever jobs list changes
+    ever(jobs, (_) {
+      if (Get.isRegistered<JobNotificationController>()) {
+        Get.find<JobNotificationController>().updateAllTabCount();
+      }
+    });
+
     // Listen to login/logout events to refresh filter state
     ever(isLoggedIn, (bool loggedIn) {
       print('🔄 [AllController] isLoggedIn changed to: $loggedIn');
       if (loggedIn) {
-        _initApiFilters().then((_) => fetchJobs(isRefresh: true));
+        fetchJobs(isRefresh: true);
       } else {
         clearFilters();
       }
@@ -70,7 +87,7 @@ class AllController extends GetxController {
 
     // Initialize categories from API if logged in, otherwise start empty
     if (isLoggedIn.value) {
-      _initApiFilters().then((_) => fetchJobs(isRefresh: true));
+      fetchJobs(isRefresh: true);
     } else {
       fetchJobs(isRefresh: true);
     }
@@ -82,57 +99,14 @@ class AllController extends GetxController {
     ]);
   }
 
-  Future<void> _initApiFilters() async {
-    try {
-      print('🚀 [AllController] Initializing filters from API...');
-      final savedData = await _jobsService.getMasterSavedSearch();
-      if (savedData != null) {
-        // Categories
-        final List<int> savedCats = (savedData['cats'] as List<int>?) ?? [];
-        if (savedCats.isNotEmpty) {
-          catIds.assignAll(savedCats);
-        }
-
-        // Etraps
-        final List<int> savedEtraps = (savedData['etraps'] as List<int>?) ?? [];
-        if (savedEtraps.isNotEmpty) {
-          etrapIds.assignAll(savedEtraps);
-        }
-
-        // Prices are loaded but don't trigger the badge
-        final double? minP = savedData['min_price'] as double?;
-        final double? maxP = savedData['max_price'] as double?;
-
-        if (minP != null && minP != 0) {
-          minPrice.value = minP;
-        } else {
-          minPrice.value = null;
-        }
-
-        if (maxP != null && maxP != 1000000) {
-          maxPrice.value = maxP;
-        } else {
-          maxPrice.value = null;
-        }
-
-        hasSavedSearch.value = savedCats.isNotEmpty || savedEtraps.isNotEmpty;
-        print('✅ [AllController] API Filters initialized: $savedData');
-      } else {
-        hasSavedSearch.value = false;
-        print('ℹ️ [AllController] No saved filters found on API.');
-      }
-    } catch (e) {
-      print('❌ [AllController] Error initializing API filters: $e');
-    }
-  }
-
   void _saveFilters() {
-    // Categories are now saved via API only
+    _storage.write('all_filter_catIds', catIds.toList());
     _storage.write('all_filter_welayatIds', welayatIds.toList());
     _storage.write('all_filter_etrapIds', etrapIds.toList());
     _storage.write('all_filter_minPrice', minPrice.value);
     _storage.write('all_filter_maxPrice', maxPrice.value);
-    _storage.write('all_filter_dates', selectedDates.map((d) => d.toIso8601String()).toList());
+    _storage.write('all_filter_dates',
+        selectedDates.map((d) => d.toIso8601String()).toList());
     _storage.write('all_filter_search', search.value);
   }
 
@@ -144,7 +118,11 @@ class AllController extends GetxController {
         return;
       }
 
-      // Categories are now loaded via API only in _initApiFilters()
+      final savedCatIds = _storage.read<List>('all_filter_catIds');
+      if (savedCatIds != null) {
+        catIds.assignAll(savedCatIds.cast<int>());
+      }
+
       final savedWelayatIds = _storage.read<List>('all_filter_welayatIds');
       if (savedWelayatIds != null) {
         welayatIds.assignAll(savedWelayatIds.cast<int>());
@@ -163,7 +141,8 @@ class AllController extends GetxController {
 
       final savedDates = _storage.read<List>('all_filter_dates');
       if (savedDates != null) {
-        selectedDates.assignAll(savedDates.map((d) => DateTime.parse(d as String)).toList());
+        selectedDates.assignAll(
+            savedDates.map((d) => DateTime.parse(d as String)).toList());
       }
 
       search.value = _storage.read<String>('all_filter_search') ?? "";
@@ -173,6 +152,7 @@ class AllController extends GetxController {
   }
 
   void _clearPersistedFilters() {
+    _storage.remove('all_filter_catIds');
     _storage.remove('all_filter_welayatIds');
     _storage.remove('all_filter_etrapIds');
     _storage.remove('all_filter_minPrice');
@@ -180,6 +160,7 @@ class AllController extends GetxController {
     _storage.remove('all_filter_dates');
     _storage.remove('all_filter_search');
 
+    catIds.clear();
     welayatIds.clear();
     etrapIds.clear();
     minPrice.value = null;
@@ -189,10 +170,7 @@ class AllController extends GetxController {
   }
 
   Future<void> fetchBalance() async {
-    try {
-      final balance = await _jobsService.fetchBalance();
-      userBalance.value = balance;
-    } catch (e) {}
+    await _balanceController.fetchBalance();
   }
 
   Future<void> fetchMetadata() async {
@@ -223,12 +201,16 @@ class AllController extends GetxController {
         isFirstLoad.value = true;
       }
       fetchBalance();
+      if (Get.isRegistered<JobNotificationController>()) {
+        Get.find<JobNotificationController>().fetchNotificationCounters();
+      }
     }
 
     isLoading.value = true;
 
     try {
-      debugPrint('[AllController] fetchJobs → sort=${orderBy.value.apiValue} lat=$_currentLat lng=$_currentLng page=$_page');
+      debugPrint(
+          '[AllController] fetchJobs → sort=${orderBy.value.apiValue} lat=$_currentLat lng=$_currentLng page=$_page');
       final response = await _jobsService.getMyJobs(
         page: _page,
         limit: _limit,
@@ -236,7 +218,7 @@ class AllController extends GetxController {
         sort: orderBy.value.apiValue,
         lat: orderBy.value == MyTasksOrderBy.nearest ? _currentLat : null,
         lng: orderBy.value == MyTasksOrderBy.nearest ? _currentLng : null,
-        // myJobs: false,
+        requiresToken: true,
         catIds: catIds,
         welayatIds: welayatIds,
         etrapIds: etrapIds,
@@ -244,15 +226,7 @@ class AllController extends GetxController {
         minPrice: minPrice.value,
         maxPrice: maxPrice.value,
         search: search.value,
-        requiresToken: AuthStorage().isLoggedIn,
       );
-
-      print('============= ALL VIEW API =============');
-      print('Page: $_page, Limit: $_limit, Status: ${status.value}, Sort: ${orderBy.value.apiValue}');
-      print('Categories: $catIds, Welayat: $welayatIds, Etrap: $etrapIds');
-      print('Search: ${search.value}, MinPrice: ${minPrice.value}, MaxPrice: ${maxPrice.value}');
-      print('Response Job Count: ${response.data.jobs.length}');
-      print('========================================');
 
       if (isRefresh) {
         jobs.clear();
@@ -390,9 +364,7 @@ class AllController extends GetxController {
     }
 
     _saveFilters();
-    // Update hasSavedSearch based on whether key filters were applied
-    // (Excluding price range as requested)
-    hasSavedSearch.value = catIds.isNotEmpty || etrapIds.isNotEmpty;
+    hasSavedSearch.value = isAnyFilterActive;
     fetchJobs(isRefresh: true);
   }
 
@@ -411,5 +383,19 @@ class AllController extends GetxController {
   }
 
   // The red badge only shows if there is a saved search on the server
-  bool get isAnyFilterActive => hasSavedSearch.value;
+  bool get isAnyFilterActive {
+    return catIds.isNotEmpty ||
+        welayatIds.isNotEmpty ||
+        etrapIds.isNotEmpty ||
+        minPrice.value != null ||
+        maxPrice.value != null ||
+        selectedDates.isNotEmpty ||
+        search.value.trim().isNotEmpty;
+  }
+
+  @override
+  void onClose() {
+    refreshController.dispose();
+    super.onClose();
+  }
 }

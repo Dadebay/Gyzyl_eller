@@ -1,4 +1,4 @@
-package com.ayterek.hyzmatlar
+package com.ayterek.ussalar
 
 import io.flutter.embedding.android.FlutterActivity
 

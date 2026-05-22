@@ -13,6 +13,7 @@ import 'package:gyzyleller/modules/filter_view/filter_view.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/all/views/pages/searc_view.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/job_notification_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 
@@ -25,13 +26,23 @@ class AllView extends StatefulWidget {
 
 class _AllViewState extends State<AllView> {
   final ScrollController _scrollController = ScrollController();
-  final AllController controller = Get.put(AllController(), permanent: true);
+  late final AllController controller;
   bool _isFabVisible = true;
   final GlobalKey _filterKey = GlobalKey();
+  final Set<int> _clearedNotificationJobIds = <int>{};
 
   @override
   void initState() {
     super.initState();
+    // Get existing controller or create new one
+    if (Get.isRegistered<AllController>()) {
+      controller = Get.find<AllController>();
+      // Reset the RefreshController so the new SmartRefresher can bind cleanly.
+      // Without this, the old _refresherState reference causes an assertion error.
+      controller.resetRefreshController();
+    } else {
+      controller = Get.put(AllController(), permanent: true);
+    }
     _scrollController.addListener(_onScroll);
   }
 
@@ -48,6 +59,19 @@ class _AllViewState extends State<AllView> {
       setState(() => _isFabVisible = false);
     } else if (direction == ScrollDirection.forward && !_isFabVisible) {
       setState(() => _isFabVisible = true);
+    }
+  }
+
+  Future<void> _clearNotificationForOpenedJob(int jobId) async {
+    if (_clearedNotificationJobIds.contains(jobId)) return;
+    if (!Get.isRegistered<JobNotificationController>()) return;
+
+    _clearedNotificationJobIds.add(jobId);
+    final success = await Get.find<JobNotificationController>().clearByJob(jobId.toString());
+
+    // If API clear was successful, immediately update the badge count
+    if (success) {
+      Get.find<JobNotificationController>().updateAllTabCount();
     }
   }
 
@@ -103,7 +127,8 @@ class _AllViewState extends State<AllView> {
                                 decoration: BoxDecoration(
                                   color: Colors.red,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1),
+                                  border:
+                                      Border.all(color: Colors.white, width: 1),
                                 ),
                                 constraints: const BoxConstraints(
                                   minWidth: 8,
@@ -126,7 +151,8 @@ class _AllViewState extends State<AllView> {
                     context: context,
                     backgroundColor: Colors.white,
                     shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20.0)),
                     ),
                     builder: (context) {
                       return AllOrderBySheet(
@@ -174,7 +200,8 @@ class _AllViewState extends State<AllView> {
                 Container(
                   width: double.infinity,
                   color: ColorConstants.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -200,6 +227,7 @@ class _AllViewState extends State<AllView> {
                 ),
               Expanded(
                 child: SmartRefresher(
+                  key: const PageStorageKey('all_view_refresher'),
                   header: const MaterialClassicHeader(
                     color: ColorConstants.greyColor,
                     backgroundColor: ColorConstants.background,
@@ -211,7 +239,8 @@ class _AllViewState extends State<AllView> {
                   onLoading: () => controller.fetchJobs(),
                   child: controller.jobs.isEmpty
                       ? Padding(
-                          padding: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
+                          padding: const EdgeInsets.only(
+                              left: 15, right: 15, bottom: 20),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -256,6 +285,7 @@ class _AllViewState extends State<AllView> {
 
                             return JobCard(
                               job: job,
+                              showDelete: false,
                               isNew: index == 0,
                               fromAllView: true,
                               hideTag: tag.hideTag,
@@ -263,9 +293,10 @@ class _AllViewState extends State<AllView> {
                               customTagTextColor: tag.textColor,
                               customTagBgColor: tag.bgColor,
                               customTagIcon: tag.icon,
-                              onOpened: () {
+                              onOpened: () async {
                                 tagResolver.markViewed(job.id);
                                 controller.jobs.refresh();
+                                await _clearNotificationForOpenedJob(job.id);
                               },
                             );
                           },
@@ -285,10 +316,14 @@ class _AllViewState extends State<AllView> {
             opacity: _isFabVisible ? 1.0 : 0.0,
             child: Obx(() {
               return controller.isLoggedIn.value
-                  ? AccountSummaryBar(
-                      balanceText: '${"wallet".tr}: ${controller.userBalance.value.toStringAsFixed(0)} TMT',
-                      onPressed: () => Get.to(() => const WalletView()),
-                      onBalanceTap: () => Get.to(() => const WalletView()),
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      child: AccountSummaryBar(
+                        balanceText:
+                            '${"wallet".tr}: ${controller.userBalance.value.toStringAsFixed(0)} TMT',
+                        onPressed: () => Get.to(() => const WalletView()),
+                        onBalanceTap: () => Get.to(() => const WalletView()),
+                      ),
                     )
                   : const SizedBox.shrink();
             }),

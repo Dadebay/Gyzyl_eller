@@ -6,7 +6,7 @@ class ReviewModel {
   final String id;
   final String userId;
   final String jobId;
-  final String review;
+  String review;
   final int rating;
   final String requestId;
   final DateTime createdAt;

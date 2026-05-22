@@ -7,6 +7,8 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:gyzyleller/modules/login/views/login_view.dart';
 
+import '../../../shared/constants/image_constants.dart';
+
 class NonAuthChatDetailView extends StatefulWidget {
   const NonAuthChatDetailView({super.key});
 
@@ -92,15 +94,15 @@ class _NonAuthChatDetailViewState extends State<NonAuthChatDetailView> {
                         Row(
                           children: [
                             Container(
-                              width: 50,
-                              height: 50,
+                              width: 40,
+                              height: 40,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.white,
                               ),
                               child: ClipOval(
                                 child: Image.asset(
-                                  'assets/images/logo.jpg',
+                                  ImageConstants.splashLogo,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
                                       const Icon(Icons.support_agent,

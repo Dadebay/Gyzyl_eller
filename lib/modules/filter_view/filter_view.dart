@@ -1,4 +1,5 @@
-import 'dart:async';
+// ignore_for_file: avoid_print, empty_catches
+
 import 'package:gyzyleller/core/models/metadata_models.dart';
 import 'package:gyzyleller/modules/filter_view/widgets/category_filter_page.dart';
 import 'package:gyzyleller/modules/filter_view/widgets/etrap_filter_page.dart';
@@ -9,7 +10,6 @@ import 'package:gyzyleller/modules/filter_view/widgets/welayat_filter_page.dart'
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
 
 enum _FilterPage { main, category, subcategory, price, welayat, etrap }
@@ -182,7 +182,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
         search: widget.initialSearch,
         requestedInput: widget.requestedInput,
         processingInput: widget.processingInput,
-        requiresToken: AuthStorage().isLoggedIn,
+        // Keep Task tabs authenticated, but All tab count must match guest results.
+        requiresToken: widget.requestedInput || widget.processingInput,
       );
       if (!mounted) return;
       setState(() {
@@ -196,9 +197,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
   }
 
   void _showCustomYearPicker() {
+    final DateTime today = DateTime.now();
     DateTime? tempStart = _startDate;
     DateTime? tempEnd = _endDate;
-    DateTime focusedDay = _startDate ?? DateTime.now();
+    DateTime focusedDay = _startDate ?? today;
+    if (focusedDay.isBefore(today)) {
+      focusedDay = today;
+    }
     bool isPickerVisible = false;
     int selectedYearForPicker = focusedDay.year;
     final yearScrollController = ScrollController(
@@ -321,7 +326,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                       Stack(
                         children: [
                           TableCalendar(
-                            firstDay: DateTime(2000),
+                            firstDay: today,
                             lastDay: DateTime(2101),
                             focusedDay: focusedDay,
                             rangeStartDay: tempStart,
@@ -515,6 +520,23 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     });
   }
 
+  void _handleCategoryTap(CategoryModel category) {
+    // Some categories do not have subcategories. Treat them as directly selectable.
+    if (category.subcategories.isEmpty) {
+      setState(() {
+        if (_selectedCatIds.contains(category.id)) {
+          _selectedCatIds.remove(category.id);
+        } else {
+          _selectedCatIds.add(category.id);
+        }
+      });
+      _scheduleFetchCount();
+      return;
+    }
+
+    _goToSubcategoryPage(category);
+  }
+
   void _goToLocationPage() =>
       setState(() => _currentPage = _FilterPage.welayat);
 
@@ -538,17 +560,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     _scheduleFetchCount();
   }
 
-  void _clearActiveSubcategories() {
-    final category = _activeCategory;
-    if (category == null) return;
-    final activeIds = category.subcategories.map((item) => item.id).toSet();
-    setState(() {
-      _selectedCatIds.removeWhere(activeIds.contains);
-    });
-    _saveSearch();
-    _scheduleFetchCount();
-  }
-
   void _selectAllActiveEtraps() {
     final welayat = _activeWelayat;
     if (welayat == null) return;
@@ -559,17 +570,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
         }
       }
     });
-    _scheduleFetchCount();
-  }
-
-  void _clearActiveEtraps() {
-    final welayat = _activeWelayat;
-    if (welayat == null) return;
-    final activeIds = welayat.etraps.map((item) => item.id).toSet();
-    setState(() {
-      _selectedEtrapIds.removeWhere(activeIds.contains);
-    });
-    _saveSearch();
     _scheduleFetchCount();
   }
 
@@ -777,7 +777,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
         return CategoryFilterPage(
           categories: _categories,
           selectedCatIds: _selectedCatIds,
-          onCategorySelected: _goToSubcategoryPage,
+          onCategorySelected: _handleCategoryTap,
           onClear: () {
             setState(() => _selectedCatIds.clear());
             _saveSearch();

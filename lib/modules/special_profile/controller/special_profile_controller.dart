@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 
 import 'dart:io';
 import 'dart:convert';
@@ -13,6 +13,7 @@ import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart
 import 'package:gyzyleller/modules/bottomnavbar/views/bottom_nav_bar_view.dart';
 import 'package:gyzyleller/modules/bottomnavbar/bindings/home_binding.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:gyzyleller/core/services/my_jobs_service.dart';
 
 class SpecialProfileController extends GetxController {
   final Rx<SpecialProfileModel> profile = SpecialProfileModel().obs;
@@ -25,7 +26,9 @@ class SpecialProfileController extends GetxController {
 
   final ImagePicker _picker = ImagePicker();
   final AuthStorage _authStorage = AuthStorage();
+  final MyJobsService _jobsService = MyJobsService();
   final RxBool isChecked = true.obs;
+  String? targetUserId;
 
   void _showLoadingDialog(String messageKey) {
     Get.dialog(
@@ -121,46 +124,21 @@ class SpecialProfileController extends GetxController {
   }
 
   bool get isMyProfile {
-    final currentUser = _authStorage.getUser();
-    print('🔍 [isMyProfile] currentUser=$currentUser');
-    if (currentUser == null) {
-      print('🔍 [isMyProfile] currentUser is NULL → false');
-      return false;
-    }
-    final currentId = currentUser['id']?.toString();
-    print('🔍 [isMyProfile] currentId=$currentId, profile.userId=${profile.value.userId}, profile.id=${profile.value.id}');
-    if (currentId == null) {
-      print('🔍 [isMyProfile] currentId is NULL → false');
-      return false;
-    }
-
-    if (profile.value.userId != null) {
-      final result = profile.value.userId == currentId;
-      print('🔍 [isMyProfile] userId comparison: "${profile.value.userId}" == "$currentId" → $result');
-      return result;
-    }
-
-    // Default to true if no profile ID (current user section)
-    if (profile.value.id == null) {
-      print('🔍 [isMyProfile] profile.id is null → true (default)');
-      return true;
-    }
-
-    print('🔍 [isMyProfile] fallthrough → false');
-    return false;
+    final String? myId = _authStorage.getUserId()?.toString();
+    if (targetUserId == null) return true;
+    return targetUserId == myId;
   }
 
   @override
   void onInit() {
     super.onInit();
-    loadInitialProfileData();
 
-    // Trigger full fetch if we're entering our own profile section
-    if (Get.arguments == null) {
-      refreshProfile();
-    } else if (Get.arguments is Map<String, dynamic>) {
-      profile.value = SpecialProfileModel.fromJson(Get.arguments);
-      fetchReviews();
+    final dynamic args = Get.arguments;
+    if (args is Map<String, dynamic> && args.containsKey('id')) {
+      targetUserId = args['id']?.toString();
+      profile.value = SpecialProfileModel.fromJson(args);
+    } else {
+      loadInitialProfileData();
     }
   }
 
@@ -177,8 +155,23 @@ class SpecialProfileController extends GetxController {
     );
   }
 
-  void setProfileFromData(Map<String, dynamic> data) {
+  void setProfileFromData(Map<String, dynamic> data,
+      {bool isOtherUser = false}) {
     final fromApi = SpecialProfileModel.fromJson(data);
+
+    if (isOtherUser) {
+      // For other users, only use data from API without local AuthStorage fallbacks
+      final imageUrl = fromApi.imageUrl != null && fromApi.imageUrl!.isNotEmpty
+          ? (fromApi.imageUrl!.startsWith('http')
+              ? fromApi.imageUrl
+              : ApiConstants.imageURL + fromApi.imageUrl!)
+          : null;
+
+      profile.value = fromApi.copyWith(
+        imageUrl: imageUrl,
+      );
+      return;
+    }
 
     final user = _authStorage.getUser();
     final name = (fromApi.name != null && fromApi.name!.isNotEmpty)
@@ -211,6 +204,19 @@ class SpecialProfileController extends GetxController {
 
     try {
       final ApiService apiService = ApiService();
+      final String? myId = _authStorage.getUserId()?.toString();
+      final bool isOtherUser = targetUserId != null && targetUserId != myId;
+
+      if (isOtherUser) {
+        final detailResponse = await apiService
+            .getRequest(ApiConstants.getMasterById(targetUserId!));
+        if (detailResponse != null && detailResponse['data'] != null) {
+          setProfileFromData(detailResponse['data'] as Map<String, dynamic>,
+              isOtherUser: true);
+        }
+        return;
+      }
+
       final response = await apiService.getRequest(ApiConstants.specialProfile);
       if (response != null && response['data'] != null) {
         final masterId = response['data']['id']?.toString();
@@ -253,8 +259,10 @@ class SpecialProfileController extends GetxController {
       // Fetch replies for each review using separate endpoint
       for (var i = 0; i < parsedReviews.length; i++) {
         try {
-          final replyList = await apiService.getReviewReplies(parsedReviews[i].id);
-          print('🔍 [fetchReviews] review[${parsedReviews[i].id}] has ${replyList.length} replies from API');
+          final replyList =
+              await apiService.getReviewReplies(parsedReviews[i].id);
+          print(
+              '🔍 [fetchReviews] review[${parsedReviews[i].id}] has ${replyList.length} replies from API');
           if (replyList.isNotEmpty) {
             final replies = replyList
                 .map((r) => ReviewReply.fromJson(r as Map<String, dynamic>))
@@ -274,14 +282,24 @@ class SpecialProfileController extends GetxController {
             );
           }
         } catch (e) {
-          print('⚠️ [fetchReviews] failed to fetch replies for review ${parsedReviews[i].id}: $e');
+          print(
+              '⚠️ [fetchReviews] failed to fetch replies for review ${parsedReviews[i].id}: $e');
         }
       }
+
+      // Sort reviews by createdAt in descending order (newest first)
+      parsedReviews.sort((a, b) {
+        if (a.createdAt == null && b.createdAt == null) return 0;
+        if (a.createdAt == null) return 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt.compareTo(a.createdAt);
+      });
 
       reviews.value = parsedReviews;
       print('🔍 [fetchReviews] final reviews.length=${reviews.length}');
       for (var r in reviews) {
-        print('🔍 [fetchReviews] review.id=${r.id}, replies.length=${r.replies.length}');
+        print(
+            '🔍 [fetchReviews] review.id=${r.id}, replies.length=${r.replies.length}');
       }
     } catch (e) {
       print('❌ [SpecialProfileController] fetchReviews error: $e');
@@ -291,62 +309,68 @@ class SpecialProfileController extends GetxController {
   }
 
   Future<bool> replyToReview(String reviewId, String replyText) async {
-    final String endpoint = 'api/user/master/reply-to-review/$reviewId';
-    print('🔍 [replyToReview] ========================================');
-    print('🔍 [replyToReview] STEP 1: reviewId=$reviewId, replyText=$replyText');
-    print('🔍 [replyToReview] STEP 2: endpoint=$endpoint');
     try {
-      Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
-      print('🔍 [replyToReview] STEP 3: loader dialog shown');
-
-      final Map<String, dynamic> body = {
-        "reply": replyText,
-      };
-
-      print('🔍 [replyToReview] STEP 4: calling handleApiRequest...');
-      final ApiService apiService = ApiService();
-      dynamic response;
-      try {
-        response = await apiService.handleApiRequest(
-          endpoint,
-          body: body,
-          method: 'POST',
-          requiresToken: true,
-          isForm: false,
-        );
-      } catch (apiError) {
-        print('❌ [replyToReview] STEP 4 FAILED: handleApiRequest threw: $apiError');
-        if (Get.isDialogOpen == true) Get.back();
-        _showConnectionSnackBar();
-        return false;
-      }
-
-      print('🔍 [replyToReview] STEP 5: response type=${response.runtimeType}');
-      print('🔍 [replyToReview] STEP 5: response=$response');
-
-      if (Get.isDialogOpen == true) Get.back();
-      print('🔍 [replyToReview] STEP 6: loader closed');
+      final response = await _jobsService.replyToReview(reviewId, replyText);
 
       final isSuccess = _isSuccessfulSaveResponse(response);
-      print('🔍 [replyToReview] STEP 7: isSuccess=$isSuccess');
+      if (isSuccess) {
+        Future.delayed(const Duration(milliseconds: 400), () => fetchReviews());
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _showConnectionSnackBar();
+      return false;
+    }
+  }
+
+  Future<bool> editReview(String reviewId, String reviewText) async {
+    try {
+      Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
+
+      final response = await _jobsService.editReview(reviewId, reviewText);
+
+      if (Get.isDialogOpen == true) Get.back();
+
+      final isSuccess = _isSuccessfulSaveResponse(response);
 
       if (isSuccess) {
-        _showSuccessSnackBar('success_subtitle');
-        print('🔍 [replyToReview] STEP 8: calling fetchReviews...');
-        fetchReviews();
-        print('🔍 [replyToReview] STEP 9: returning true ✅');
-        print('🔍 [replyToReview] ========================================');
+        Future.delayed(const Duration(milliseconds: 400), () => fetchReviews());
         return true;
       } else {
-        print('🔍 [replyToReview] STEP 8: NOT successful, returning false');
-        print('🔍 [replyToReview] ========================================');
         _showConnectionSnackBar();
         return false;
       }
     } catch (e) {
       if (Get.isDialogOpen == true) Get.back();
-      print('❌ [replyToReview] OUTER CATCH Error: $e');
-      print('❌ [replyToReview] ========================================');
+      _showConnectionSnackBar();
+      return false;
+    }
+  }
+
+  Future<bool> editReviewWithRating(String jobId, int rating, String reviewText) async {
+    try {
+      print('🟢 [SpecialProfileController] editReviewWithRating called');
+      print('🟢 [SpecialProfileController] jobId: $jobId, rating: $rating');
+
+      final response = await _jobsService.editReviewWithRating(jobId, rating, reviewText);
+
+      print('🟢 [SpecialProfileController] Response: $response');
+
+      final isSuccess = _isSuccessfulSaveResponse(response);
+
+      print('🟢 [SpecialProfileController] isSuccess: $isSuccess');
+
+      if (isSuccess) {
+        Future.delayed(const Duration(milliseconds: 400), () => fetchReviews());
+        return true;
+      } else {
+        _showConnectionSnackBar();
+        return false;
+      }
+    } catch (e, stackTrace) {
+      print('❌ [SpecialProfileController] Exception: $e');
+      print('❌ [SpecialProfileController] StackTrace: $stackTrace');
       _showConnectionSnackBar();
       return false;
     }
@@ -398,7 +422,11 @@ class SpecialProfileController extends GetxController {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.camera, size: 35),
+              leading: const HugeIcon(
+                icon: HugeIcons.strokeRoundedCamera01,
+                size: 30,
+                color: Colors.black,
+              ),
               title: Text('select_by_camera'.tr,
                   style: const TextStyle(fontSize: 18)),
               onTap: () {
@@ -407,9 +435,10 @@ class SpecialProfileController extends GetxController {
               },
             ),
             ListTile(
-              leading: const Padding(
-                padding: EdgeInsets.only(right: 4),
-                child: Icon(Icons.image, size: 30),
+              leading: const HugeIcon(
+                icon: HugeIcons.strokeRoundedImage01,
+                size: 30,
+                color: Colors.black,
               ),
               title: Text('select_by_gallery'.tr,
                   style: const TextStyle(fontSize: 18)),
@@ -644,9 +673,10 @@ class SpecialProfileController extends GetxController {
           Get.back();
         } else {
           // Navigate to Home (AllView) index 0
-          final HomeController homeController = Get.isRegistered<HomeController>()
-              ? Get.find<HomeController>()
-              : Get.put(HomeController());
+          final HomeController homeController =
+              Get.isRegistered<HomeController>()
+                  ? Get.find<HomeController>()
+                  : Get.put(HomeController());
           homeController.changePage(0);
           Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
         }
@@ -756,7 +786,10 @@ class SpecialProfileController extends GetxController {
 
     if (response is String) {
       final normalized = response.trim().toLowerCase();
-      return normalized == 'true' || normalized == 'success';
+      return normalized == 'true' ||
+          normalized == 'success' ||
+          normalized == '200' ||
+          normalized == '201';
     }
 
     if (response is int) {

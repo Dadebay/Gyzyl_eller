@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:lottie/lottie.dart';
 import 'package:gyzyleller/modules/onboarding/controllers/onboarding_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
@@ -114,6 +115,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     },
                     itemBuilder: (context, index) {
                       final page = controller.pages[index];
+                      final isLottieAsset =
+                          page.image.toLowerCase().endsWith('.json');
                       return Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -122,10 +125,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 35.0, vertical: 15.0),
-                                child: Image.asset(
-                                  page.image,
-                                  fit: BoxFit.contain,
-                                ),
+                                child: isLottieAsset
+                                    ? Lottie.asset(
+                                        page.image,
+                                        fit: BoxFit.contain,
+                                      )
+                                    : Image.asset(
+                                        page.image,
+                                        fit: BoxFit.contain,
+                                      ),
                               ),
                             ),
                             const SizedBox(height: 10),

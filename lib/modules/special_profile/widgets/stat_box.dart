@@ -18,16 +18,18 @@ class StatBox extends StatelessWidget {
     return Column(
       children: [
         icon,
-        Center(
-          child: SizedBox(
-            width: 60,
-            child: Text(label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: ColorConstants.fonts,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500)),
-          ),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: 90,
+          height: 45,
+          child: Text(label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  color: ColorConstants.fonts,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500)),
         ),
         Text(
           value,

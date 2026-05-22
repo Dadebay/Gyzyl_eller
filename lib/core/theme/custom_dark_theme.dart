@@ -25,14 +25,14 @@ final class CustomDarkTheme {
       ),
       iconTheme: IconThemeData(color: Colors.white),
     ),
-    cardTheme: CardTheme(
-      color: const Color(0xff1E1E1E),
-      elevation: 3,
-      shadowColor: Colors.black.withOpacity(0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-    ),
+    // cardTheme: CardTheme(
+    //   color: const Color(0xff1E1E1E),
+    //   elevation: 3,
+    //   shadowColor: Colors.black.withOpacity(0.3),
+    //   shape: RoundedRectangleBorder(
+    //     borderRadius: BorderRadius.circular(16),
+    //   ),
+    // ),
     snackBarTheme: const SnackBarThemeData(
       backgroundColor: Color(0xff2C2C2C),
       contentTextStyle: TextStyle(color: Colors.white),

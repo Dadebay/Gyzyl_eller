@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gyzyleller/core/models/my_tasks_status.dart';
@@ -26,7 +28,8 @@ class NewTag extends StatelessWidget {
   Widget build(BuildContext context) {
     if (hideTag) return const SizedBox.shrink();
 
-    final bool hasCustom = customLabel != null && customTextColor != null && customBgColor != null;
+    final bool hasCustom =
+        customLabel != null && customTextColor != null && customBgColor != null;
 
     if (!hasCustom && status == null) return const SizedBox.shrink();
 
@@ -82,7 +85,8 @@ class NewTag extends StatelessWidget {
           'assets/icons/aktiw.svg',
           width: 14,
           height: 14,
-          colorFilter: const ColorFilter.mode(Color(0xFF165500), BlendMode.srcIn),
+          colorFilter:
+              const ColorFilter.mode(Color(0xFF165500), BlendMode.srcIn),
         );
         textColor = const Color(0xFF165500);
         bgColor = const Color.fromARGB(255, 120, 229, 118);
@@ -156,7 +160,11 @@ class NewTag extends StatelessWidget {
             children: [
               statusIcon,
               const SizedBox(width: 4),
-              Text(myStatus.displayName, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
+              Text(myStatus.displayName,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: textColor)),
             ],
           ),
         ),

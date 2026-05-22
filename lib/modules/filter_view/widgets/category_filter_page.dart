@@ -51,10 +51,12 @@ class CategoryFilterPage extends StatelessWidget {
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
-              int selectedSubCount = 0;
-              selectedSubCount = category.subcategories
-                  .where((sub) => selectedCatIds.contains(sub.id))
-                  .length;
+              final bool isLeafCategory = category.subcategories.isEmpty;
+              final int selectedSubCount = isLeafCategory
+                  ? (selectedCatIds.contains(category.id) ? 1 : 0)
+                  : category.subcategories
+                      .where((sub) => selectedCatIds.contains(sub.id))
+                      .length;
 
               return InkWell(
                 onTap: () => onCategorySelected(category),
@@ -79,9 +81,13 @@ class CategoryFilterPage extends StatelessWidget {
                           ),
                         ),
                       const SizedBox(width: 8),
-                      const HugeIcon(
-                        icon: HugeIcons.strokeRoundedArrowRight01,
-                        color: ColorConstants.greyColor,
+                      HugeIcon(
+                        icon: isLeafCategory
+                            ? HugeIcons.strokeRoundedCheckmarkCircle03
+                            : HugeIcons.strokeRoundedArrowRight01,
+                        color: selectedSubCount > 0
+                            ? ColorConstants.kPrimaryColor2
+                            : ColorConstants.greyColor,
                         size: 20,
                       ),
                     ],

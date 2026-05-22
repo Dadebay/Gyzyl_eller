@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:http/http.dart' as http;
@@ -8,18 +10,30 @@ enum HttpMethod { get, post, put, delete }
 
 class ApiService {
   final _auth = AuthStorage();
+  final _storage = GetStorage();
 
-  Future<dynamic> getRequest(String endpoint, {bool requiresToken = true, void Function(dynamic)? handleSuccess}) async {
+  /// Gets the current app language code for Content-Language header
+  String get _currentLanguage => _storage.read<String>('langCode') ?? 'tk';
+
+  Future<dynamic> getRequest(
+    String endpoint, {
+    bool requiresToken = true,
+    void Function(dynamic)? handleSuccess,
+    Map<String, String>? headers,
+  }) async {
     try {
       final token = _auth.token;
-      final headers = <String, String>{
+      final requestHeaders = <String, String>{
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Content-Language': _currentLanguage,
         if (requiresToken && token != null) 'Authorization': 'Bearer $token',
+        ...?headers,
       };
       final fullUrl = '${Api().urlLink}$endpoint';
 
-      final response = await http.get(Uri.parse(fullUrl), headers: headers);
+      final response =
+          await http.get(Uri.parse(fullUrl), headers: requestHeaders);
       final decodedBody = utf8.decode(response.bodyBytes);
 
       print('-----------------------------------------');
@@ -30,15 +44,18 @@ class ApiService {
       print('-----------------------------------------');
 
       if (response.statusCode == 200) {
-        final responseJson = decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
+        final responseJson =
+            decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
         handleSuccess?.call(responseJson);
         return responseJson;
       } else {
         print('Response Body: $decodedBody');
-        final dynamic responseJson = decodedBody.isNotEmpty ? _decodeJsonSafe(decodedBody) : {};
+        final dynamic responseJson =
+            decodedBody.isNotEmpty ? _decodeJsonSafe(decodedBody) : {};
 
         String message = 'anErrorOccurred'.tr;
-        if (responseJson is Map<String, dynamic> && responseJson['message'] != null) {
+        if (responseJson is Map<String, dynamic> &&
+            responseJson['message'] != null) {
           message = responseJson['message'].toString();
         } else if (responseJson is String && responseJson.trim().isNotEmpty) {
           message = responseJson;
@@ -65,11 +82,14 @@ class ApiService {
     }
   }
 
-  Future<dynamic> postMultipartRequest(String endpoint, Map<String, dynamic> body, {List<XFile>? xFiles, String fileField = 'photo'}) async {
+  Future<dynamic> postMultipartRequest(
+      String endpoint, Map<String, dynamic> body,
+      {List<XFile>? xFiles, String fileField = 'photo'}) async {
     List<http.MultipartFile> multipartFiles = [];
     if (xFiles != null) {
       for (XFile file in xFiles) {
-        multipartFiles.add(await http.MultipartFile.fromPath(fileField, file.path));
+        multipartFiles
+            .add(await http.MultipartFile.fromPath(fileField, file.path));
       }
     }
 
@@ -105,10 +125,15 @@ class ApiService {
   }
 
   Future<dynamic> handleApiRequest(String endpoint,
-      {required Map<String, dynamic> body, required String method, required bool requiresToken, bool isForm = false, List<http.MultipartFile>? multipartFiles}) async {
+      {required Map<String, dynamic> body,
+      required String method,
+      required bool requiresToken,
+      bool isForm = false,
+      List<http.MultipartFile>? multipartFiles}) async {
     try {
       final token = _auth.token;
-      final uriString = endpoint.startsWith('http') ? endpoint : '${Api().urlLink}$endpoint';
+      final uriString =
+          endpoint.startsWith('http') ? endpoint : '${Api().urlLink}$endpoint';
 
       final uri = Uri.parse(uriString);
       late http.BaseRequest request;
@@ -125,13 +150,16 @@ class ApiService {
         print('Request Body (Form): $body');
       } else {
         request = http.Request(method, uri);
-        request.headers[HttpHeaders.contentTypeHeader] = 'application/json; charset=UTF-8';
+        request.headers[HttpHeaders.contentTypeHeader] =
+            'application/json; charset=UTF-8';
         if (body.isNotEmpty) {
           final bodyString = jsonEncode(body);
           (request as http.Request).body = bodyString;
           print('Request Body: $bodyString');
         }
       }
+
+      request.headers['Content-Language'] = _currentLanguage;
 
       if (requiresToken && token != null) {
         request.headers[HttpHeaders.authorizationHeader] = 'Bearer $token';
@@ -163,7 +191,8 @@ class ApiService {
         if (statusCode == 409) {
         } else {
           String message = 'anErrorOccurred'.tr;
-          if (errorJson is Map<String, dynamic> && errorJson.containsKey('message')) {
+          if (errorJson is Map<String, dynamic> &&
+              errorJson.containsKey('message')) {
             message = errorJson['message']?.toString() ?? message;
           } else if (errorJson is String) {
             message = errorJson;
@@ -174,7 +203,7 @@ class ApiService {
         return statusCode;
       }
     } on SocketException {
-      CustomWidgets.showSnackBar('Internet Hatası'.tr, 'Internet baglanşygyňyzy barlaň'.tr, Colors.red);
+      // CustomWidgets.showSnackBar('Internet Hatası'.tr, 'Internet baglanşygyňyzy barlaň'.tr, Colors.red);
       rethrow;
     } catch (e) {
       rethrow;
@@ -202,7 +231,8 @@ class ApiService {
 
   /// Fetches reviews for a master profile by their user ID.
   /// Calls `master-reviews/{userId}` and returns a list of raw JSON maps.
-  Future<List<dynamic>> getMasterReviews(String userId, {String? column, String? direction}) async {
+  Future<List<dynamic>> getMasterReviews(String userId,
+      {String? column, String? direction}) async {
     String endpoint = 'api/master-reviews/$userId';
     final Map<String, String> queryParams = {};
     if (column != null) queryParams['column'] = column;
@@ -221,7 +251,8 @@ class ApiService {
         for (var i = 0; i < list.length; i++) {
           print('📡 [getMasterReviews] review[$i]=${list[i]}');
           if (list[i] is Map) {
-            print('📡 [getMasterReviews] review[$i].replies=${list[i]['replies']}');
+            print(
+                '📡 [getMasterReviews] review[$i].replies=${list[i]['replies']}');
           }
         }
         print('📡 [getMasterReviews] ========================================');
@@ -276,6 +307,7 @@ class ApiService {
       if (token != null) {
         dioClient.options.headers['Authorization'] = 'Bearer $token';
       }
+      dioClient.options.headers['Content-Language'] = _currentLanguage;
 
       final formData = dio_pkg.FormData.fromMap({
         'file': await dio_pkg.MultipartFile.fromFile(filePath),
@@ -286,7 +318,9 @@ class ApiService {
       final response = await dioClient.post(
         fullUrl,
         data: formData,
-        onSendProgress: onSendProgress != null ? (sent, total) => onSendProgress(sent, total) : null,
+        onSendProgress: onSendProgress != null
+            ? (sent, total) => onSendProgress(sent, total)
+            : null,
       );
 
       final data = response.data;

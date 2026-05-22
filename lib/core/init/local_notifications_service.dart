@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
@@ -55,7 +56,7 @@ class LocalNotificationsService {
       if (response.payload != null) {
         try {
           final data = jsonDecode(response.payload!);
-          if (data['type'] == '9' || data['type'] == 'chat') {
+          if (data['type'] == 'chat') {
             if (Get.isRegistered<HomeController>()) {
               Get.find<HomeController>().changePage(2);
             }

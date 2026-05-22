@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:get/get.dart';
@@ -18,10 +20,14 @@ import 'package:gyzyleller/modules/chats/controllers/notification_controller.dar
 import 'package:gyzyleller/core/services/fcm_token_synchronizer.dart';
 import 'package:gyzyleller/core/services/fcm_token_provider.dart';
 import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
+import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
+import 'package:gyzyleller/modules/settings_profile/controllers/user_profile_controller.dart';
+import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
 import 'package:gyzyleller/shared/widgets/widgets.dart';
 
 class AuthService {
-  final AuthController authController = Get.put<AuthController>(AuthController());
+  final AuthController authController =
+      Get.put<AuthController>(AuthController());
 
   final AuthStorage _auth = AuthStorage();
 
@@ -62,21 +68,34 @@ class AuthService {
         if (responseData['data'] is Map<String, dynamic>) {
           _auth.saveUser(responseData['data'] as Map<String, dynamic>);
         }
-        GetStorage().write('all_view_login_at', DateTime.now().toUtc().toIso8601String());
+        GetStorage().write(
+            'all_view_login_at', DateTime.now().toUtc().toIso8601String());
 
-        _fetchAndSaveMasterProfileId();
+        await _fetchAndSaveMasterProfileId();
 
         if (Get.isRegistered<FcmTokenSynchronizer>()) {
           Get.find<FcmTokenSynchronizer>().setTokenForUser();
         }
 
-        // Update AllController isLoggedIn reactively after login
+        // Delete all stale controllers so BottomNavBar re-creates them fresh
         if (Get.isRegistered<AllController>()) {
-          Get.find<AllController>().isLoggedIn.value = true;
+          Get.delete<AllController>(force: true);
+        }
+        if (Get.isRegistered<HomeController>()) {
+          Get.delete<HomeController>(force: true);
+        }
+        if (Get.isRegistered<SettingsController>()) {
+          Get.delete<SettingsController>(force: true);
+        }
+        if (Get.isRegistered<UserProfilController>()) {
+          Get.delete<UserProfilController>(force: true);
+        }
+        if (Get.isRegistered<TaskController>()) {
+          Get.delete<TaskController>(force: true);
         }
 
-        CustomWidgets.showSnackBar('login_success_title'.tr, 'login_success_subtitle'.tr, ColorConstants.greenColor);
-        Get.find<HomeController>().refreshData();
+        CustomWidgets.showSnackBar('login_success_title'.tr,
+            'login_success_subtitle'.tr, ColorConstants.greenColor);
         Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
       } else {
         // Extract backend error message and show it directly
@@ -114,11 +133,6 @@ class AuthService {
     GetStorage().remove('all_view_seen_jobs');
     _auth.clear();
 
-    // Update AllController isLoggedIn reactively so AccountSummaryBar hides immediately
-    if (Get.isRegistered<AllController>()) {
-      Get.find<AllController>().isLoggedIn.value = false;
-    }
-
     // Remote FCM token on logout
     if (Get.isRegistered<FcmTokenProvider>()) {
       Get.find<FcmTokenProvider>().removeToken();
@@ -134,16 +148,35 @@ class AuthService {
     if (Get.isRegistered<ChatSocketService>()) {
       Get.find<ChatSocketService>().reconnect();
     }
+    if (Get.isRegistered<AllController>()) {
+      Get.delete<AllController>(force: true);
+    }
+    if (Get.isRegistered<HomeController>()) {
+      Get.delete<HomeController>(force: true);
+    }
+    if (Get.isRegistered<SettingsController>()) {
+      Get.delete<SettingsController>(force: true);
+    }
+    if (Get.isRegistered<UserProfilController>()) {
+      Get.delete<UserProfilController>(force: true);
+    }
+    if (Get.isRegistered<TaskController>()) {
+      Get.delete<TaskController>(force: true);
+    }
 
-    CustomWidgets.showSnackBar('logout_success_title'.tr, 'logout_success_subtitle'.tr, ColorConstants.greenColor);
+    CustomWidgets.showSnackBar('logout_success_title'.tr,
+        'logout_success_subtitle'.tr, ColorConstants.greenColor);
     Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
   }
 
   /// Fetches master profile after login and saves the ID locally.
   Future<void> _fetchAndSaveMasterProfileId() async {
     try {
-      final response = await ApiService().getRequest(ApiConstants.specialProfile);
-      if (response != null && response['data'] != null && response['data']['id'] != null) {
+      final response =
+          await ApiService().getRequest(ApiConstants.specialProfile);
+      if (response != null &&
+          response['data'] != null &&
+          response['data']['id'] != null) {
         _auth.saveMasterProfileId(response['data']['id'].toString());
       }
     } catch (e) {

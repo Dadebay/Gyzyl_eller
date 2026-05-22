@@ -1,3 +1,5 @@
+import 'package:gyzyleller/core/models/review_model.dart';
+
 class JobResponseModel {
   final bool success;
   final JobData data;
@@ -19,7 +21,9 @@ class JobData {
   JobData({required this.count, required this.jobs});
 
   factory JobData.fromJson(Map<String, dynamic> json) {
-    final jobs = (json['jobs'] as List? ?? []).map((item) => JobModel.fromJson(item)).toList();
+    final jobs = (json['jobs'] as List? ?? [])
+        .map((item) => JobModel.fromJson(item))
+        .toList();
 
     int parsedCount = int.tryParse(json['count']?.toString() ?? '') ?? 0;
 
@@ -36,7 +40,11 @@ class JobData {
     final pagination = json['pagination'];
     if (parsedCount == 0 && pagination is Map<String, dynamic>) {
       parsedCount = int.tryParse(
-            (pagination['count'] ?? pagination['total'] ?? pagination['total_count'])?.toString() ?? '',
+            (pagination['count'] ??
+                        pagination['total'] ??
+                        pagination['total_count'])
+                    ?.toString() ??
+                '',
           ) ??
           0;
     }
@@ -85,6 +93,8 @@ class JobModel {
   final int welayatId;
   final int etrapId;
   final String address;
+  final String? priceComment;
+  final String? commentComment;
   final String? phone;
   final String createdAt;
   final String whenToDo;
@@ -100,7 +110,9 @@ class JobModel {
   final List<String> catPath;
   final List<JobAnswer> answers;
   final String? review;
+  final int? reviewId;
   final int? reviewRating;
+  final List<ReviewReply> reviewReplies;
   final int? responsesCount;
   final int? viewCount;
   final String? position;
@@ -111,10 +123,13 @@ class JobModel {
   final bool finished;
   final bool selected;
   final int? chatId;
+  final String? rejectedReason;
 
   JobModel({
     required this.id,
     this.userId,
+    this.priceComment,
+    this.commentComment,
     required this.catId,
     required this.name,
     required this.desc,
@@ -139,7 +154,9 @@ class JobModel {
     this.catPath = const [],
     this.answers = const [],
     this.review,
+    this.reviewId,
     this.reviewRating,
+    this.reviewReplies = const [],
     this.responsesCount,
     this.viewCount,
     this.position,
@@ -150,12 +167,15 @@ class JobModel {
     this.finished = false,
     this.selected = false,
     this.chatId,
+    this.rejectedReason,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
     return JobModel(
       id: json['id'] ?? 0,
-      userId: json['user_id'] != null ? int.tryParse(json['user_id'].toString()) : null,
+      userId: json['user_id'] != null
+          ? int.tryParse(json['user_id'].toString())
+          : null,
       catId: json['cat_id'] ?? 0,
       name: json['name'] ?? '',
       desc: json['desc'] ?? '',
@@ -165,6 +185,8 @@ class JobModel {
       welayatId: json['welayat_id'] ?? 0,
       etrapId: json['etrap_id'] ?? 0,
       address: json['address'] ?? '',
+      priceComment: json['price'].toString(),
+      commentComment: json['comment'].toString(),
       phone: json['phone']?.toString(),
       createdAt: json['created_at'] ?? '',
       whenToDo: json['when_to_do'] ?? '',
@@ -174,31 +196,81 @@ class JobModel {
           ? json['category_name']
           : (json['cat_name']?.toString().isNotEmpty == true
               ? json['cat_name']
-              : (json['category'] != null && json['category'] is Map && json['category']['name'] != null
+              : (json['category'] != null &&
+                      json['category'] is Map &&
+                      json['category']['name'] != null
                   ? json['category']['name']
-                  : (json['cat_path'] is List && (json['cat_path'] as List).isNotEmpty ? (json['cat_path'] as List).last.toString() : ''))),
+                  : (json['cat_path'] is List &&
+                          (json['cat_path'] as List).isNotEmpty
+                      ? (json['cat_path'] as List).last.toString()
+                      : ''))),
       welayat: json['welayat'] ?? '',
       etrap: json['etrap'] ?? '',
       username: json['username'] ?? '',
       image: json['image']?.toString(),
-      images: (json['images'] as List? ?? []).map((e) => e is Map ? (e['image']?.toString() ?? '') : e.toString()).where((e) => e.isNotEmpty).toList(),
-      files: (json['files'] as List? ?? []).map((item) => JobFileModel.fromJson(item)).toList(),
-      catPath: (json['cat_path'] as List? ?? []).map((e) => e.toString()).toList(),
-      answers: (json['answers'] as List? ?? []).map((item) => JobAnswer.fromJson(item)).toList(),
+      images: (json['images'] as List? ?? [])
+          .map((e) => e is Map ? (e['image']?.toString() ?? '') : e.toString())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      files: (json['files'] as List? ?? [])
+          .map((item) => JobFileModel.fromJson(item))
+          .toList(),
+      catPath:
+          (json['cat_path'] as List? ?? []).map((e) => e.toString()).toList(),
+      answers: (json['answers'] as List? ?? [])
+          .map((item) => JobAnswer.fromJson(item))
+          .toList(),
       review: json['review']?.toString(),
-      reviewRating: json['review_rating'] != null ? int.tryParse(json['review_rating'].toString()) : null,
-      responsesCount: int.tryParse((json['responses_count'] ?? json['request_count'] ?? json['responses'])?.toString() ?? '0') ?? 0,
-      unseenRequestCount: int.tryParse((json['unseen_request_count'] ?? json['unseenRequestCount'])?.toString() ?? '0') ?? 0,
+      reviewId: json['review_id'] != null
+          ? int.tryParse(json['review_id'].toString())
+          : (json['id'] != null && json['review'] != null
+              ? int.tryParse(json['id'].toString())
+              : null),
+      reviewRating: json['review_rating'] != null
+          ? int.tryParse(json['review_rating'].toString())
+          : (json['rating'] != null
+              ? int.tryParse(json['rating'].toString())
+              : null),
+      reviewReplies: (json['review_replies'] as List?)
+              ?.map((e) => ReviewReply.fromJson(e))
+              .toList() ??
+          const [],
+      responsesCount: int.tryParse((json['responses_count'] ??
+                      json['request_count'] ??
+                      json['responses'])
+                  ?.toString() ??
+              '0') ??
+          0,
+      unseenRequestCount: int.tryParse(
+              (json['unseen_request_count'] ?? json['unseenRequestCount'])
+                      ?.toString() ??
+                  '0') ??
+          0,
       viewCount: int.tryParse(json['view_count']?.toString() ?? '0') ?? 0,
       position: json['position']?.toString(),
-      requestId: json['request_id'] != null ? int.tryParse(json['request_id'].toString()) : (json['requestId'] != null ? int.tryParse(json['requestId'].toString()) : null),
+      requestId: json['request_id'] != null
+          ? int.tryParse(json['request_id'].toString())
+          : (json['requestId'] != null
+              ? int.tryParse(json['requestId'].toString())
+              : null),
       selectedUserId: json['selected_user_id'] != null
           ? int.tryParse(json['selected_user_id'].toString())
-          : (json['selectedUserId'] != null ? int.tryParse(json['selectedUserId'].toString()) : (json['selected_user'] is Map ? int.tryParse((json['selected_user']['id'] ?? '').toString()) : null)),
-      hasSeen: json['has_seen'] == true || json['has_seen'] == 1 || json['has_seen']?.toString().toLowerCase() == 'true',
+          : (json['selectedUserId'] != null
+              ? int.tryParse(json['selectedUserId'].toString())
+              : (json['selected_user'] is Map
+                  ? int.tryParse((json['selected_user']['id'] ?? '').toString())
+                  : null)),
+      hasSeen: json['has_seen'] == true ||
+          json['has_seen'] == 1 ||
+          json['has_seen']?.toString().toLowerCase() == 'true',
       finished: json['finished'] ?? false,
       selected: json['selected'] ?? false,
-      chatId: json['chat_id'] != null ? int.tryParse(json['chat_id'].toString()) : (json['chatId'] != null ? int.tryParse(json['chatId'].toString()) : null),
+      chatId: json['chat_id'] != null
+          ? int.tryParse(json['chat_id'].toString())
+          : (json['chatId'] != null
+              ? int.tryParse(json['chatId'].toString())
+              : null),
+      rejectedReason: json['rejected_reason']?.toString(),
     );
   }
 
@@ -229,7 +301,9 @@ class JobModel {
     List<String>? catPath,
     List<JobAnswer>? answers,
     String? review,
+    int? reviewId,
     int? reviewRating,
+    List<ReviewReply>? reviewReplies,
     int? responsesCount,
     int? viewCount,
     String? position,
@@ -240,6 +314,9 @@ class JobModel {
     bool? finished,
     bool? selected,
     int? chatId,
+    String? rejectedReason,
+    String? priceComment,
+    String? commentComment,
   }) {
     return JobModel(
       id: id ?? this.id,
@@ -268,7 +345,9 @@ class JobModel {
       catPath: catPath ?? this.catPath,
       answers: answers ?? this.answers,
       review: review ?? this.review,
+      reviewId: reviewId ?? this.reviewId,
       reviewRating: reviewRating ?? this.reviewRating,
+      reviewReplies: reviewReplies ?? this.reviewReplies,
       responsesCount: responsesCount ?? this.responsesCount,
       viewCount: viewCount ?? this.viewCount,
       position: position ?? this.position,
@@ -279,6 +358,9 @@ class JobModel {
       finished: finished ?? this.finished,
       selected: selected ?? this.selected,
       chatId: chatId ?? this.chatId,
+      rejectedReason: rejectedReason ?? this.rejectedReason,
+      priceComment: priceComment ?? this.priceComment,
+      commentComment: commentComment ?? this.commentComment,
     );
   }
 }
@@ -321,14 +403,20 @@ class JobAnswer {
       type: json['type'] ?? '',
       formName: json['form_name']?.toString(),
       formId: json['form_id'],
-      options: (json['options'] as List?)?.map((e) => JobAnswerOption.fromJson(e)).toList(),
+      options: (json['options'] as List?)
+          ?.map((e) => JobAnswerOption.fromJson(e))
+          .toList(),
       value: json['value']?.toString(),
       date: json['date']?.toString(),
       time: json['time']?.toString(),
-      locationId: json['location_id'] != null ? int.tryParse(json['location_id'].toString()) : null,
+      locationId: json['location_id'] != null
+          ? int.tryParse(json['location_id'].toString())
+          : null,
       lat: json['lat']?.toString(),
       lng: json['lng']?.toString(),
-      rating: json['rating'] != null ? int.tryParse(json['rating'].toString()) : null,
+      rating: json['rating'] != null
+          ? int.tryParse(json['rating'].toString())
+          : null,
     );
   }
   JobAnswer copyWith({

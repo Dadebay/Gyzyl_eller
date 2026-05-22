@@ -1,20 +1,21 @@
-// ignore_for_file: deprecated_member_use
+﻿// ignore_for_file: deprecated_member_use, unused_local_variable, avoid_print
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/models/chat_model.dart';
 import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
 import 'package:gyzyleller/modules/chats/controllers/chat_controller.dart';
 import 'package:gyzyleller/modules/chats/views/chat_detail_view.dart';
 import 'package:gyzyleller/modules/chats/views/non_auth_chat_detail_view.dart';
-import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
 import 'package:intl/intl.dart';
+
+// Chats is the 3rd tab (index 2) inside the IndexedStack
+const _kChatTabIndex = 2;
 
 const zerror = Color.fromRGBO(255, 45, 95, 1.0);
 const gray300 = Color(0xFFE3E3E3);
@@ -27,10 +28,11 @@ class ChatsView extends StatefulWidget {
 }
 
 class _ChatsViewState extends State<ChatsView>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   ChatController? _chatController;
   final Api api = Api();
   final _auth = AuthStorage();
+  Worker? _tabWorker;
 
   @override
   bool get wantKeepAlive => true;
@@ -38,14 +40,48 @@ class _ChatsViewState extends State<ChatsView>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (_auth.isLoggedIn) {
       _chatController = Get.find<ChatController>();
-      _chatController?.fetchChats();
+      _ensureSocketAndFetch();
+    }
+    // Listen to tab switches – IndexedStack never rebuilds old widgets,
+    // so initState / didChangeDependencies are not re-triggered on tab change.
+    if (Get.isRegistered<HomeController>()) {
+      _tabWorker = ever(
+        Get.find<HomeController>().bottomNavBarSelectedIndex,
+        (int idx) {
+          if (idx == _kChatTabIndex && _auth.isLoggedIn) {
+            _chatController ??= Get.find<ChatController>();
+            _ensureSocketAndFetch();
+          }
+        },
+      );
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && _auth.isLoggedIn) {
+      _chatController ??= Get.find<ChatController>();
+      _ensureSocketAndFetch();
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabWorker?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _ensureSocketAndFetch() {
+    _chatController?.ensureConnected();
+  }
+
   Future<void> _onRefresh() async {
-    await _chatController?.fetchChats();
+    _ensureSocketAndFetch();
   }
 
   @override
@@ -54,9 +90,6 @@ class _ChatsViewState extends State<ChatsView>
 
     if (_auth.isLoggedIn && _chatController == null) {
       _chatController = Get.find<ChatController>();
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        _chatController?.fetchChats();
-      });
     }
 
     if (!_auth.isLoggedIn) {
@@ -184,6 +217,7 @@ class _ChatsViewState extends State<ChatsView>
                     lastSeen: '',
                     blocked: false,
                     notification: false,
+                    isAdmin: true,
                   ),
                 );
               }
@@ -195,15 +229,15 @@ class _ChatsViewState extends State<ChatsView>
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: 40,
+                      height: 40,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white,
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                          'assets/images/logo.jpg',
+                          'assets/images/logo.png',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(Icons.support_agent,
@@ -290,7 +324,7 @@ class _ChatsViewState extends State<ChatsView>
       return Padding(
         padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 4),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             if (isSelectionMode)
               IconButton(
@@ -298,25 +332,26 @@ class _ChatsViewState extends State<ChatsView>
                 onPressed: ctrl.clearSelection,
               )
             else
-              Expanded(
-                child: Center(
-                  child: Text(
-                    isSelectionMode
-                        ? '$selectedCount ${'selected'.tr}'
-                        : 'chat'.tr,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black,
-                    ),
+              const SizedBox(width: 48),
+            Expanded(
+              child: Center(
+                child: Text(
+                  isSelectionMode ? 'selected_items'.tr : 'chat'.tr,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
                   ),
                 ),
               ),
+            ),
             if (isSelectionMode)
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
                 onPressed: () => _showDeleteDialog(context),
               )
+            else
+              const SizedBox(width: 48),
           ],
         ),
       );
@@ -514,6 +549,10 @@ class _ChatsViewState extends State<ChatsView>
                       ctrl.toggleSelection(chat.chatId);
                     } else {
                       ctrl.setUnread(index);
+                      print('=== CHATS_VIEW NAVIGATION ===');
+                      print('chat.finished: ${chat.finished}');
+                      print('chat.finishedAt: ${chat.finishedAt}');
+                      print('=== END ===');
                       Get.to(
                         () => ChatDetailView(
                           chatId: chat.chatId,
@@ -528,8 +567,11 @@ class _ChatsViewState extends State<ChatsView>
                           lastSeen: chat.lastSeen,
                           blocked: chat.blocked,
                           notification: chat.notification,
+                          isAdmin: chat.isAdmin,
                           postLat: chat.postLat,
                           postLng: chat.postLng,
+                          finished: chat.finished,
+                          finishedAt: chat.finishedAt,
                         ),
                       )?.then((_) => ctrl.fetchChats());
                     }
@@ -663,9 +705,11 @@ class _ChatListItem extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      chat.lastMessage.isNotEmpty
-                                          ? chat.lastMessage
-                                          : '...',
+                                      chat.lastMessage.startsWith('Location: ')
+                                          ? 'location'.tr
+                                          : (chat.lastMessage.isNotEmpty
+                                              ? chat.lastMessage
+                                              : '...'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -763,6 +807,10 @@ class _ChatListItem extends StatelessWidget {
   }
 
   void _navigateToDetail(ChatModel chat) {
+    print('=== CHATS_VIEW _navigateToDetail ===');
+    print('chat.finished: ${chat.finished}');
+    print('chat.finishedAt: ${chat.finishedAt}');
+    print('=== END ===');
     Get.to(
       () => ChatDetailView(
         chatId: chat.chatId,
@@ -777,8 +825,11 @@ class _ChatListItem extends StatelessWidget {
         lastSeen: chat.lastSeen,
         blocked: chat.blocked,
         notification: chat.notification,
+        isAdmin: chat.isAdmin,
         postLat: chat.postLat,
         postLng: chat.postLng,
+        finished: chat.finished,
+        finishedAt: chat.finishedAt,
       ),
     );
   }

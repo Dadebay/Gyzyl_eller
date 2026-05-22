@@ -50,9 +50,9 @@ class DefaultFirebaseOptions {
   }
 
   // Android — values from google-services.json (project: gyzyleller-d1cb3)
- static const FirebaseOptions android = FirebaseOptions(
+static const FirebaseOptions android = FirebaseOptions(
   apiKey: 'AIzaSyCnviagkclA2x1MaG5tBv1ODq4xlV2f0BI',
-  appId: '1:406458755749:android:a168a4597d81e3ab683b4c',
+  appId: '1:406458755749:android:d05ec19bc3fc78e3683b4c',
   messagingSenderId: '406458755749',
   projectId: 'ayterek-5c3e8',
   storageBucket: 'ayterek-5c3e8.firebasestorage.app',
@@ -65,6 +65,6 @@ static const FirebaseOptions ios = FirebaseOptions(
   messagingSenderId: '406458755749',
   projectId: 'ayterek-5c3e8',
   storageBucket: 'ayterek-5c3e8.firebasestorage.app',
-  iosBundleId: 'com.ayterek.hyzmatlar',
+  iosBundleId: 'com.ayterek.ussalar',
 );
 }

@@ -59,10 +59,10 @@ class JobRequestBottomSheet extends StatelessWidget {
 
               // Illustration
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: SvgPicture.asset(
                   IconConstants.teklipugrat,
-                  height: 120,
+                  height: 100,
                 ),
               ),
               const SizedBox(height: 20),
@@ -81,7 +81,10 @@ class JobRequestBottomSheet extends StatelessWidget {
               Text(
                 "send_offer_desc".tr,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: ColorConstants.secondary, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                    fontSize: 14,
+                    color: ColorConstants.secondary,
+                    fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 24),
               Container(
@@ -91,6 +94,7 @@ class JobRequestBottomSheet extends StatelessWidget {
                 ),
                 child: TextFormField(
                   controller: controller.priceController,
+                  onChanged: (val) => controller.calculateDynamicFee(),
                   keyboardType: TextInputType.number,
                   maxLength: 8,
                   textAlign: TextAlign.start,
@@ -102,11 +106,37 @@ class JobRequestBottomSheet extends StatelessWidget {
                     ),
                     suffixText: " TMT",
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 15),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 15),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              Obx(() {
+                final fee = controller.calculatedFee.value;
+                final balance = controller.userBalance.value;
+                if (fee <= 0) return const SizedBox(height: 16);
+                final bool hasEnough = balance >= fee;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: Text(
+                    hasEnough
+                        ? 'offer_fee_info'.trParams({
+                            'fee': fee.toStringAsFixed(0),
+                          })
+                        : '${'offer_fee_insufficient'.tr}\n${'offer_fee_balance_line'.trParams({
+                                'balance': balance.toStringAsFixed(0),
+                                'fee': fee.toStringAsFixed(0),
+                              })}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
               Obx(() {
                 final hasError = controller.commentHasError.value;
                 return Column(
@@ -116,7 +146,9 @@ class JobRequestBottomSheet extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: ColorConstants.background,
                         borderRadius: BorderRadius.circular(12),
-                        border: hasError ? Border.all(color: Colors.red, width: 1.5) : null,
+                        border: hasError
+                            ? Border.all(color: Colors.red, width: 1.5)
+                            : null,
                       ),
                       child: TextFormField(
                         controller: controller.commentController,
@@ -168,8 +200,10 @@ class JobRequestBottomSheet extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
-                        onPressed: () => controller.showSuccessBanner.value = false,
+                        icon: const Icon(Icons.close,
+                            size: 16, color: Color(0xFF2E7D32)),
+                        onPressed: () =>
+                            controller.showSuccessBanner.value = false,
                       ),
                     ],
                   ),
@@ -184,7 +218,8 @@ class JobRequestBottomSheet extends StatelessWidget {
                   Expanded(
                     child: SizedBox(
                       child: ElevatedButton(
-                        onPressed: () => controller.showingTemplates.value = true,
+                        onPressed: () =>
+                            controller.showingTemplates.value = true,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1E5BB8),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -208,10 +243,16 @@ class JobRequestBottomSheet extends StatelessWidget {
                   Expanded(
                     child: SizedBox(
                       child: ElevatedButton(
-                        onPressed: controller.currentCommentText.value.trim().isEmpty ? null : () => controller.saveTemplate(),
+                        onPressed:
+                            controller.currentCommentText.value.trim().isEmpty
+                                ? null
+                                : () => controller.saveTemplate(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: controller.showSuccessBanner.value ? const Color(0xFFE0E0E0) : ColorConstants.kPrimaryColor2,
-                          disabledBackgroundColor: ColorConstants.kPrimaryColor2.withOpacity(0.5),
+                          backgroundColor: controller.showSuccessBanner.value
+                              ? const Color(0xFFE0E0E0)
+                              : ColorConstants.kPrimaryColor2,
+                          disabledBackgroundColor:
+                              ColorConstants.kPrimaryColor2.withOpacity(0.5),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -223,7 +264,14 @@ class JobRequestBottomSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: controller.showSuccessBanner.value ? Colors.grey : Colors.white.withOpacity(controller.currentCommentText.value.trim().isEmpty ? 0.7 : 1.0),
+                            color: controller.showSuccessBanner.value
+                                ? Colors.grey
+                                : Colors.white.withOpacity(controller
+                                        .currentCommentText.value
+                                        .trim()
+                                        .isEmpty
+                                    ? 0.7
+                                    : 1.0),
                           ),
                         ),
                       ),
@@ -235,29 +283,37 @@ class JobRequestBottomSheet extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Submit Button
-              Container(
-                padding: const EdgeInsets.only(bottom: 20),
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => controller.submitJobRequest(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorConstants.kPrimaryColor2,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Obx(() {
+                final fee = controller.calculatedFee.value;
+                final balance = controller.userBalance.value;
+                final bool insufficientBalance = fee > 0 && balance < fee;
+                return Container(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: insufficientBalance
+                        ? null
+                        : () => controller.submitJobRequest(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorConstants.kPrimaryColor2,
+                      disabledBackgroundColor: Colors.grey[400],
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    "send_offer_title".tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    child: Text(
+                      "send_offer_title".tr,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              }),
             ],
           ),
         ),
@@ -324,7 +380,8 @@ class JobRequestBottomSheet extends StatelessWidget {
 
               return ListView.separated(
                 itemCount: controller.templates.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final template = controller.templates[index];
                   return Stack(

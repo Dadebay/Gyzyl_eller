@@ -1,8 +1,11 @@
+// ignore_for_file: unused_field
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/job_notification_controller.dart';
 import 'package:gyzyleller/modules/bottomnavbar/views/custom_bottom_nav_extension.dart';
 import 'package:gyzyleller/modules/chats/controllers/notification_controller.dart';
 import 'package:gyzyleller/modules/chats/views/chats_view.dart';
@@ -10,7 +13,9 @@ import 'package:gyzyleller/shared/constants/list_constants.dart';
 import 'package:gyzyleller/modules/all/views/all_view.dart';
 import 'package:gyzyleller/modules/chats/controllers/chat_controller.dart';
 import 'package:gyzyleller/modules/task/task_view.dart';
+import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
+import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
 import 'package:in_app_update/in_app_update.dart';
@@ -25,8 +30,19 @@ class BottomNavBar extends StatefulWidget {
 
 class _BottomNavBarState extends State<BottomNavBar> {
   final HomeController homeController = Get.put(HomeController());
-  final ChatController chatController = Get.put(ChatController(), permanent: true);
-  final NotificationController notifController = Get.put(NotificationController(), permanent: true);
+  final ChatController chatController =
+      Get.put(ChatController(), permanent: true);
+  final NotificationController notifController =
+      Get.put(NotificationController(), permanent: true);
+  final JobNotificationController jobNotifController =
+      Get.put(JobNotificationController(), permanent: true);
+
+  final List<Widget> _pages = [
+    const AllView(),
+    const TaskView(),
+    const ChatsView(),
+    SettingsView(),
+  ];
 
   @override
   void initState() {
@@ -52,35 +68,87 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> pages = [
-      const AllView(),
-      const TaskView(),
-      const ChatsView(),
-      SettingsView(),
-    ];
-
     return UpgradeAlert(
       upgrader: Upgrader(languageCode: 'ru'),
-      dialogStyle: Platform.isAndroid ? UpgradeDialogStyle.material : UpgradeDialogStyle.cupertino,
+      dialogStyle: Platform.isAndroid
+          ? UpgradeDialogStyle.material
+          : UpgradeDialogStyle.cupertino,
       child: Obx(() => Scaffold(
             appBar: PreferredSize(
-              preferredSize: Size.fromHeight(homeController.bottomNavBarSelectedIndex.value == 3 ? kToolbarHeight : 0),
+              preferredSize: Size.fromHeight(
+                  homeController.bottomNavBarSelectedIndex.value == 3
+                      ? kToolbarHeight
+                      : 0),
               child: CustomAppBar(
-                title: ListConstants.pageNames[homeController.bottomNavBarSelectedIndex.value],
+                title: ListConstants
+                    .pageNames[homeController.bottomNavBarSelectedIndex.value],
               ),
             ),
-            body: pages[homeController.bottomNavBarSelectedIndex.value],
-            bottomNavigationBar: CustomBottomNavBar(
-              currentIndex: homeController.bottomNavBarSelectedIndex.value,
-              onTap: (index) {
-                if (homeController.isBottomNavBarEnabled.value) {
-                  homeController.changePage(index);
-                }
-              },
-              icons: ListConstants.mainIcons,
-              selectedIcons: ListConstants.selectedIcons,
-              labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
-              badges: [0, 0, chatController.unreadCount.value, chatController.notifCount.value],
+            body: IndexedStack(
+              index: homeController.bottomNavBarSelectedIndex.value,
+              children: _pages,
+            ),
+            bottomNavigationBar: Obx(
+              () => CustomBottomNavBar(
+                currentIndex: homeController.bottomNavBarSelectedIndex.value,
+                onTap: (index) {
+                  if (homeController.isBottomNavBarEnabled.value) {
+                    final previousIndex =
+                        homeController.bottomNavBarSelectedIndex.value;
+                    homeController.changePage(index);
+
+                    final bool isLoggedIn = AuthStorage().isLoggedIn;
+
+                    // If we switch TO the first tab (index 0), reset the ignore flag
+                    if (index == 0 && isLoggedIn &&
+                        Get.isRegistered<JobNotificationController>()) {
+                      Get.find<JobNotificationController>()
+                          .ignoreLocalAllTabCount.value = false;
+                    }
+
+                    // If we switch away from the first tab (index 0) to another tab:
+                    if (previousIndex == 0 && index != 0) {
+                      if (isLoggedIn &&
+                          Get.isRegistered<JobNotificationController>()) {
+                        Get.find<JobNotificationController>()
+                            .clearAllTabNotifications();
+                      }
+                    }
+
+                    // If we switch away from the second tab (index 1) to another tab (NOT when entering tab 1):
+                    if (previousIndex == 1 && index != 1) {
+                      if (isLoggedIn &&
+                          Get.isRegistered<JobNotificationController>() &&
+                          Get.isRegistered<TaskController>()) {
+                        final activeSubTabIndex =
+                            Get.find<TaskController>().activeTabIndex.value;
+                        Get.find<JobNotificationController>()
+                            .clearTasksTabNotifications(activeSubTabIndex);
+                      }
+                    }
+
+                    // Dynamically update Tasks tab badge for the new page selection
+                    if (isLoggedIn &&
+                        Get.isRegistered<JobNotificationController>()) {
+                      Get.find<JobNotificationController>().updateTasksTabCount();
+                    }
+                  }
+                },
+                icons: ListConstants.mainIcons,
+                selectedIcons: ListConstants.selectedIcons,
+                labels: [
+                  "all_tab".tr,
+                  "tasks_tab".tr,
+                  "chat".tr,
+                  "menu_tab".tr
+                ],
+                badges: [
+                  jobNotifController.allTabCount.value,
+                  jobNotifController.tasksTabCount.value,
+                  chatController.unreadCount.value,
+                  chatController.notifCount.value
+                ],
+              ),
             ),
           )),
     );

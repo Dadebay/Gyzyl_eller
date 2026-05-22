@@ -24,6 +24,7 @@ class CustomFlutterMap extends StatefulWidget {
   final StrokeCap? strokeCap;
   final StrokeJoin? strokeJoin;
   final bool interactive;
+  final LatLngBounds? fitBounds;
 
   const CustomFlutterMap({
     super.key,
@@ -46,6 +47,7 @@ class CustomFlutterMap extends StatefulWidget {
     this.onTap,
     this.onMapTap,
     this.interactive = true,
+    this.fitBounds,
   });
 
   @override
@@ -58,6 +60,19 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
   @override
   void didUpdateWidget(covariant CustomFlutterMap oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (widget.fitBounds != null && oldWidget.fitBounds != widget.fitBounds) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: widget.fitBounds!,
+            padding: const EdgeInsets.all(70),
+          ),
+        );
+      });
+      return;
+    }
+
     if (oldWidget.center == widget.center && oldWidget.zoom == widget.zoom) {
       return;
     }
@@ -76,7 +91,8 @@ class _CustomFlutterMapState extends State<CustomFlutterMap> {
         initialCenter: widget.center ?? const LatLng(37.95, 58.38),
         initialZoom: widget.zoom ?? 13.0,
         interactionOptions: InteractionOptions(
-          flags: widget.interactive ? InteractiveFlag.all : InteractiveFlag.none,
+          flags:
+              widget.interactive ? InteractiveFlag.all : InteractiveFlag.none,
         ),
       ),
       children: [

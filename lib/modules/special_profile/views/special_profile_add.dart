@@ -35,10 +35,12 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
   List<Map<String, dynamic>> _fileMetadata = [];
 
   bool _submitted = false;
+
   String _nameError = '';
   String _workTejribeError = '';
   String _legalizationError = '';
   String _longBioError = '';
+  String _profileImageError = '';
 
   bool _validateFields() {
     final nameErr =
@@ -49,17 +51,22 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
         _selectedLegalizationType == null ? 'field_required'.tr : '';
     final longBioErr =
         longBioController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final profileImageErr = controller.selectedProfileImage.value == null
+        ? 'field_required'.tr
+        : '';
     setState(() {
       _submitted = true;
       _nameError = nameErr;
       _workTejribeError = workErr;
       _legalizationError = legalErr;
       _longBioError = longBioErr;
+      _profileImageError = profileImageErr;
     });
     return nameErr.isEmpty &&
         workErr.isEmpty &&
         legalErr.isEmpty &&
-        longBioErr.isEmpty;
+        longBioErr.isEmpty &&
+        profileImageErr.isEmpty;
   }
 
   static const List<String> _legalizationValues = [
@@ -262,7 +269,17 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
             const SizedBox(height: 10),
             CustomElevatedButton(
               onPressed: () async {
-                if (!_validateFields()) return;
+                final valid = _validateFields();
+                if (!valid) {
+                  if (_profileImageError.isNotEmpty) {
+                    CustomWidgets.showSnackBar(
+                      'profile_image_required_title',
+                      'profile_image_required',
+                      ColorConstants.redColor,
+                    );
+                  }
+                  return;
+                }
                 if (!controller.isChecked.value) {
                   CustomWidgets.showSnackBar(
                     'error_title',

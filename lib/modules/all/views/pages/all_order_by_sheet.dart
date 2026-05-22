@@ -7,7 +7,7 @@ class AllOrderBySheet extends StatelessWidget {
   final MyTasksOrderBy groupValue;
   final ValueChanged<MyTasksOrderBy> onChanged;
 
-  static final List<MyTasksOrderBy> _options = MyTasksOrderBy.values;
+  static const List<MyTasksOrderBy> _options = MyTasksOrderBy.values;
 
   const AllOrderBySheet({
     super.key,

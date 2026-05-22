@@ -1,8 +1,7 @@
-// ignore_for_file: empty_catches
+// ignore_for_file: empty_catches, avoid_print
 
+import 'package:gyzyleller/core/controllers/balance_controller.dart';
 import 'package:gyzyleller/core/services/chat_socket_service.dart';
-import 'package:gyzyleller/core/services/fcm_token_provider.dart';
-import 'package:gyzyleller/core/services/fcm_token_synchronizer.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:kartal/kartal.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -23,6 +22,7 @@ final class ApplicationInitialize {
       print('📦 GetStorage initialized');
       Get.put(GetStorage());
       Get.put(ChatSocketService(), permanent: true);
+      Get.put(BalanceController(), permanent: true);
       await initializeDateFormatting('tk', null);
       await initializeDateFormatting('ru', null);
 

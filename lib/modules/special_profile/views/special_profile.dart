@@ -25,7 +25,7 @@ class SpecialProfile extends StatefulWidget {
 
 class _SpecialProfileState extends State<SpecialProfile> {
   final SpecialProfileController _controller =
-      Get.put(SpecialProfileController(), permanent: true);
+      Get.put(SpecialProfileController());
 
   // ── State ────────────────────────────────────────────────────────────────
   bool _isExpanded = false;
@@ -49,12 +49,10 @@ class _SpecialProfileState extends State<SpecialProfile> {
         .toList();
   }
 
-  // ── Lifecycle ────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
     // Always refresh when entering the profile view.
-    // The controller is permanent, so onInit only runs once.
     _controller.refreshProfile();
   }
 
@@ -167,15 +165,16 @@ class _SpecialProfileState extends State<SpecialProfile> {
             size: 26.0),
       ),
       actions: [
-        IconButton(
-          onPressed: () => Get.to(() => const SpecialProfileEditView()),
-          iconSize: 20,
-          padding: EdgeInsets.zero,
-          icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedEdit02,
-              color: ColorConstants.kPrimaryColor2,
-              size: 24.0),
-        ),
+        if (_controller.isMyProfile)
+          IconButton(
+            onPressed: () => Get.to(() => const SpecialProfileEditView()),
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedEdit02,
+                color: ColorConstants.kPrimaryColor2,
+                size: 24.0),
+          ),
       ],
     );
   }
@@ -215,11 +214,11 @@ class _SpecialProfileState extends State<SpecialProfile> {
                 RichText(
                   text: TextSpan(
                     children: [
-                      const TextSpan(
-                        text: 'Bio: ',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                      TextSpan(
+                        text: 'bio'.tr,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
                             color: ColorConstants.blackColor),
                       ),
                       TextSpan(
@@ -254,11 +253,11 @@ class _SpecialProfileState extends State<SpecialProfile> {
             return RichText(
               text: TextSpan(
                 children: [
-                  const TextSpan(
-                    text: 'Bio: ',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                  TextSpan(
+                    text: 'bio'.tr,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
                         color: ColorConstants.blackColor),
                   ),
                   TextSpan(
@@ -303,12 +302,17 @@ class _SpecialProfileState extends State<SpecialProfile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
-            'works_section_title'.tr, HugeIcons.strokeRoundedFiles01),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader(
+                'works_section_title'.tr, HugeIcons.strokeRoundedFiles01),
+          ],
+        ),
         const SizedBox(height: 15),
         GridView.builder(
           shrinkWrap: true,
-          itemCount: images.length,
+          itemCount: images.length > 4 ? 4 : images.length,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
@@ -337,6 +341,31 @@ class _SpecialProfileState extends State<SpecialProfile> {
             );
           },
         ),
+        const SizedBox(
+          height: 10,
+        ),
+        if (images.length > 4)
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            GestureDetector(
+              onTap: () => _openAllImagesScreen(images),
+              child: Text(
+                'view_all_images'.tr,
+                style: const TextStyle(
+                  color: ColorConstants.blue,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.underline,
+                  decorationColor: ColorConstants.blue,
+                ),
+              ),
+            ),
+            const SizedBox(width: 3),
+            const Icon(
+              Icons.north_east,
+              size: 18,
+              color: ColorConstants.blue,
+            ),
+          ]),
       ],
     );
   }
@@ -430,6 +459,16 @@ class _SpecialProfileState extends State<SpecialProfile> {
     );
   }
 
+  /// Opens all images screen with grid view.
+  void _openAllImagesScreen(List<String> images) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _AllImagesScreen(images: images),
+      ),
+    );
+  }
+
   /// Reviews section with AnimatedSwitcher + shimmer loading.
   Widget _buildReviewsSection(profile) {
     return Column(
@@ -469,7 +508,7 @@ class _SpecialProfileState extends State<SpecialProfile> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'view_all_button'.tr,
+                  'view_all_images'.tr,
                   style: const TextStyle(
                       fontSize: 15,
                       color: ColorConstants.blue,
@@ -558,6 +597,98 @@ class _ImageGalleryScreenState extends State<_ImageGalleryScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AllImagesScreen extends StatelessWidget {
+  final List<String> images;
+
+  const _AllImagesScreen({required this.images});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: ColorConstants.background,
+      appBar: AppBar(
+        backgroundColor: ColorConstants.background,
+        title: Text(
+          'works_section_title'.tr,
+          style: const TextStyle(
+            color: ColorConstants.fonts,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          iconSize: 26,
+          padding: EdgeInsets.zero,
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            color: ColorConstants.kPrimaryColor2,
+            size: 26.0,
+          ),
+        ),
+      ),
+      body: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: images.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisExtent: 140,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemBuilder: (context, index) {
+          return InkWell(
+            onTap: () => _openImageGallery(context, images, index),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(
+                imageUrl: images[index],
+                fit: BoxFit.cover,
+                placeholder: (context, url) => _buildImageShimmer(),
+                errorWidget: (context, url, _) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: Icon(Icons.image_not_supported, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _openImageGallery(
+      BuildContext context, List<String> images, int initialIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ImageGalleryScreen(
+          images: images,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageShimmer() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 0.6),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Container(
+          color: Colors.grey[200]!.withOpacity(value),
+        );
+      },
+      onEnd: () {},
     );
   }
 }

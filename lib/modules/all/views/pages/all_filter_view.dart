@@ -68,7 +68,8 @@ class _AllFilterViewState extends State<AllFilterView> {
         centerTitle: true,
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: ColorConstants.kPrimaryColor2),
+          icon: const Icon(Icons.arrow_back_ios,
+              color: ColorConstants.kPrimaryColor2),
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -126,8 +127,11 @@ class _AllFilterViewState extends State<AllFilterView> {
                     child: Text(
                       status.displayName,
                       style: TextStyle(
-                        color: isSelected ? ColorConstants.kPrimaryColor2 : Colors.black87,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected
+                            ? ColorConstants.kPrimaryColor2
+                            : Colors.black87,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -137,7 +141,9 @@ class _AllFilterViewState extends State<AllFilterView> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? ColorConstants.kPrimaryColor2 : Colors.grey,
+                        color: isSelected
+                            ? ColorConstants.kPrimaryColor2
+                            : Colors.grey,
                         width: 2,
                       ),
                     ),
@@ -178,13 +184,15 @@ class _AllFilterViewState extends State<AllFilterView> {
         style: ElevatedButton.styleFrom(
           backgroundColor: ColorConstants.kPrimaryColor2,
           minimumSize: const Size(double.infinity, 55),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         child: _isCountLoading
             ? const SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
               )
             : Text(
                 "${"Result".tr} ($_currentCount)",

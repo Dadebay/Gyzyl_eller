@@ -1,7 +1,14 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/services/api_service.dart';
+import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/models/metadata_models.dart';
 import '../models/job_model.dart';
 import '../models/saved_request_model.dart';
@@ -85,11 +92,13 @@ class MyJobsService {
     }
 
     if (dates != null && dates.isNotEmpty) {
-      queryParams['dates'] = dates.map((d) => DateFormat('yyyy-MM-dd').format(d)).join(',');
+      queryParams['dates'] =
+          dates.map((d) => DateFormat('yyyy-MM-dd').format(d)).join(',');
       // Also set date_from and date_to for compatibility if 2 dates are provided
       if (dates.length >= 2) {
         queryParams['date_from'] = DateFormat('yyyy-MM-dd').format(dates[0]);
-        queryParams['date_to'] = DateFormat('yyyy-MM-dd').format(dates[dates.length - 1]);
+        queryParams['date_to'] =
+            DateFormat('yyyy-MM-dd').format(dates[dates.length - 1]);
       } else if (dates.length == 1) {
         queryParams['date_from'] = DateFormat('yyyy-MM-dd').format(dates[0]);
         queryParams['date_to'] = DateFormat('yyyy-MM-dd').format(dates[0]);
@@ -106,7 +115,9 @@ class MyJobsService {
       queryParams['etrap_id'] = etrapIds.join(',');
     }
 
-    final String queryString = queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    final String queryString = queryParams.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     final String endpoint = 'api/jobs?$queryString';
 
     print('-----------------------------------------');
@@ -116,7 +127,8 @@ class MyJobsService {
     print('-----------------------------------------');
 
     try {
-      final response = await _api.getRequest(endpoint, requiresToken: requiresToken);
+      final response =
+          await _api.getRequest(endpoint, requiresToken: requiresToken);
       print('Jobs API Response: $response');
 
       if (response != null) {
@@ -199,29 +211,54 @@ class MyJobsService {
     }
   }
 
-  Future<dynamic> sendJobRequest(int jobId, {required double price, required String comment}) async {
-    final String endpoint = 'api/user/job-request/$jobId';
+  String getSendJobRequestUrl(int jobId) {
+    return '${Api().urlLink}api/user/job-request/$jobId';
+  }
 
-    final body = {
+  Future<dynamic> sendJobRequest(int jobId,
+      {required double price, required String comment}) async {
+    final String url = getSendJobRequestUrl(jobId);
+    final String? token = AuthStorage().token;
+    final String langCode = GetStorage().read<String>('langCode') ?? 'tk';
+
+    final Map<String, dynamic> body = {
       'price': price,
       'comment': comment,
     };
 
-    print('--- Sending Job Request (POST) ---');
-    print('Endpoint: $endpoint');
-    print('Request Body: $body');
+    print('--- Sending Job Request (http POST) ---');
+    print('URL: $url');
+    print('Comment length (chars): ${comment.length}');
+    print('Comment UTF-8 bytes: ${utf8.encode(comment).length}');
+    print('Body: $body');
+    print('Authorization Token: Bearer $token');
 
     try {
-      final response = await _api.handleApiRequest(
-        endpoint,
-        method: 'POST',
-        body: body,
-        requiresToken: true,
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Language': langCode,
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
       );
-      print('Response: $response');
-      return response;
-    } catch (e) {
-      print('Error in sendJobRequest: $e');
+      print('✅ Status: ${response.statusCode}');
+      print('✅ Response body: ${response.body}');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response.body.isNotEmpty
+            ? json.decode(response.body)
+            : response.statusCode;
+      } else {
+        throw Exception(
+            'Server error ${response.statusCode}: ${response.body}');
+      }
+    } catch (e, stack) {
+      print('========== sendJobRequest ERROR ==========');
+      print('Error type: ${e.runtimeType}');
+      print('Error: $e');
+      print('Stack: $stack');
+      print('==========================================');
       rethrow;
     }
   }
@@ -236,7 +273,9 @@ class MyJobsService {
       if (response != null) {
         final data = response['data'] ?? response['rows'];
         if (data is List) {
-          return data.map((e) => SavedRequestModel.fromJson(e as Map<String, dynamic>)).toList();
+          return data
+              .map((e) => SavedRequestModel.fromJson(e as Map<String, dynamic>))
+              .toList();
         }
       }
       return [];
@@ -378,7 +417,8 @@ class MyJobsService {
     }
   }
 
-  Future<dynamic> createOrder({required int bankId, required String amount}) async {
+  Future<dynamic> createOrder(
+      {required int bankId, required String amount}) async {
     final lang = Get.locale?.languageCode ?? 'tk';
     final String endpoint = 'api/user/$lang/create-order';
     final body = {"bank_id": bankId, "summ": amount, "device": "DESKTOP"};
@@ -398,14 +438,22 @@ class MyJobsService {
   }
 
   Future<List<CategoryModel>> getCategories() async {
-    final lang = Get.locale?.languageCode ?? 'tk';
+    final langWeb = GetStorage().read('langCode') ?? 'tk';
     const String endpoint = 'api/service-cats';
     try {
-      print('DEBUG: Fetching categories from $endpoint with lang: $lang');
-      final response = await _api.getRequest(endpoint, requiresToken: false);
+      print('DEBUG: Fetching categories from $endpoint with lang: $langWeb');
+      final response = await _api.getRequest(
+        endpoint,
+        requiresToken: false,
+        headers: {
+          'Content-Language': langWeb,
+        },
+      );
       print('DEBUG: Categories response: $response');
       if (response != null && response['data'] != null) {
-        return (response['data'] as List).map((e) => CategoryModel.fromJson(e)).toList();
+        return (response['data'] as List)
+            .map((e) => CategoryModel.fromJson(e))
+            .toList();
       }
       return [];
     } catch (e) {
@@ -483,13 +531,22 @@ class MyJobsService {
         // Parse Categories (extracted from gyzyl_cat_id field)
         final dynamic catsData = firstItem['cats'];
         if (catsData is List) {
-          result['cats'] = catsData.map((e) => int.tryParse((e is Map ? e['gyzyl_cat_id'] : e).toString()) ?? 0).where((id) => id != 0).toList();
+          result['cats'] = catsData
+              .map((e) =>
+                  int.tryParse((e is Map ? e['gyzyl_cat_id'] : e).toString()) ??
+                  0)
+              .where((id) => id != 0)
+              .toList();
         }
 
         // Parse Etraps (extracted from etrap_id field)
         final dynamic etrapsData = firstItem['etraps'];
         if (etrapsData is List) {
-          result['etraps'] = etrapsData.map((e) => int.tryParse((e is Map ? e['etrap_id'] : e).toString()) ?? 0).where((id) => id != 0).toList();
+          result['etraps'] = etrapsData
+              .map((e) =>
+                  int.tryParse((e is Map ? e['etrap_id'] : e).toString()) ?? 0)
+              .where((id) => id != 0)
+              .toList();
         }
 
         // Parse Min Price
@@ -525,5 +582,54 @@ class MyJobsService {
       print('❌ [MyJobsService] Error in getMyRequestOnJob: $e');
       return null;
     }
+  }
+
+  Future<dynamic> editReview(String reviewId, String reviewText) async {
+    final String endpoint = 'api/user/master/reply-to-review/$reviewId';
+    final body = {
+      'review': reviewText,
+    };
+    print('🚀 [MyJobsService] POST - Edit Review');
+    print('Endpoint: $endpoint');
+    return await _api.handleApiRequest(
+      endpoint,
+      method: 'POST',
+      body: body,
+      requiresToken: true,
+    );
+  }
+
+  Future<dynamic> editReviewWithRating(
+      String jobId, int rating, String reviewText) async {
+    // Ayterek uses the same endpoint for both creating and updating reviews
+    final String endpoint = 'api/user/job-done-by-user/$jobId';
+    final body = {
+      'rating': rating,
+      'review': reviewText,
+    };
+    print('🚀 [MyJobsService] POST - Edit Review with Rating');
+    print('Endpoint: $endpoint');
+    print('Body: $body');
+    return await _api.handleApiRequest(
+      endpoint,
+      method: 'POST',
+      body: body,
+      requiresToken: true,
+    );
+  }
+
+  Future<dynamic> replyToReview(String reviewId, String replyText) async {
+    final String endpoint = 'api/user/master/reply-to-review/$reviewId';
+    final body = {
+      'reply': replyText,
+    };
+    print('🚀 [MyJobsService] POST - Reply to Review');
+    print('Endpoint: $endpoint');
+    return await _api.handleApiRequest(
+      endpoint,
+      method: 'POST',
+      body: body,
+      requiresToken: true,
+    );
   }
 }

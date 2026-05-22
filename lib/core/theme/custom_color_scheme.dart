@@ -74,7 +74,7 @@ class ColorConstants {
 
   //
   static const Color kSecondaryColor = Color(0xff009B00);
-  static const Color successtatus = Color.fromARGB(255, 120 , 229, 118);
+  static const Color successtatus = Color.fromARGB(255, 120, 229, 118);
   static const Color kPrettyBlack = Color(0xff1A1A1A);
   static const Color kPrettyBlack2 = Color(0xFF1d1d1b);
   static const Color whiteColor = Colors.white;
@@ -95,7 +95,10 @@ class ColorConstants {
   static const List<Color> noUserBackground = [
     Color.fromRGBO(25, 167, 206, 1.0),
     Color.fromRGBO(255, 172, 172, 1.0),
-    Color.fromRGBO(255, 123, 84, 1.0),
     Color.fromRGBO(170, 119, 255, 1.0),
+    Color.fromRGBO(255, 123, 84, 1.0),
+    Color.fromRGBO(25, 167, 206, 1.0),
+    Color.fromRGBO(255, 172, 172, 1.0),
+    Color.fromRGBO(255, 123, 84, 1.0),
   ];
 }

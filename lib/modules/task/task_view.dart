@@ -7,9 +7,9 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:gyzyleller/core/models/job_model.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/modules/filter_view/filter_view.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/all/views/pages/all_order_by_sheet.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/job_notification_controller.dart';
 import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 
@@ -20,9 +20,19 @@ class TaskView extends StatefulWidget {
   State<TaskView> createState() => _TaskViewState();
 }
 
-class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin {
+class _TaskViewState extends State<TaskView>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final TaskController controller = Get.put(TaskController());
+  final Set<int> _clearedNotificationJobIds = <int>{};
+
+  void _clearNotificationForOpenedJob(int jobId) {
+    if (_clearedNotificationJobIds.contains(jobId)) return;
+    if (!Get.isRegistered<JobNotificationController>()) return;
+
+    _clearedNotificationJobIds.add(jobId);
+    Get.find<JobNotificationController>().clearByJob(jobId.toString());
+  }
 
   @override
   void initState() {
@@ -30,9 +40,31 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
+        final previousIndex = controller.activeTabIndex.value;
         controller.activeTabIndex.value = _tabController.index;
+
+        // Only refresh if tab actually changed
+        if (previousIndex != _tabController.index) {
+          _refreshCurrentTabSilently();
+
+          // Clear notifications of the sub-tab the user just left
+          if (Get.isRegistered<JobNotificationController>()) {
+            final jobNotifController = Get.find<JobNotificationController>();
+            jobNotifController.clearTasksTabNotifications(previousIndex);
+            jobNotifController.updateTasksTabCount();
+          }
+        }
       }
     });
+  }
+
+  void _refreshCurrentTabSilently() {
+    // Trigger pull-to-refresh animation for smooth visual feedback
+    if (_tabController.index == 0) {
+      controller.requestedRefreshController.requestRefresh();
+    } else {
+      controller.processingRefreshController.requestRefresh();
+    }
   }
 
   @override
@@ -50,84 +82,6 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
         leadingWidth: 110,
         leading: Row(
           children: [
-            // Obx(
-            //   () => IconButton(
-            //     padding: EdgeInsets.zero,
-            //     icon: Stack(
-            //       children: [
-            //         const HugeIcon(
-            //           icon: HugeIcons.strokeRoundedFilter,
-            //           color: ColorConstants.blackColor,
-            //           size: 24.0,
-            //         ),
-            //         if (controller.isAnyFilterActive)
-            //           Positioned(
-            //             right: 0,
-            //             top: 0,
-            //             child: Container(
-            //               padding: const EdgeInsets.all(1.5),
-            //               decoration: BoxDecoration(
-            //                 color: Colors.red,
-            //                 shape: BoxShape.circle,
-            //                 border: Border.all(color: Colors.white, width: 1.5),
-            //               ),
-            //               constraints: const BoxConstraints(
-            //                 minWidth: 8,
-            //                 minHeight: 8,
-            //               ),
-            //             ),
-            //           ),
-            //       ],
-            //     ),
-            //     onPressed: () {
-            //       final tabIndex = _tabController.index;
-            //       final isRequested = tabIndex == 0;
-
-            //       showModalBottomSheet(
-            //         context: context,
-            //         isScrollControlled: true,
-            //         backgroundColor: Colors.transparent,
-            //         builder: (_) => FilterBottomSheet(
-            //           initialCatIds: isRequested
-            //               ? controller.reqCatIds
-            //               : controller.procCatIds,
-            //           initialWelayatIds: isRequested
-            //               ? controller.reqWelayatIds
-            //               : controller.procWelayatIds,
-            //           initialEtrapIds: isRequested
-            //               ? controller.reqEtrapIds
-            //               : controller.procEtrapIds,
-            //           initialMinPrice: isRequested
-            //               ? controller.reqMinPrice.value
-            //               : controller.procMinPrice.value,
-            //           initialMaxPrice: isRequested
-            //               ? controller.reqMaxPrice.value
-            //               : controller.procMaxPrice.value,
-            //           initialSearch: isRequested
-            //               ? controller.reqSearch.value
-            //               : controller.procSearch.value,
-            //           initialDates: isRequested
-            //               ? controller.reqSelectedDates
-            //               : controller.procSelectedDates,
-            //           requestedInput: isRequested,
-            //           processingInput: !isRequested,
-            //           onApply: (filters) {
-            //             controller.applyFilters(
-            //               tabIndex: tabIndex,
-            //               newCatIds: filters['catIds'],
-            //               newWelayatIds: filters['welayatIds'],
-            //               newEtrapIds: filters['etrapIds'],
-            //               newMinPrice: filters['minPrice'],
-            //               newMaxPrice: filters['maxPrice'],
-            //               newDates: filters['dates'],
-            //               newSearch: filters['search'],
-            //             );
-            //           },
-            //         ),
-            //       );
-            //     },
-            //   ),
-            // ),
             IconButton(
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -136,7 +90,8 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                   context: context,
                   backgroundColor: Colors.white,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20.0)),
                   ),
                   builder: (context) {
                     return AllOrderBySheet(
@@ -184,7 +139,8 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                   tabs: [
                     Tab(
                       child: Text(
-                        "my_offers_tab".trParams({"count": reqCount.toString()}),
+                        "my_offers_tab"
+                            .trParams({"count": reqCount.toString()}),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: Get.locale?.languageCode == 'ru' ? 13 : 18,
@@ -234,7 +190,8 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
               onLoading: () => controller.fetchProcessingJobs(),
               child: controller.processingJobs.isEmpty
                   ? Padding(
-                      padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
+                      padding:
+                          const EdgeInsets.only(top: 20, left: 20, right: 20),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -257,7 +214,8 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 14),
                       itemCount: controller.processingJobs.length,
                       itemBuilder: (context, index) {
                         final job = controller.processingJobs[index];
@@ -286,7 +244,10 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                             customTagTextColor: tag.textColor,
                             customTagBgColor: tag.bgColor,
                             customTagIcon: tag.icon,
-                            onDeleted: () => controller.fetchProcessingJobs(isRefresh: true),
+                            onOpened: () =>
+                                _clearNotificationForOpenedJob(job.id),
+                            onDeleted: () =>
+                                controller.fetchProcessingJobs(isRefresh: true),
                           ),
                         );
                       },
@@ -345,12 +306,15 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                 ),
               )
             : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                 itemCount: controller.requestedJobs.length,
                 itemBuilder: (context, index) {
                   final job = controller.requestedJobs[index];
                   final tag = _TaskRequestedTagResolver().resolve(job);
-                  final bool canDeleteJob = (job.status != 3 || job.selectedUserId == null || job.finished);
+                  final bool canDeleteJob = (job.status != 3 ||
+                      job.selectedUserId == null ||
+                      job.finished);
                   return Container(
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
@@ -367,7 +331,12 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                     child: JobCard(
                       job: job,
                       isNew: false,
-                      showDelete: !canDeleteJob,
+                      showDelete: (job.status == 5 ||
+                              job.status == 4 ||
+                              job.finished == true ||
+                              job.status == 7)
+                          ? true
+                          : !canDeleteJob,
                       fromTaskView: true,
                       taskTabIndex: 0,
                       hideTag: tag.hideTag,
@@ -375,7 +344,9 @@ class _TaskViewState extends State<TaskView> with SingleTickerProviderStateMixin
                       customTagTextColor: tag.textColor,
                       customTagBgColor: tag.bgColor,
                       customTagIcon: tag.icon,
-                      onDeleted: () => controller.fetchRequestedJobs(isRefresh: true),
+                      onOpened: () => _clearNotificationForOpenedJob(job.id),
+                      onDeleted: () =>
+                          controller.fetchRequestedJobs(isRefresh: true),
                     ),
                   );
                 },
@@ -435,11 +406,27 @@ class _TaskRequestedTagResolver {
       );
     }
 
+    // Ýerine ýetirilen
+    if (job.status == 4) {
+      return _TaskTagData(
+        label: 'status_done'.tr,
+        textColor: const Color(0xFF616161),
+        bgColor: const Color(0xFFF0F0F0),
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedCheckmarkBadge04,
+          size: 14,
+          color: Color(0xFF616161),
+        ),
+      );
+    }
+
     // Başga hünärmen saýlandy (status==3 we selected_user_id != mine)
     if (job.status == 3) {
       final user = _auth.getUser();
       final myId = int.tryParse((user?['id'] ?? '').toString());
-      final isOtherSelected = myId != null && job.selectedUserId != null && job.selectedUserId != myId;
+      final isOtherSelected = myId != null &&
+          job.selectedUserId != null &&
+          job.selectedUserId != myId;
       if (isOtherSelected) {
         return _TaskTagData(
           label: 'task_status_other_selected'.tr,
@@ -451,7 +438,46 @@ class _TaskRequestedTagResolver {
             color: Color(0xFF165500),
           ),
         );
+      } else {
+        // Biz saýlandyk (Ýerine ýetiriji biz)
+        if (job.finished == true) {
+          return _TaskTagData(
+            label: 'task_status_done_no_rating'.tr,
+            textColor: const Color(0xFF616161),
+            bgColor: const Color(0xFFF0F0F0),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedCheckmarkCircle03,
+              size: 14,
+              color: Color(0xFF616161),
+            ),
+          );
+        } else {
+          return _TaskTagData(
+            label: 'task_status_working'.tr,
+            textColor: ColorConstants.blackColor,
+            bgColor: const Color.fromARGB(255, 120, 229, 118),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedWorkAlert,
+              size: 14,
+              color: ColorConstants.blackColor,
+            ),
+          );
+        }
       }
+    }
+
+    // Finished ýagdaýy (gury finished true bolsa-da)
+    if (job.finished == true) {
+      return _TaskTagData(
+        label: 'status_done'.tr,
+        textColor: const Color(0xFF616161),
+        bgColor: const Color(0xFFF0F0F0),
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedCheckmarkBadge04,
+          size: 14,
+          color: Color(0xFF616161),
+        ),
+      );
     }
 
     // Teklibiňiz görülen
@@ -460,7 +486,10 @@ class _TaskRequestedTagResolver {
         label: 'status_viewedd'.tr,
         textColor: const Color(0xFF165500),
         bgColor: const Color.fromARGB(255, 120, 229, 118),
-        icon: const HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 14, color: Color(0xFF165500)),
+        icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedEye,
+            size: 14,
+            color: Color(0xFF165500)),
       );
     }
 

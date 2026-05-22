@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:gyzyleller/core/controllers/balance_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/views/add_cash_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
@@ -11,8 +12,8 @@ class WalletController extends GetxController {
   final RefreshController walletRefreshController = RefreshController(initialRefresh: false);
   final RefreshController addCashRefreshController = RefreshController(initialRefresh: false);
   final MyJobsService _jobsService = MyJobsService();
-
-  final RxDouble balance = 0.0.obs;
+  final BalanceController _balanceController = Get.find<BalanceController>();
+  RxDouble get balance => _balanceController.balance;
   final RxList<dynamic> logs = <dynamic>[].obs;
   final RxBool isLoading = true.obs;
   final RxBool isLogsLoading = false.obs;
@@ -43,11 +44,7 @@ class WalletController extends GetxController {
   }
 
   Future<void> fetchBalance() async {
-    try {
-      balance.value = await _jobsService.fetchBalance();
-    } catch (e) {
-      print('Error in WalletController fetchBalance: $e');
-    }
+    await _balanceController.fetchBalance();
   }
 
   Future<void> fetchLogs() async {

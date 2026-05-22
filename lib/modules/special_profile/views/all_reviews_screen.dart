@@ -8,7 +8,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 enum ReviewSorting {
   newest('created_at', 'desc'),
-  oldest('created_at', 'asc'),
+  // oldest('created_at', 'asc'),
   highestRating('rating', 'desc'),
   lowestRating('rating', 'asc');
 
@@ -152,8 +152,8 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
     switch (s) {
       case ReviewSorting.newest:
         return 'sort_newest'.tr;
-      case ReviewSorting.oldest:
-        return 'sort_oldest'.tr;
+      // case ReviewSorting.oldest:
+      //   return 'sort_oldest'.tr;
       case ReviewSorting.highestRating:
         return 'sort_highest_rating'.tr;
       case ReviewSorting.lowestRating:

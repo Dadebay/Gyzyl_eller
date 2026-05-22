@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 class ChatModel {
   final String chatId;
   final String userId;
@@ -18,6 +20,10 @@ class ChatModel {
   final String? postLng;
   final bool isAdmin;
 
+  // Tamamlanma ýagdaýy
+  final bool finished;
+  final String? finishedAt;
+
   ChatModel({
     required this.chatId,
     required this.userId,
@@ -37,6 +43,8 @@ class ChatModel {
     this.postLat,
     this.postLng,
     this.isAdmin = false,
+    this.finished = false,
+    this.finishedAt,
   });
 
   /// Builds a ChatModel from the chat entry + the separate products/users maps
@@ -80,10 +88,14 @@ class ChatModel {
       lastMessage: chat['last_message']?.toString() ?? '',
       lastMessageTime: chat['last_sended_message']?.toString() ?? '',
       unreadCount: () {
-        final val = chat['unread_count']?.toString() ?? chat['unreadCount']?.toString() ?? chat['unread']?.toString() ?? '0';
+        final val = chat['unread_count']?.toString() ??
+            chat['unreadCount']?.toString() ??
+            chat['unread']?.toString() ??
+            '0';
         final parsed = int.tryParse(val) ?? 0;
         if (parsed > 0) {
-          print('🔥 [ChatModel] Found unreadCount: $parsed in chat ${chat['id']}');
+          print(
+              '🔥 [ChatModel] Found unreadCount: $parsed in chat ${chat['id']}');
         }
         return parsed;
       }(),
@@ -95,6 +107,14 @@ class ChatModel {
       postLng: product['lng']?.toString(),
       isAdmin: chat['type_id']?.toString() == '2' ||
           chat['type_id']?.toString() == '4',
+      finished: () {
+        final rawFinished = product['finished'] ?? chat['finished'];
+        return rawFinished == true ||
+            rawFinished == 1 ||
+            rawFinished?.toString().toLowerCase() == 'true';
+      }(),
+      finishedAt:
+          product['finished_at']?.toString() ?? chat['finished_at']?.toString(),
     );
   }
 }

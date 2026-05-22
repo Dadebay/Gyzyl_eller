@@ -77,9 +77,11 @@ class ProfileHeader extends StatelessWidget {
               child: Container(
                 width: 100,
                 height: 100,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: (imageUrl == null || !imageUrl!.startsWith('http'))
+                      ? ColorConstants.noUserBackground[name.hashCode % 4]
+                      : Colors.white,
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(50),
@@ -88,17 +90,49 @@ class ProfileHeader extends StatelessWidget {
                           imageUrl: imageUrl!,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => _buildShimmer(),
-                          errorWidget: (context, url, error) => const HugeIcon(
-                            icon: HugeIcons.strokeRoundedUser,
-                            color: ColorConstants.greyColor,
-                            size: 60,
+                        errorWidget: (context, url, error) => Center(
+                          child: Text(
+                            () {
+                              final n = name.trim();
+                              if (n.isEmpty) return '?';
+                              for (int i = 0; i < n.length; i++) {
+                                final char = n[i];
+                                if (RegExp(r'[a-zA-Z0-9\u0400-\u04FF]')
+                                    .hasMatch(char)) {
+                                  return char.toUpperCase();
+                                }
+                              }
+                              return n[0].toUpperCase();
+                            }(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
-                      : const HugeIcon(
-                          icon: HugeIcons.strokeRoundedUser,
-                          color: ColorConstants.greyColor,
-                          size: 60,
                         ),
+                      )
+                    : Center(
+                        child: Text(
+                          () {
+                            final n = name.trim();
+                            if (n.isEmpty) return '?';
+                            for (int i = 0; i < n.length; i++) {
+                              final char = n[i];
+                              if (RegExp(r'[a-zA-Z0-9\u0400-\u04FF]')
+                                  .hasMatch(char)) {
+                                return char.toUpperCase();
+                              }
+                            }
+                            return n[0].toUpperCase();
+                          }(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                 ),
               ),
             ),
@@ -116,13 +150,17 @@ class ProfileHeader extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           name,
+          textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         if (experience != null && experience!.isNotEmpty) ...[
           const SizedBox(height: 3),
           Text(
             experience!,
-            style: const TextStyle(fontSize: 16, color: ColorConstants.fonts),
+            style: const TextStyle(
+                fontSize: 18,
+                color: ColorConstants.fonts,
+                fontWeight: FontWeight.w400),
             textAlign: TextAlign.center,
           ),
         ],

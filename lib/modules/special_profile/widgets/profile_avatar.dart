@@ -1,3 +1,6 @@
+// ignore_for_file: deprecated_member_use
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
@@ -12,7 +15,9 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SettingsController settingsController =
-        Get.find<SettingsController>();
+        Get.isRegistered<SettingsController>()
+            ? Get.find<SettingsController>()
+            : Get.put(SettingsController());
     return Center(
       child: Column(
         children: [
@@ -32,39 +37,49 @@ class ProfileAvatar extends StatelessWidget {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                      FullScreenImagePage(imageUrl: imageUrl!),
+                                      FullScreenImagePage(imageUrl: imageUrl),
                                 ),
                               );
                             }
                           : null,
                       child: Container(
-                        padding: const EdgeInsets.all(2),
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.white,
-                          backgroundImage:
-                              controller.selectedProfileImage.value != null
-                                  ? FileImage(
-                                      controller.selectedProfileImage.value!)
-                                  : (hasNetworkImage
-                                      ? NetworkImage(imageUrl!)
-                                      : null),
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: (controller.selectedProfileImage.value ==
+                                      null &&
+                                  !hasNetworkImage)
+                              ? ColorConstants.noUserBackground[(int.tryParse(
+                                          controller.profile.value.id ?? '0') ??
+                                      0) %
+                                  4]
+                              : Colors.grey[200],
+                        ),
+                        child: ClipOval(
                           child: controller.isUploadingProfileImage.value
-                              ? const SizedBox(
-                                  width: 26,
-                                  height: 26,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2.4),
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 26,
+                                    height: 26,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2.4),
+                                  ),
                                 )
-                              : (controller.selectedProfileImage.value ==
-                                          null &&
-                                      !hasNetworkImage
-                                  ? const Icon(
-                                      Icons.person,
-                                      color: Colors.grey,
-                                      size: 50,
+                              : (controller.selectedProfileImage.value != null
+                                  ? Image.file(
+                                      controller.selectedProfileImage.value!,
+                                      fit: BoxFit.cover,
                                     )
-                                  : null),
+                                  : (hasNetworkImage
+                                      ? CachedNetworkImage(
+                                          imageUrl: imageUrl,
+                                          fit: BoxFit.cover,
+                                          errorWidget: (context, url, error) =>
+                                              _buildInitial(
+                                                  settingsController, 45),
+                                        )
+                                      : _buildInitial(settingsController, 45))),
                         ),
                       ),
                     );
@@ -115,6 +130,31 @@ class ProfileAvatar extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInitial(SettingsController settingsController, double fontSize) {
+    return Center(
+      child: Text(
+        () {
+          final n = (settingsController.user.value?['username'] ?? '')
+              .toString()
+              .trim();
+          if (n.isEmpty) return '?';
+          for (int i = 0; i < n.length; i++) {
+            final char = n[i];
+            if (RegExp(r'[a-zA-Z0-9\u0400-\u04FF]').hasMatch(char)) {
+              return char.toUpperCase();
+            }
+          }
+          return n[0].toUpperCase();
+        }(),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

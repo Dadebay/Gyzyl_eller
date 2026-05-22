@@ -182,6 +182,7 @@ class _AllSearchViewState extends State<AllSearchView> {
           itemCount: _allController.jobs.length,
           itemBuilder: (context, index) {
             return JobCard(
+              showDelete: false,
               job: _allController.jobs[index],
               isNew: false,
             );

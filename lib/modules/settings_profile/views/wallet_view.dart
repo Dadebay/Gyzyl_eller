@@ -1,7 +1,5 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/wallet_controller.dart';
@@ -18,90 +16,111 @@ class WalletView extends GetView<WalletController> {
       Get.put(WalletController());
     }
 
-    return Scaffold(
-      backgroundColor: ColorConstants.background,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              backgroundColor: ColorConstants.kPrimaryColor2,
-              elevation: 4,
-              centerTitle: true,
-              toolbarHeight: 100,
-              automaticallyImplyLeading: false,
-              leading: Padding(
-                padding: const EdgeInsets.only(left: 5),
-                child: Center(
-                  child: GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      height: 45,
-                      width: 45,
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.arrow_back_ios_new,
-                          color: ColorConstants.kPrimaryColor2, size: 18),
+    return const AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: ColorConstants.kPrimaryColor2,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: ColorConstants.background,
+        body: _WalletBody(),
+      ),
+    );
+  }
+}
+
+class _WalletBody extends GetView<WalletController> {
+  const _WalletBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverAppBar(
+            backgroundColor: ColorConstants.kPrimaryColor2,
+            systemOverlayStyle: const SystemUiOverlayStyle(
+              statusBarColor: ColorConstants.kPrimaryColor2,
+              statusBarIconBrightness: Brightness.light,
+              statusBarBrightness: Brightness.dark,
+            ),
+            elevation: 4,
+            centerTitle: true,
+            toolbarHeight: 100,
+            automaticallyImplyLeading: false,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 5),
+              child: Center(
+                child: GestureDetector(
+                  onTap: () => Get.back(),
+                  child: Container(
+                    height: 45,
+                    width: 45,
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: const Icon(Icons.arrow_back_ios_new,
+                        color: ColorConstants.kPrimaryColor2, size: 18),
                   ),
                 ),
               ),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(0),
-                child: Container(
-                  height: 20,
-                  width: double.maxFinite,
-                  decoration: BoxDecoration(
-                    color: ColorConstants.background,
-                    border: Border.all(color: ColorConstants.background),
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(30),
-                    ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(0),
+              child: Container(
+                height: 20,
+                width: double.maxFinite,
+                decoration: BoxDecoration(
+                  color: ColorConstants.background,
+                  border: Border.all(color: ColorConstants.background),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
                   ),
                 ),
               ),
-              title: Text(
-                'my_account_title'.tr,
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
             ),
-          ];
-        },
-        body: Obx(() {
-          if (controller.isLoading.value && controller.logs.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: Colors.grey,
-              ),
-            );
-          }
-          return SmartRefresher(
-            header: const MaterialClassicHeader(
-              color: ColorConstants.greyColor,
-              backgroundColor: ColorConstants.background,
+            title: Text(
+              'my_account_title'.tr,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
             ),
-            controller: controller.walletRefreshController,
-            enablePullDown: true,
-            onRefresh: () => controller.refreshData(),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildBalanceFrame(context),
-                  const SizedBox(height: 20),
-                  _buildTransactionHistory(context),
-                  const SizedBox(height: 10),
-                  _buildTransactionList(context),
-                ],
-              ),
+          ),
+        ];
+      },
+      body: Obx(() {
+        if (controller.isLoading.value && controller.logs.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Colors.grey,
             ),
           );
-        }),
-      ),
+        }
+        return SmartRefresher(
+          header: const MaterialClassicHeader(
+            color: ColorConstants.greyColor,
+            backgroundColor: ColorConstants.background,
+          ),
+          controller: controller.walletRefreshController,
+          enablePullDown: true,
+          onRefresh: () => controller.refreshData(),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildBalanceFrame(context),
+                const SizedBox(height: 20),
+                _buildTransactionHistory(context),
+                const SizedBox(height: 10),
+                _buildTransactionList(context),
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -230,15 +249,7 @@ class WalletView extends GetView<WalletController> {
 
       final logs = controller.logs;
       if (logs.isEmpty) {
-        return SizedBox(
-          height: 200,
-          child: Center(
-            child: Text(
-              'no_transactions'.tr,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ),
-        );
+        return const SizedBox();
       }
 
       return Container(
@@ -267,12 +278,15 @@ class WalletView extends GetView<WalletController> {
   Widget _buildTransactionItem(BuildContext context, dynamic log,
       [bool isLast = false]) {
     final int eventType = int.tryParse(log['event_type'].toString()) ?? 0;
+    print(
+        '🔍 EVENT_TYPE: $eventType | SUMM: ${log['summ']} | ID: ${log['id']} | FULL_LOG: $log');
     final summ = log['summ']?.toString() ?? '0';
     final parsedSumm = int.tryParse(summ) ?? 0;
     final isPositive = (eventType == 1 || eventType == 5) && !(0 > parsedSumm);
 
     String columnText = log['?column?']?.toString() ?? '';
-
+    final String logId =
+        log['job_id']?.toString() ?? log['id']?.toString() ?? '';
     String title = switch (eventType) {
       1 => 'money_added'.tr,
       2 => 'tarif_bought'.tr,
@@ -281,6 +295,7 @@ class WalletView extends GetView<WalletController> {
       5 => 'refund'.tr,
       6 => 'ad_bought'.tr,
       7 => 'promo_bought'.tr,
+      8 => 'selected_as_master'.trParams({'id': logId}),
       _ => 'unknown_transaction'.tr,
     };
 

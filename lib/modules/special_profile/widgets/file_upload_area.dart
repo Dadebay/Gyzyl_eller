@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use, unused_local_variable
 
 import 'dart:io';
 
@@ -161,13 +161,39 @@ class _FileUploadSectionState extends State<FileUploadSection> {
   }
 
   Future<void> _pickImages() async {
+    // Check total file count limit (16 max)
+    final int currentTotal = images.length + uploadedFiles.length;
+    if (currentTotal >= 16) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('max_files_limit'.tr),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final List<XFile> pickedFiles = await _picker.pickMultiImage(
       maxWidth: 1200,
       maxHeight: 1200,
       imageQuality: 85,
     );
     if (pickedFiles.isEmpty) return;
-    for (var file in pickedFiles) {
+
+    // Calculate how many files can be added
+    final int availableSlots = 16 - currentTotal;
+    final List<XFile> filesToAdd = pickedFiles.take(availableSlots).toList();
+
+    if (pickedFiles.length > availableSlots) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('max_files_limit_reached'.tr),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+
+    for (var file in filesToAdd) {
       final int bytes = await file.length();
       final Map<String, dynamic> newImage = {
         "name": file.name,
@@ -183,19 +209,46 @@ class _FileUploadSectionState extends State<FileUploadSection> {
   }
 
   Future<void> _pickFiles() async {
+    // Check total file count limit (16 max)
+    final int currentTotal = images.length + uploadedFiles.length;
+    if (currentTotal >= 16) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('max_files_limit'.tr),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       allowMultiple: true,
     );
     if (result == null) return;
+
+    // Calculate how many files can be added
+    final int availableSlots = 16 - currentTotal;
+    int addedCount = 0;
+
     for (var file in result.files) {
+      if (addedCount >= availableSlots) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('max_files_limit_reached'.tr),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        break;
+      }
+
       if (file.path == null) continue;
       final String ext = file.extension?.toLowerCase() ?? '';
       final List<String> allowed = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
       if (!allowed.contains(ext)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${file.name} - geГ§ersiz format'),
+            content: Text('${file.name} - geçersiz format'),
             backgroundColor: Colors.red,
           ),
         );
@@ -211,6 +264,7 @@ class _FileUploadSectionState extends State<FileUploadSection> {
         "url": null,
       };
       setState(() => uploadedFiles.add(newFile));
+      addedCount++;
     }
     _processUploadQueue();
   }
@@ -296,11 +350,17 @@ class _FileUploadSectionState extends State<FileUploadSection> {
                     style: const TextStyle(
                         color: ColorConstants.kPrimaryColor2, fontSize: 12),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 3),
                   const Text(
                     'PNG, JPG, PDF, DOC',
                     style: TextStyle(
                         color: ColorConstants.secondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'click_to_upload_max'.tr,
+                    style: const TextStyle(
+                        color: ColorConstants.kPrimaryColor2, fontSize: 12),
                   ),
                 ],
               ),
@@ -399,131 +459,89 @@ class _FileUploadSectionState extends State<FileUploadSection> {
         // ---------------- Images List ----------------
         if (images.isNotEmpty)
           Column(
-            children: images.map((img) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                child: Column(
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: img["path"] != null
-                              ? Image.file(
-                                  File(img["path"] as String),
-                                  width: 70,
-                                  height: 70,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return _buildImageError();
-                                  },
-                                )
-                              : CachedNetworkImage(
-                                  imageUrl: img["url"] ?? "",
-                                  width: 70,
-                                  height: 70,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    width: 70,
-                                    height: 70,
-                                    color: Colors.grey[200],
-                                  ),
-                                  errorWidget: (context, url, _) =>
-                                      _buildImageError(),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Show first 4 images in a 2x2 grid
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1,
+                ),
+                itemCount: images.length,
+                itemBuilder: (context, index) {
+                  final img = images[index];
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: img["path"] != null
+                            ? Image.file(
+                                File(img["path"] as String),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildImageError();
+                                },
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: img["url"] ?? "",
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: Colors.grey[200],
                                 ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                img["name"],
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                errorWidget: (context, url, _) =>
+                                    _buildImageError(),
                               ),
-                              const SizedBox(height: 4),
-                              (() {
-                                final size = img["size"];
-                                final sizeStr = (size != null &&
-                                        size.toString().trim().isNotEmpty &&
-                                        size != '-')
-                                    ? size.toString()
-                                    : null;
-                                final status = img["loading"] == true
-                                    ? "status_loading".tr
-                                    : "status_completed".tr;
-                                final statusStr =
-                                    (status.toString().trim().isNotEmpty &&
-                                            status != '-')
-                                        ? status.toString()
-                                        : null;
-                                if (sizeStr == null && statusStr == null) {
-                                  return const SizedBox.shrink();
-                                } else if (sizeStr != null &&
-                                    statusStr != null) {
-                                  return Text(
-                                    "$sizeStr / $statusStr",
-                                    style: TextStyle(
-                                      color: ColorConstants.blackColor
-                                          .withOpacity(0.5),
-                                      fontSize: 13,
-                                    ),
-                                  );
-                                } else if (sizeStr != null) {
-                                  return Text(
-                                    sizeStr,
-                                    style: TextStyle(
-                                      color: ColorConstants.blackColor
-                                          .withOpacity(0.5),
-                                      fontSize: 13,
-                                    ),
-                                  );
-                                } else {
-                                  return Text(
-                                    statusStr!,
-                                    style: TextStyle(
-                                      color: ColorConstants.blackColor
-                                          .withOpacity(0.5),
-                                      fontSize: 13,
-                                    ),
-                                  );
-                                }
-                              })(),
-                            ],
+                      ),
+                      // Loading indicator
+                      if (img["loading"] == true)
+                        Positioned.fill(
+                          child: Container(
+                            color: Colors.black.withOpacity(0.3),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: img["progress"],
+                                strokeWidth: 3,
+                                backgroundColor: Colors.grey[200],
+                                valueColor: const AlwaysStoppedAnimation(
+                                    ColorConstants.kPrimaryColor2),
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
+                      // Delete button
+                      Positioned(
+                        top: 5,
+                        right: 5,
+                        child: GestureDetector(
                           onTap: () => _removeImage(img),
-                          child: const Icon(Icons.close, size: 24),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (img["loading"] == true)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: img["progress"],
-                          minHeight: 4,
-                          backgroundColor: Colors.grey.shade100,
-                          valueColor: const AlwaysStoppedAnimation(
-                              ColorConstants.kPrimaryColor2),
-                        ),
-                      )
-                    else
-                      Container(
-                        height: 1,
-                        color: Colors.grey.shade100,
                       ),
-                  ],
-                ),
-              );
-            }).toList(),
+                    ],
+                  );
+                },
+              ),
+              // "View All" button if more than 4 images
+            ],
           ),
       ],
     );

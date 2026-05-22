@@ -32,7 +32,10 @@ class SpecialProfileEditView extends StatefulWidget {
 class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
   final SpecialProfileController controller =
       Get.find<SpecialProfileController>();
-  final SettingsController settingsController = Get.find<SettingsController>();
+  final SettingsController settingsController =
+      Get.isRegistered<SettingsController>()
+          ? Get.find<SettingsController>()
+          : Get.put(SettingsController());
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController shortBioController = TextEditingController();
@@ -109,7 +112,7 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'deleteProfileTitle'.tr,
+                  'delete_my_profile'.tr,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -125,7 +128,17 @@ class _SpecialProfileEditViewState extends State<SpecialProfileEditView> {
                 ),
                 const SizedBox(height: 25),
                 Text(
-                  'deleteProfileDescription'.tr,
+                  'deleteProfileDescriptionn'.tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: ColorConstants.fonts,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+                Text(
+                  'deleteProfileDescriptionnn'.tr,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 16,

@@ -77,9 +77,13 @@ Future<void> showContactUsDialog(BuildContext context) async {
                                   size: 18,
                                   color: ColorConstants.kPrimaryColor2),
                               const SizedBox(width: 6),
-                              Text(
-                                body['phone_number'].toString(),
-                                style: const TextStyle(fontSize: 18),
+                              Expanded(
+                                child: Text(
+                                  body['phone_number'].toString(),
+                                  style: const TextStyle(fontSize: 18),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
@@ -96,9 +100,13 @@ Future<void> showContactUsDialog(BuildContext context) async {
                                   size: 18,
                                   color: ColorConstants.kPrimaryColor2),
                               const SizedBox(width: 6),
-                              Text(
-                                body['email'].toString(),
-                                style: const TextStyle(fontSize: 16),
+                              Expanded(
+                                child: Text(
+                                  body['email'].toString(),
+                                  style: const TextStyle(fontSize: 16),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
@@ -143,6 +151,8 @@ Future<void> showContactUsDialog(BuildContext context) async {
                                     child: Text(
                                       value,
                                       style: const TextStyle(fontSize: 16),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],

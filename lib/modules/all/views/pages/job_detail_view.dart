@@ -1,6 +1,8 @@
+// ignore_for_file: avoid_print, depend_on_referenced_packages
+
 import 'package:feather_icons/feather_icons.dart';
+import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
-import 'package:collection/collection.dart';
 // ignore_for_file: deprecated_member_use, unused_element
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,7 +10,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:gyzyleller/core/utils/all_view_tag_resolver.dart';
 import 'package:intl/intl.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -18,6 +19,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/core/models/job_model.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
 import 'package:gyzyleller/modules/all/controllers/job_detail_controller.dart';
 import 'package:gyzyleller/modules/all/views/pages/info_row.dart';
 import 'package:gyzyleller/modules/all/views/pages/new_tag.dart';
@@ -28,9 +30,9 @@ import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_request_bottom_sheet.dart';
 import 'package:gyzyleller/shared/widgets/full_screen_image_gallery.dart';
+import 'package:gyzyleller/modules/all/views/pages/account_summary_bar.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
-import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
 import 'package:gyzyleller/modules/login/views/login_view.dart';
 import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:dio/dio.dart';
@@ -51,7 +53,6 @@ class JobDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final JobDetailController controller = Get.put(JobDetailController());
-    final RefreshController refreshController = RefreshController();
 
     return Scaffold(
       backgroundColor: ColorConstants.background,
@@ -80,7 +81,11 @@ class JobDetailView extends StatelessWidget {
               ? PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, color: Colors.black),
                   padding: const EdgeInsets.symmetric(horizontal: 0),
-                  offset: const Offset(-13, 35),
+                  offset: const Offset(-12, 40),
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    maxWidth: 48,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -88,23 +93,15 @@ class JobDetailView extends StatelessWidget {
                     PopupMenuItem<String>(
                       value: 'delete',
                       height: 25,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.only(
+                          left: 12.5, right: 5, top: 5, bottom: 5),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'deletee'.tr,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
                           SvgPicture.asset(
                             IconConstants.trash,
-                            width: 16,
-                            height: 16,
+                            width: 22,
+                            height: 22,
                             colorFilter: const ColorFilter.mode(
                               Colors.black,
                               BlendMode.srcIn,
@@ -116,8 +113,11 @@ class JobDetailView extends StatelessWidget {
                   ],
                   onSelected: (value) async {
                     if (value == 'delete' && controller.job.value != null) {
-                      final bool isProposal = controller.fromTaskView.value && controller.taskTabIndex.value == 0;
-                      final deleted = await DialogUtils().showDeleteJobDialog(context, controller.job.value!.id, isRequest: isProposal);
+                      final bool isProposal = controller.fromTaskView.value &&
+                          controller.taskTabIndex.value == 0;
+                      final deleted = await DialogUtils().showDeleteJobDialog(
+                          context, controller.job.value!.id,
+                          isRequest: isProposal);
                       if (deleted == true) {
                         Get.back();
                       }
@@ -129,6 +129,8 @@ class JobDetailView extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        print(
+            '🔴 [OBX] isLoading=${controller.isLoading.value}, error="${controller.error.value}", job=${controller.job.value?.id}');
         if (controller.isLoading.value) {
           return const Center(
             child: CircularProgressIndicator(
@@ -165,7 +167,8 @@ class JobDetailView extends StatelessWidget {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ColorConstants.kPrimaryColor2,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -205,31 +208,47 @@ class JobDetailView extends StatelessWidget {
         final reviewAnswer = job.answers.firstWhereOrNull(
           (a) => a.type == 'review' || a.type == 'comment',
         );
-        String? reviewText;
-        int rating = 0;
-        print('[JOB_DETAIL][REVIEW] reviewAnswer found: ${reviewAnswer != null}');
-        print('[JOB_DETAIL][REVIEW] reviewAnswer.type: ${reviewAnswer?.type}');
-        print('[JOB_DETAIL][REVIEW] reviewAnswer.value: ${reviewAnswer?.value}');
-        print('[JOB_DETAIL][REVIEW] reviewAnswer.rating: ${reviewAnswer?.rating}');
-        print('[JOB_DETAIL][REVIEW] job.review: ${job.review}');
-        print('[JOB_DETAIL][REVIEW] job.reviewRating: ${job.reviewRating}');
-        if (reviewAnswer != null && reviewAnswer.value != null && reviewAnswer.value!.isNotEmpty) {
-          reviewText = reviewAnswer.value;
-          if (reviewAnswer.rating != null) {
-            rating = reviewAnswer.rating!;
-          }
-        } else if (job.review != null && job.review!.isNotEmpty) {
-          reviewText = job.review;
-          if (job.reviewRating != null) {
-            rating = job.reviewRating!;
-          }
-        }
-        print('[JOB_DETAIL][REVIEW] selected reviewText: $reviewText');
-        print('[JOB_DETAIL][REVIEW] selected rating: $rating');
-        final int? myUserId = AuthStorage().getUserId();
-        final bool isSelectedUser = myUserId != null && job.selectedUserId != null && myUserId == job.selectedUserId;
-        if (reviewText != null && reviewText.isNotEmpty) {
+
+        String? reviewText = reviewAnswer?.value ?? job.review;
+        int rating = reviewAnswer?.rating ?? job.reviewRating ?? 0;
+
+        print('🔍 [OFFER_BOX] reviewText: "$reviewText"');
+        print('🔍 [OFFER_BOX] job.priceComment raw: "${job.priceComment}"');
+        print('🔍 [OFFER_BOX] job.commentComment raw: "${job.commentComment}"');
+        print('🔍 [OFFER_BOX] job.selectedUserId: ${job.selectedUserId}');
+        print(
+            '🔍 [OFFER_BOX] job.finished: ${job.finished}, job.status: ${job.status}');
+
+        if ((reviewText != null && reviewText.isNotEmpty) || rating > 0) {
+          reviewText ??= '';
+          final int? myUserId = AuthStorage().getUserId();
+          final bool isSelectedUser = myUserId != null &&
+              job.selectedUserId != null &&
+              myUserId == job.selectedUserId;
+
+          print(
+              '🔍 [JobDetailView] isSelectedUser (for reply box): $isSelectedUser');
+          print(
+              '🔍 [JobDetailView] controller.isSelectedMaster: ${controller.isSelectedMaster}');
+          print(
+              '🔍 [JobDetailView] myUserId: $myUserId, job.selectedUserId: ${job.selectedUserId}');
+
           if (isSelectedUser) {
+            final String offerPrice = (job.priceComment == null ||
+                    job.priceComment!.trim().isEmpty ||
+                    job.priceComment!.trim() == 'null' ||
+                    job.priceComment!.trim() == '0')
+                ? ''
+                : job.priceComment!.trim();
+            final String offerComment = (job.commentComment == null ||
+                    job.commentComment!.trim().isEmpty ||
+                    job.commentComment!.trim() == 'null')
+                ? ''
+                : job.commentComment!.trim();
+
+            print(
+                '🔍 [OFFER_BOX] isSelectedUser=true → offerPrice: "$offerPrice", offerComment: "$offerComment"');
+
             reviewApproveBox = Container(
               width: double.infinity,
               margin: const EdgeInsets.only(bottom: 8),
@@ -237,94 +256,63 @@ class JobDetailView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                // border: Border.all(color: const Color(0xFFE3E8F1)),
               ),
-              child: Row(
-                children: [
-                  const HugeIcon(icon: HugeIcons.strokeRoundedTick03, color: Color(0xFF4BB543), size: 22),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'review_approved'.tr,
-                      style: const TextStyle(
-                        color: Color(0xFF1B2B50),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          reviewCard = Card(
-            margin: const EdgeInsets.only(top: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            color: Colors.white,
-            elevation: 0.5,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 24, bottom: 16, left: 12, right: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.grey[200],
-                        backgroundImage: (job.image != null && job.image!.isNotEmpty) ? NetworkImage(job.image!) as ImageProvider : null,
-                        child: (job.image == null || job.image!.isEmpty) ? const Icon(Icons.person, color: Colors.grey, size: 22) : null,
-                      ),
-                      const SizedBox(width: 10),
+                      const HugeIcon(
+                          icon: HugeIcons.strokeRoundedTick03,
+                          color: Color(0xFF4BB543),
+                          size: 22),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          job.username,
+                          'review_approved'.tr,
                           style: const TextStyle(
+                            color: Color(0xFF1B2B50),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: Color(0xFF1B2B50),
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Row(
-                        children: List.generate(5, (i) {
-                          return Icon(
-                            i < rating ? Icons.star : Icons.star_border,
-                            color: i < rating ? Color(0xFFFFC700) : Color(0xFFE3E8F1),
-                            size: 22,
-                          );
-                        }),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    reviewText,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Color(0xFF1B2B50),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    (() {
-                      try {
-                        final dateTime = DateTime.parse(job.createdAt);
-                        return DateFormat('dd.MM.yyyy').format(dateTime);
-                      } catch (_) {
-                        return job.createdAt;
-                      }
-                    })(),
-                    style: const TextStyle(
-                      color: Color(0xFFB0B8C1),
-                      fontSize: 14,
-                    ),
-                  ),
                 ],
               ),
-            ),
+            );
+          }
+
+          final reviewModel = ReviewModel(
+            id: job.reviewId?.toString() ?? '',
+            userId: job.userId?.toString() ?? '',
+            jobId: job.id.toString(),
+            review: reviewText,
+            rating: rating,
+            requestId: job.requestId?.toString() ?? '',
+            createdAt: DateTime.tryParse(job.createdAt) ?? DateTime.now(),
+            username: job.username,
+            image: job.image,
+            replies: job.reviewReplies,
+          );
+
+          final String? currentUserId = AuthStorage().getUserId()?.toString();
+          final bool canEditOwnReview = AuthStorage().isLoggedIn &&
+              currentUserId != null &&
+              currentUserId == reviewModel.userId;
+
+          reviewCard = ReviewTile(
+            review: reviewModel,
+            isOwner: controller.isSelectedMaster,
+            hideReplyEdit: false,
+            onEditReview: canEditOwnReview
+                ? (id, text) => controller.editReview(id, text)
+                : null,
+            onReply: controller.isSelectedMaster
+                ? (reviewId, replyText) =>
+                    controller.replyToReview(reviewId, replyText)
+                : null,
           );
         }
 
@@ -336,7 +324,9 @@ class JobDetailView extends StatelessWidget {
         }
 
         for (final answer in job.answers) {
-          if ((answer.type == 'image' || answer.type == 'file') && answer.value != null && answer.value!.isNotEmpty) {
+          if ((answer.type == 'image' || answer.type == 'file') &&
+              answer.value != null &&
+              answer.value!.isNotEmpty) {
             images.add(_resolveMediaUrl(answer.value!));
           }
         }
@@ -353,11 +343,13 @@ class JobDetailView extends StatelessWidget {
         final args = Get.arguments;
         final bool fromAllView = args is Map && args['fromAllView'] == true;
         final bool fromTaskView = args is Map && args['fromTaskView'] == true;
-        final int taskTabIndex = args is Map ? ((args['taskTabIndex'] as int?) ?? 0) : 0;
+        final int taskTabIndex =
+            args is Map ? ((args['taskTabIndex'] as int?) ?? 0) : 0;
         final AllViewTagResolver tagResolver = AllViewTagResolver();
         AllViewTagData? detailTag;
         if (fromAllView) {
-          detailTag = tagResolver.resolve(job, isLoggedIn: controller.isLoggedIn.value);
+          detailTag =
+              tagResolver.resolve(job, isLoggedIn: controller.isLoggedIn.value);
         } else if (fromTaskView) {
           if (taskTabIndex == 0) {
             detailTag = _TaskRequestedDetailTagResolver().resolve(job);
@@ -377,27 +369,32 @@ class JobDetailView extends StatelessWidget {
             color: ColorConstants.blue,
             backgroundColor: ColorConstants.background,
           ),
-          controller: refreshController,
+          controller: controller.refreshController,
           enablePullDown: true,
           enablePullUp: false,
           onRefresh: () async {
             await controller.fetchJobDetail(controller.job.value!.id);
-            refreshController.refreshCompleted();
+            controller.refreshController.refreshCompleted();
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 20.0),
+            padding: const EdgeInsets.only(
+                left: 16.0, right: 16.0, top: 16.0, bottom: 20.0),
             children: [
               _buildDateCard(displayCreatedAt),
               const SizedBox(height: 16),
               Text(
                 'isin_gys'.tr,
-                style: const TextStyle(color: ColorConstants.blue, fontSize: 13, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: ColorConstants.blue,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
                 job.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               if (job.desc.isNotEmpty)
@@ -417,7 +414,10 @@ class JobDetailView extends StatelessWidget {
                   children: [
                     Text(
                       "file_img".tr,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.blue),
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.blue),
                     ),
                     const SizedBox(height: 12),
                     _buildImageGallery(
@@ -438,14 +438,20 @@ class JobDetailView extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
                 ),
-              if (job.position != null && job.position!.isNotEmpty && job.position != "0.0, 0.0" && job.position != "(0.0, 0.0)") ...[
+              if (job.position != null &&
+                  job.position!.isNotEmpty &&
+                  job.position != "0.0, 0.0" &&
+                  job.position != "(0.0, 0.0)") ...[
                 const SizedBox(height: 14),
                 _buildMapPreview(job, position, context),
                 const SizedBox(height: 14),
               ],
               Text(
                 'bash_mag'.tr,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.blue),
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.blue),
               ),
               const SizedBox(height: 16),
               Builder(
@@ -468,33 +474,61 @@ class JobDetailView extends StatelessWidget {
                 },
               ),
               if (jobStatusEnum == MyTasksStatus.retEdilen) ...[
-                Text(
-                  'duzgun'.tr,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorConstants.kPrimaryColor2),
-                ),
                 const SizedBox(height: 12),
+                if (job.rejectedReason != null &&
+                    job.rejectedReason!.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text(
+                          job.rejectedReason!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red.shade900,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
               const SizedBox(height: 12),
-              job.status == 3 && AuthStorage().isLoggedIn == true
+              job.status == 3 &&
+                      AuthStorage().isLoggedIn == true &&
+                      job.userId.toString() ==
+                          AuthStorage().masterProfileId.toString()
                   ? Container(
-                      padding: EdgeInsets.all(10),
-                      margin: EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12)),
                       child: Row(
                         // crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 14),
+                          const Padding(
+                            padding: EdgeInsets.only(right: 14),
                             child: Icon(
                               FeatherIcons.info,
                               color: Colors.grey,
                             ),
                           ),
-                          Expanded(child: Text('executor_selected_info'.tr, maxLines: 2, style: const TextStyle(fontSize: 15, color: ColorConstants.fonts, fontWeight: FontWeight.bold))),
+                          Expanded(
+                              child: Text('executor_selected_info'.tr,
+                                  maxLines: 2,
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      color: ColorConstants.fonts,
+                                      fontWeight: FontWeight.bold))),
                         ],
                       ),
                     )
-                  : SizedBox.shrink(),
+                  : const SizedBox.shrink(),
               _buildOtherInfoSection(context, job),
               const SizedBox(height: 10),
               Column(
@@ -504,162 +538,206 @@ class JobDetailView extends StatelessWidget {
                     final currentJob = controller.job.value;
                     if (currentJob == null) return const SizedBox.shrink();
 
-                    // Hide offer button if job.status == tamamlanan (4) or expired (7)
-                    if (currentJob.status == 4 || currentJob.status == 7) {
+                    // Hide offer button if this job belongs to the logged-in user
+                    final int? myUserId = AuthStorage().getUserId();
+                    print('🔍 [OFFER_BTN] job.userId = ${currentJob.userId}');
+                    print('🔍 [OFFER_BTN] myUserId   = $myUserId');
+                    print(
+                        '🔍 [OFFER_BTN] eşitmi?    = ${currentJob.userId == myUserId}');
+                    if (myUserId != null &&
+                        currentJob.userId != null &&
+                        currentJob.userId == myUserId) {
                       return const SizedBox.shrink();
                     }
 
-                    return AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      switchInCurve: Curves.easeInOut,
-                      switchOutCurve: Curves.easeInOut,
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SizeTransition(
-                            sizeFactor: animation,
-                            axisAlignment: -1.0,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: currentJob.finished
-                          ? const SizedBox()
-                          : (controller.isOfferSent.value || currentJob.requestId != null)
-                              ? Column(
-                                  key: const ValueKey('offer_sent'),
-                                  children: [
-                                    if (!(currentJob.selected && !currentJob.finished)) ...[
-                                      if (controller.isOfferSent.value)
-                                        _buildOfferSuccessBox(
-                                          price: controller.sentPrice.value,
-                                          comment: controller.sentComment.value,
-                                        )
-                                      else
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: ColorConstants.whiteColor,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.access_time, color: ColorConstants.blackColor),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                "offer_sent".tr,
-                                                style: const TextStyle(
-                                                  color: ColorConstants.blackColor,
-                                                  fontWeight: FontWeight.w400,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                    final bool hasOffer = controller.isOfferSent.value ||
+                        currentJob.requestId != null;
+
+                    final String priceVal = controller.isOfferSent.value
+                        ? controller.sentPrice.value
+                        : (currentJob.priceComment?.isNotEmpty == true
+                            ? currentJob.priceComment!
+                            : controller.sentPrice.value);
+                    final String commentVal = controller.isOfferSent.value
+                        ? controller.sentComment.value
+                        : (currentJob.commentComment?.isNotEmpty == true
+                            ? currentJob.commentComment!
+                            : controller.sentComment.value);
+
+                    final bool showOfferSuccessCard = hasOffer &&
+                        priceVal.trim().isNotEmpty &&
+                        priceVal.trim() != 'null' &&
+                        priceVal.trim() != '0' &&
+                        commentVal.trim().isNotEmpty &&
+                        commentVal.trim() != 'null';
+
+                    // Hide offer button/actions if job is finished or status == tamamlanan (4) or expired (7)
+                    // Also hide if status == 3 (selected) AND finished == true (task_status_done_no_rating)
+                    // Also hide if status == 3 (worker selected) AND coming from all_view - status_worker_selected
+                    final bool fromAllView = Get.arguments is Map &&
+                        (Get.arguments as Map)['fromAllView'] == true;
+
+                    final bool isStatusRestricted = currentJob.finished ||
+                        currentJob.status == 4 ||
+                        currentJob.status == 7 ||
+                        (currentJob.status == 3 && fromAllView) ||
+                        (currentJob.status == 3 && currentJob.finished == true);
+
+                    // If no offer was made and status is restricted, show nothing
+                    if (!showOfferSuccessCard && isStatusRestricted) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // _buildCommissionInfo(controller),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 400),
+                            switchInCurve: Curves.easeInOut,
+                            switchOutCurve: Curves.easeInOut,
+                            transitionBuilder: (child, animation) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SizeTransition(
+                                  sizeFactor: animation,
+                                  axisAlignment: -1.0,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: showOfferSuccessCard
+                                ? Column(
+                                    key: const ValueKey('offer_sent'),
+                                    children: [
+                                      _buildOfferSuccessBox(
+                                        price: priceVal,
+                                        comment: commentVal,
+                                      ),
                                       const SizedBox(height: 16),
-                                    ],
-                                    if (currentJob.selected || currentJob.chatId != null || controller.chatIdFromApi.value != null) ...[
-                                      _buildActionButtons(context, currentJob),
-                                      const SizedBox(height: 16),
-                                    ],
-                                    if (currentJob.selected) ...[
-                                      if (controller.isCompleteRequestSent.value)
-                                        const SizedBox.shrink()
-                                      else
-                                        SizedBox(
-                                          width: double.infinity,
-                                          height: 50,
-                                          child: ElevatedButton(
-                                            onPressed: controller.isCompletingJob.value
-                                                ? null
-                                                : () async {
-                                                    final result = await DialogUtils().showCompleteJobDialog(context);
-                                                    if (result == true) {
-                                                      controller.markJobDoneByMasterWithRequestId();
-                                                    }
-                                                  },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: ColorConstants.kPrimaryColor2,
-                                              padding: const EdgeInsets.symmetric(vertical: 14),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              elevation: 0,
-                                            ),
-                                            child: controller.isCompletingJob.value
-                                                ? const SizedBox(
-                                                    width: 20,
-                                                    height: 20,
-                                                    child: CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      color: Colors.white,
-                                                    ),
-                                                  )
-                                                : Text(
-                                                    'complete_job'.tr,
-                                                    style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.white,
-                                                    ),
+                                      if (!isStatusRestricted) ...[
+                                        if (currentJob.selected ||
+                                            currentJob.chatId != null ||
+                                            controller.chatIdFromApi.value !=
+                                                null) ...[
+                                          _buildActionButtons(
+                                              context, currentJob),
+                                          const SizedBox(height: 16),
+                                        ],
+                                        if (currentJob.selected) ...[
+                                          if (controller
+                                              .isCompleteRequestSent.value)
+                                            const SizedBox.shrink()
+                                          else
+                                            SizedBox(
+                                              width: double.infinity,
+                                              height: 50,
+                                              child: ElevatedButton(
+                                                onPressed: controller
+                                                        .isCompletingJob.value
+                                                    ? null
+                                                    : () async {
+                                                        final result =
+                                                            await DialogUtils()
+                                                                .showCompleteJobDialog(
+                                                                    context);
+                                                        if (result == true) {
+                                                          controller
+                                                              .markJobDoneByMasterWithRequestId();
+                                                        }
+                                                      },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      ColorConstants
+                                                          .kPrimaryColor2,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 14),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
                                                   ),
-                                          ),
-                                        ),
-                                      const SizedBox(height: 16),
+                                                  elevation: 0,
+                                                ),
+                                                child: controller
+                                                        .isCompletingJob.value
+                                                    ? const SizedBox(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                      )
+                                                    : Text(
+                                                        'complete_job'.tr,
+                                                        style: const TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                              ),
+                                            ),
+                                          const SizedBox(height: 16),
+                                        ],
+                                      ],
                                     ],
-                                  ],
-                                )
-                              : Column(
-                                  key: const ValueKey('make_offer'),
-                                  children: [
-                                    _buildCommissionInfo(controller),
-                                    const SizedBox(height: 16),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          if (!controller.isLoggedIn.value) {
-                                            Get.to(() => const LoginView(), binding: LoginBinding());
-                                            return;
-                                          }
-                                          final currentJob = controller.job.value;
-                                          final minRequired = currentJob != null ? currentJob.minPrice : 0;
-                                          if (controller.userBalance.value < minRequired) {
-                                            DialogUtils().showInsufficientBalanceDialog(context);
-                                            return;
-                                          }
-                                          _checkMasterAndExecute(context, "make_offer".tr, () {
-                                            controller.showingTemplates.value = false;
-                                            showModalBottomSheet(
-                                              context: context,
-                                              isScrollControlled: true,
-                                              backgroundColor: Colors.transparent,
-                                              builder: (context) => const JobRequestBottomSheet(),
-                                            );
-                                          });
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: ColorConstants.kPrimaryColor2,
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                  )
+                                : Column(
+                                    key: const ValueKey('make_offer'),
+                                    children: [
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            if (!controller.isLoggedIn.value) {
+                                              Get.to(() => const LoginView(),
+                                                  binding: LoginBinding());
+                                              return;
+                                            }
+                                            _checkMasterAndExecute(
+                                                context, "make_offer".tr, () {
+                                              controller.showingTemplates
+                                                  .value = false;
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                builder: (context) =>
+                                                    const JobRequestBottomSheet(),
+                                              );
+                                            });
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                ColorConstants.kPrimaryColor2,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 14),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            elevation: 0,
                                           ),
-                                          elevation: 0,
-                                        ),
-                                        child: Text(
-                                          "make_offer".tr,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                          child: Text(
+                                            "make_offer".tr,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                    );
+                                    ],
+                                  ),
+                          ),
+                        ]);
                   }),
                   const SizedBox(height: 10),
                   if (reviewApproveBox != null) ...[
@@ -670,62 +748,11 @@ class JobDetailView extends StatelessWidget {
                   ],
                   const SizedBox(height: 20),
                   Obx(() => controller.isLoggedIn.value
-                      ? SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => Get.to(() => const WalletView()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: ColorConstants.blue,
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                GestureDetector(
-                                  onTap: () => Get.to(() => const WalletView()),
-                                  child: Row(
-                                    children: [
-                                      SvgPicture.asset(IconConstants.hasabym, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn), width: 18),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "${"wallet".tr}: ${controller.userBalance.value.toStringAsFixed(0)} TMT",
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: ColorConstants.kPrimaryColor2,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SvgPicture.asset(IconConstants.arrowOutward, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn), width: 14),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        "ginis".tr,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
+                      ? AccountSummaryBar(
+                          balanceText:
+                              '${"wallet".tr}: ${controller.userBalance.value.toStringAsFixed(0)} TMT',
+                          onPressed: () => Get.to(() => const WalletView()),
+                          onBalanceTap: () => Get.to(() => const WalletView()),
                         )
                       : const SizedBox.shrink()),
                 ],
@@ -739,41 +766,55 @@ class JobDetailView extends StatelessWidget {
   }
 
   Widget _buildCommissionInfo(JobDetailController controller) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ColorConstants.background,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.info_outline,
-            color: ColorConstants.secondary,
-            size: 20,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "Işiň bahasy ${controller.basePercent.value}%. Müşderi tarapyndan saýlanan bolsaňyz, pul balansyňyzdan alnar.",
-              style: const TextStyle(
-                fontSize: 15,
-                color: ColorConstants.secondary,
-                fontWeight: FontWeight.w500,
-                height: 1.4,
+    return Obx(() {
+      final isSelected = controller.job.value?.selected == true ||
+          controller.job.value?.status == 3;
+      final fee = controller.calculatedFee.value > 0
+          ? controller.calculatedFee.value
+          : controller.persistedFee.value;
+
+      if (isSelected || fee == 0) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: ColorConstants.background,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.info_outline,
+              color: ColorConstants.secondary,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'offer_fee_info'.trParams({'fee': fee.toStringAsFixed(0)}),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: ColorConstants.secondary,
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildActionButtons(BuildContext context, JobModel job) {
     final controller = Get.find<JobDetailController>();
-    final String? chatId = job.chatId?.toString() ?? controller.chatIdFromApi.value?.toString();
+    final String? chatId =
+        job.chatId?.toString() ?? controller.chatIdFromApi.value?.toString();
     final bool hasChat = chatId != null;
     final bool hasPhone = job.phone != null && job.phone!.isNotEmpty;
 
@@ -855,7 +896,8 @@ class JobDetailView extends StatelessWidget {
 
   void _navigateToChat(JobModel job) {
     final JobDetailController controller = Get.find<JobDetailController>();
-    final String? chatId = job.chatId?.toString() ?? controller.chatIdFromApi.value?.toString();
+    final String? chatId =
+        job.chatId?.toString() ?? controller.chatIdFromApi.value?.toString();
 
     if (chatId == null) {
       print('❌ [JobDetail] chatId is null, cannot navigate to chat');
@@ -865,7 +907,7 @@ class JobDetailView extends StatelessWidget {
     print('🚀 [JobDetail] Navigating to Chat: $chatId');
 
     final String productImage = job.images.isNotEmpty ? job.images.first : '';
-    final LatLng? pos = controller.parsePosition(job.position);
+    final LatLng pos = controller.parsePosition(job.position);
 
     Get.to(
       () => ChatDetailView(
@@ -875,14 +917,16 @@ class JobDetailView extends StatelessWidget {
         userPicture: job.image ?? '',
         productId: job.id.toString(),
         productImage: productImage,
-        productPrice: (job.minPrice == 0 && job.maxPrice == 0) ? "not_priced".tr : "${job.minPrice} - ${job.maxPrice} TMT",
+        productPrice: (job.minPrice == 0 && job.maxPrice == 0)
+            ? "not_priced".tr
+            : "${job.minPrice} - ${job.maxPrice} TMT",
         productTitle: job.name,
         productStatus: job.status.toString(),
         lastSeen: '',
         blocked: false,
         notification: false, // Changed to false as this is a real chat session
-        postLat: pos?.latitude.toString(),
-        postLng: pos?.longitude.toString(),
+        postLat: pos.latitude.toString(),
+        postLng: pos.longitude.toString(),
       ),
     )?.then((_) {
       // Refresh chats when coming back, similar to ChatsView
@@ -890,7 +934,8 @@ class JobDetailView extends StatelessWidget {
     });
   }
 
-  void _checkMasterAndExecute(BuildContext context, String actionTitle, VoidCallback onExecute) {
+  void _checkMasterAndExecute(
+      BuildContext context, String actionTitle, VoidCallback onExecute) {
     if (AuthStorage().masterProfileId == null) {
       DialogUtils().showFillProfileDialog(context, actionTitle);
     } else {
@@ -898,45 +943,80 @@ class JobDetailView extends StatelessWidget {
     }
   }
 
-  Widget _buildOfferSuccessBox({required String price, required String comment}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "your_offer_is".trParams({'price': price}),
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: ColorConstants.fonts,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildOfferSuccessBox(
+      {required String price, required String comment}) {
+    final controller = Get.find<JobDetailController>();
+    return Column(children: [
+      Obx(() {
+        final fee = controller.calculatedFee.value > 0
+            ? controller.calculatedFee.value
+            : controller.persistedFee.value;
+        if (fee == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
             children: [
-              const Icon(Icons.access_time, size: 20, color: ColorConstants.fonts),
-              const SizedBox(width: 10),
+              const Icon(
+                Icons.info_outline,
+                color: ColorConstants.secondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  comment,
+                  'offer_fee_info'.trParams({'fee': fee.toStringAsFixed(0)}),
                   style: const TextStyle(
-                    fontSize: 14,
-                    color: ColorConstants.fonts,
+                    fontSize: 15,
+                    color: ColorConstants.secondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
             ],
           ),
-        ],
+        );
+      }),
+      const SizedBox(height: 12),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "your_offer_is".trParams({'price': price}),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: ColorConstants.fonts,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.access_time,
+                    size: 20, color: ColorConstants.fonts),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    comment,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: ColorConstants.fonts,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ]);
   }
 
   Widget _buildDateCard(String dateStr) {
@@ -953,7 +1033,10 @@ class JobDetailView extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             dateStr,
-            style: const TextStyle(color: ColorConstants.fonts, fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+                color: ColorConstants.fonts,
+                fontSize: 13,
+                fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -1023,7 +1106,9 @@ class JobDetailView extends StatelessWidget {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: isExpanded ? content : "${content.substring(0, tp.getPositionForOffset(Offset(constraints.maxWidth, tp.height)).offset - 12)}...",
+                                text: isExpanded
+                                    ? content
+                                    : "${content.substring(0, tp.getPositionForOffset(Offset(constraints.maxWidth, tp.height)).offset - 12)}...",
                                 style: const TextStyle(
                                   fontSize: 15,
                                   color: ColorConstants.fonts,
@@ -1033,7 +1118,8 @@ class JobDetailView extends StatelessWidget {
                                 alignment: PlaceholderAlignment.baseline,
                                 baseline: TextBaseline.alphabetic,
                                 child: GestureDetector(
-                                  onTap: () => controller.isDescExpanded.toggle(),
+                                  onTap: () =>
+                                      controller.isDescExpanded.toggle(),
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 4),
                                     child: Text(
@@ -1041,7 +1127,7 @@ class JobDetailView extends StatelessWidget {
                                       style: const TextStyle(
                                         fontSize: 13,
                                         color: ColorConstants.blue,
-                                        fontWeight: FontWeight.w400,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
@@ -1107,7 +1193,8 @@ class JobDetailView extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: GestureDetector(
-                          onLongPress: () => _showDownloadOption(context, images[firstIndex]),
+                          onLongPress: () =>
+                              _showDownloadOption(context, images[firstIndex]),
                           child: InkWell(
                             onTap: () {
                               Navigator.of(context, rootNavigator: true).push(
@@ -1125,10 +1212,12 @@ class JobDetailView extends StatelessWidget {
                                 imageUrl: images[firstIndex],
                                 fit: BoxFit.cover,
                                 height: 120,
-                                placeholder: (context, url) => _buildImageShimmer(),
+                                placeholder: (context, url) =>
+                                    _buildImageShimmer(),
                                 errorWidget: (context, url, error) => Container(
                                   color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                                  child: const Icon(Icons.broken_image,
+                                      color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -1144,12 +1233,14 @@ class JobDetailView extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: GestureDetector(
-                            onLongPress: () => _showDownloadOption(context, images[secondIndex]),
+                            onLongPress: () => _showDownloadOption(
+                                context, images[secondIndex]),
                             child: InkWell(
                               onTap: () {
                                 Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
-                                    builder: (context) => FullScreenImageGallery(
+                                    builder: (context) =>
+                                        FullScreenImageGallery(
                                       images: images,
                                       initialIndex: secondIndex,
                                     ),
@@ -1162,10 +1253,13 @@ class JobDetailView extends StatelessWidget {
                                   imageUrl: images[secondIndex],
                                   fit: BoxFit.cover,
                                   height: 120,
-                                  placeholder: (context, url) => _buildImageShimmer(),
-                                  errorWidget: (context, url, error) => Container(
+                                  placeholder: (context, url) =>
+                                      _buildImageShimmer(),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
                                     color: Colors.grey[200],
-                                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                                    child: const Icon(Icons.broken_image,
+                                        color: Colors.grey),
                                   ),
                                 ),
                               ),
@@ -1192,7 +1286,9 @@ class JobDetailView extends StatelessWidget {
                 height: 6,
                 width: 6,
                 decoration: BoxDecoration(
-                  color: currentPage == index ? ColorConstants.kPrimaryColor2 : Colors.grey[400],
+                  color: currentPage == index
+                      ? ColorConstants.kPrimaryColor2
+                      : Colors.grey[400],
                   borderRadius: BorderRadius.circular(3),
                 ),
               );
@@ -1216,6 +1312,8 @@ class JobDetailView extends StatelessWidget {
               ),
               placeName: job.name,
               catName: job.categoryName,
+              welayat: job.welayat,
+              etrap: job.etrap,
             ),
           ),
         );
@@ -1242,6 +1340,8 @@ class JobDetailView extends StatelessWidget {
                 ),
                 placeName: job.name,
                 catName: job.categoryName,
+                welayat: job.welayat,
+                etrap: job.etrap,
               ),
             ),
           );
@@ -1257,7 +1357,9 @@ class JobDetailView extends StatelessWidget {
     int? currentFormId;
 
     for (var answer in job.answers) {
-      if (answer.formId != null && answer.formId != currentFormId && answer.formName != null) {
+      if (answer.formId != null &&
+          answer.formId != currentFormId &&
+          answer.formName != null) {
         if (innerWidgets.isNotEmpty) {
           innerWidgets.add(const SizedBox(height: 12));
         }
@@ -1316,9 +1418,13 @@ class JobDetailView extends StatelessWidget {
     ];
   }
 
-  Widget? _buildSingleAnswer(JobAnswer answer, JobModel job, BuildContext context) {
-    final hasMap = (answer.lat != null && answer.lng != null) || (answer.type == 'map' && answer.value != null && answer.value!.isNotEmpty);
-    final content = _getAnswerContent(answer, excludeLocationInfo: hasMap);
+  Widget? _buildSingleAnswer(
+      JobAnswer answer, JobModel job, BuildContext context) {
+    final hasMap = (answer.lat != null && answer.lng != null) ||
+        (answer.type == 'map' &&
+            answer.value != null &&
+            answer.value!.isNotEmpty);
+    final content = _getAnswerContent(answer);
 
     if (content.isEmpty && !hasMap) return null;
 
@@ -1336,7 +1442,10 @@ class JobDetailView extends StatelessWidget {
 
   Widget _buildAnswerMap(JobAnswer answer, JobModel job, BuildContext context) {
     final JobDetailController controller = Get.find<JobDetailController>();
-    final mapPos = controller.parsePosition(answer.value ?? ((answer.lat != null && answer.lng != null) ? "(${answer.lng},${answer.lat})" : ""));
+    final mapPos = controller.parsePosition(answer.value ??
+        ((answer.lat != null && answer.lng != null)
+            ? "(${answer.lng},${answer.lat})"
+            : ""));
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -1361,6 +1470,8 @@ class JobDetailView extends StatelessWidget {
                 ),
                 placeName: job.name,
                 catName: answer.value ?? answer.question,
+                welayat: job.welayat,
+                etrap: job.etrap,
               ),
             ),
           );
@@ -1372,7 +1483,11 @@ class JobDetailView extends StatelessWidget {
   Widget _buildAnswerRow(String question, String answer) {
     return RichText(
       text: TextSpan(
-        style: const TextStyle(fontSize: 14, color: Colors.black, height: 1.4, fontFamily: 'Gilroy'),
+        style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black,
+            height: 1.4,
+            fontFamily: 'Gilroy'),
         children: [
           TextSpan(
             text: "$question: ",
@@ -1384,12 +1499,36 @@ class JobDetailView extends StatelessWidget {
     );
   }
 
-  String _getAnswerContent(JobAnswer answer, {bool excludeLocationInfo = false}) {
+  String _resolveLocationId(int? id) {
+    if (id == null) return '';
+    try {
+      if (Get.isRegistered<AllController>()) {
+        final allLocations = Get.find<AllController>().allLocations;
+        for (var w in allLocations) {
+          if (w.id == id) return w.name;
+          for (var e in w.etraps) {
+            if (e.id == id) {
+              return w.name == e.name ? w.name : "${w.name} / ${e.name}";
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error resolving locationId $id: $e');
+    }
+    return '';
+  }
+
+  String _getAnswerContent(JobAnswer answer) {
     final List<String> parts = [];
 
     // 1. Add Options (Selections)
     if (answer.options != null && answer.options!.isNotEmpty) {
-      parts.add(answer.options!.map((o) => o.optionName).join(', '));
+      final optionsString = answer.options!
+          .map((o) => o.optionName.trim())
+          .where((s) => s.isNotEmpty)
+          .join(', ');
+      if (optionsString.isNotEmpty) parts.add(optionsString);
     }
 
     // 2. Add Date and Time
@@ -1400,52 +1539,120 @@ class JobDetailView extends StatelessWidget {
         if (answer.time != null && answer.time!.isNotEmpty) {
           datePart += " ${answer.time!.split(':').take(2).join(':')}";
         }
-        parts.add(datePart);
+        if (datePart.trim().isNotEmpty) parts.add(datePart.trim());
       } catch (_) {
-        parts.add(answer.date!);
+        if (answer.date!.trim().isNotEmpty) parts.add(answer.date!.trim());
         if (answer.time != null && answer.time!.isNotEmpty) {
-          parts.add(answer.time!.split(':').take(2).join(':'));
+          final timePart = answer.time!.split(':').take(2).join(':');
+          if (timePart.trim().isNotEmpty) parts.add(timePart.trim());
         }
       }
     } else if (answer.time != null && answer.time!.isNotEmpty) {
-      parts.add(answer.time!.split(':').take(2).join(':'));
+      final timePart = answer.time!.split(':').take(2).join(':');
+      if (timePart.trim().isNotEmpty) parts.add(timePart.trim());
     }
 
-    if (!excludeLocationInfo) {
-      // 3. Add Raw Value
-      if (answer.value != null && answer.value!.isNotEmpty && !parts.any((p) => p.contains(answer.value!))) {
-        parts.add(answer.value!);
+    String locName = '';
+    if (answer.locationId != null) {
+      locName = _resolveLocationId(answer.locationId);
+      if (locName.isNotEmpty) {
+        // Split resolved location name (which might be "Prov / Dist") into parts for better deduplication
+        parts.addAll(locName
+            .split(RegExp(r'[/,]'))
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty));
       }
     }
 
-    return parts.join(' / ');
+    // 3. Add Raw Value
+    if (answer.value != null) {
+      final raw = answer.value!.trim();
+      final lowerRaw = raw.toLowerCase();
+
+      // Skip internal placeholder flags
+      if (raw.isNotEmpty && lowerRaw != 'true' && lowerRaw != 'false') {
+        // Skip if it looks like coordinates and we already have a map or lat/lng
+        final bool isCoord = _isCoordinateString(raw);
+        final bool hasMapData = answer.lat != null || answer.type == 'map';
+
+        if (!(isCoord && hasMapData)) {
+          // Split by common separators to avoid duplication with options or other fields
+          final rawParts = raw.split(RegExp(r'[/,;]'));
+          for (var p in rawParts) {
+            final trimmed = p.trim();
+            if (trimmed.isNotEmpty) {
+              parts.add(trimmed);
+            }
+          }
+        }
+      }
+    }
+
+    // Deduplicate and join
+    final uniqueParts = <String>[];
+    for (var p in parts) {
+      final trimmed = p.trim();
+      if (trimmed.isEmpty) continue;
+
+      // Check if this part is already represented (either exactly or as part of another string)
+      bool alreadyPresent = false;
+      for (var existing in uniqueParts) {
+        if (existing.toLowerCase() == trimmed.toLowerCase() ||
+            existing.toLowerCase().contains(trimmed.toLowerCase())) {
+          alreadyPresent = true;
+          break;
+        }
+        // Also check reverse: if trimmed contains existing, replace existing
+        if (trimmed.toLowerCase().contains(existing.toLowerCase())) {
+          // Keep the longer/more specific version?
+          // Actually, just let it be for now, toSet() or simple check is usually enough
+        }
+      }
+
+      if (!alreadyPresent) {
+        uniqueParts.add(trimmed);
+      }
+    }
+
+    return uniqueParts.join(', ');
   }
 
   String _formatDateStatus(BuildContext context, JobModel job) {
-    if (job.whenToDo == 'date_today' || job.whenToDo == 'date_tomorrow') {
-      if (job.startDate != null && job.startDate!.isNotEmpty) {
-        try {
-          final taskDate = DateTime.parse(job.startDate!);
-          final dateFormat = DateFormat('EEEE, dd MMMM', Localizations.localeOf(context).toString());
-          final timeStr = DateFormat('HH:mm').format(taskDate);
-          return "${job.whenToDo.tr} (${dateFormat.format(taskDate)}) $timeStr";
-        } catch (_) {}
+    // Handle during_the_week with date range
+    if (job.whenToDo == 'during_the_week') {
+      if (job.startDate != null &&
+          job.startDate!.isNotEmpty &&
+          job.startDate != 'null' &&
+          job.endDate != null &&
+          job.endDate!.isNotEmpty &&
+          job.endDate != 'null') {
+        final range = _formatDateRange(job.startDate, job.endDate);
+        if (range.isNotEmpty) return range;
       }
       return job.whenToDo.tr;
     }
 
-    if (job.startDate != null && job.startDate!.isNotEmpty) {
+    // Skip generic startDate handling for special_date tasks to avoid showing date_today incorrectly
+    if (job.whenToDo != 'special_date' &&
+        job.startDate != null &&
+        job.startDate!.isNotEmpty &&
+        job.startDate != 'null') {
       try {
         final taskDate = DateTime.parse(job.startDate!);
         final now = DateTime.now();
         final tomorrow = now.add(const Duration(days: 1));
-        final dateFormat = DateFormat('EEEE, dd MMMM', Localizations.localeOf(context).toString());
+        final dateFormat = DateFormat(
+            'EEEE, dd MMMM', Localizations.localeOf(context).languageCode);
 
-        if (taskDate.year == now.year && taskDate.month == now.month && taskDate.day == now.day) {
+        if (taskDate.year == now.year &&
+            taskDate.month == now.month &&
+            taskDate.day == now.day) {
           return "${"date_today".tr} (${dateFormat.format(now)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
-        if (taskDate.year == tomorrow.year && taskDate.month == tomorrow.month && taskDate.day == tomorrow.day) {
+        if (taskDate.year == tomorrow.year &&
+            taskDate.month == tomorrow.month &&
+            taskDate.day == tomorrow.day) {
           return "${"date_tomorrow".tr} (${dateFormat.format(tomorrow)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
@@ -1459,6 +1666,21 @@ class JobDetailView extends StatelessWidget {
     }
 
     if (job.whenToDo == 'special_date') {
+      // Try to get date from answers first
+      for (final answer in job.answers) {
+        if (answer.date != null && answer.date!.isNotEmpty) {
+          final range = _formatDateRange(answer.date, null);
+          if (range.isNotEmpty) return range;
+        }
+      }
+      // If no answer date, fallback to job's start and end dates
+      if (job.startDate != null &&
+          job.startDate!.isNotEmpty &&
+          job.endDate != null &&
+          job.endDate!.isNotEmpty) {
+        final range = _formatDateRange(job.startDate, job.endDate);
+        if (range.isNotEmpty) return range;
+      }
       return 'i_will_choose_date'.tr;
     }
 
@@ -1466,8 +1688,12 @@ class JobDetailView extends StatelessWidget {
   }
 
   String _formatDateRange(String? start, String? end) {
-    if (start == null && end == null) return '';
-    if (start != null && (end == null || start == end)) {
+    if ((start == null || start == 'null') && (end == null || end == 'null')) {
+      return '';
+    }
+    if (start != null &&
+        start != 'null' &&
+        (end == null || end == 'null' || start == end)) {
       try {
         final date = DateTime.parse(start);
         return DateFormat('dd.MM.yyyy HH:mm').format(date);
@@ -1479,7 +1705,9 @@ class JobDetailView extends StatelessWidget {
       final startDate = DateTime.parse(start!);
       final endDate = DateTime.parse(end!);
       final formatter = DateFormat('dd.MM.yyyy');
-      if (startDate.year == endDate.year && startDate.month == endDate.month && startDate.day == endDate.day) {
+      if (startDate.year == endDate.year &&
+          startDate.month == endDate.month &&
+          startDate.day == endDate.day) {
         return "${DateFormat('dd.MM.yyyy HH:mm').format(startDate)} - ${DateFormat('HH:mm').format(endDate)}";
       }
       return "${formatter.format(startDate)} - ${formatter.format(endDate)}";
@@ -1514,7 +1742,8 @@ class JobDetailView extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.insert_drive_file, size: 32, color: ColorConstants.kPrimaryColor2),
+            const Icon(Icons.insert_drive_file,
+                size: 32, color: ColorConstants.kPrimaryColor2),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -1534,7 +1763,8 @@ class JobDetailView extends StatelessWidget {
               },
               child: const Padding(
                 padding: EdgeInsets.all(4.0),
-                child: Icon(Icons.download_rounded, color: ColorConstants.kPrimaryColor2),
+                child: Icon(Icons.download_rounded,
+                    color: ColorConstants.kPrimaryColor2),
               ),
             ),
           ],
@@ -1583,13 +1813,16 @@ class JobDetailView extends StatelessWidget {
                 children: [
                   SmallInfo(
                     icon: IconConstants.payment,
-                    text: (job.minPrice == 0 && job.maxPrice == 0) ? "not_priced".tr : "${job.minPrice} TMT - ${job.maxPrice} TMT",
+                    text: (job.minPrice == 0 && job.maxPrice == 0)
+                        ? "not_priced".tr
+                        : "${job.minPrice} TMT - ${job.maxPrice} TMT",
                   ),
                   const SizedBox(width: 16),
                   SmallInfo(
                     icon: IconConstants.builder,
                     text: "${job.responsesCount ?? 0}",
-                    color: job.requestId != null ? ColorConstants.secondary : null,
+                    color:
+                        job.requestId != null ? ColorConstants.secondary : null,
                   ),
                   const SizedBox(width: 16),
                   SmallInfo(
@@ -1601,7 +1834,26 @@ class JobDetailView extends StatelessWidget {
               const SizedBox(height: 12),
               InfoRow(
                 icon: IconConstants.locationHouse,
-                text: "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
+                text: job.welayat == job.etrap
+                    ? "${job.welayat}${job.address.isNotEmpty ? ', ${job.address}' : ''}"
+                    : "${job.welayat}, ${job.etrap}${job.address.isNotEmpty ? ', ${job.address}' : ''}",
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.numbers,
+                    size: 16,
+                    color: ColorConstants.secondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text("№ ${job.id}",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      )),
+                ],
               ),
               const SizedBox(height: 12),
               const Divider(height: 1.5, color: ColorConstants.whiteColor),
@@ -1655,7 +1907,10 @@ class JobDetailView extends StatelessWidget {
   }
 
   void _showDownloadSnackBar({required bool isSuccess, String? message}) {
-    final String text = message ?? (isSuccess ? "${'download'.tr} ${'success_title'.tr}" : "${'error_title'.tr}: ${'download'.tr}");
+    final String text = message ??
+        (isSuccess
+            ? "${'download'.tr} ${'success_title'.tr}"
+            : "${'error_title'.tr}: ${'download'.tr}");
 
     Get.closeAllSnackbars();
     Get.snackbar(
@@ -1681,7 +1936,11 @@ class JobDetailView extends StatelessWidget {
 
   Future<void> _downloadFile(String url) async {
     final lowerUrl = url.toLowerCase();
-    final isImage = lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg') || lowerUrl.endsWith('.png') || lowerUrl.endsWith('.webp') || lowerUrl.endsWith('.gif');
+    final isImage = lowerUrl.endsWith('.jpg') ||
+        lowerUrl.endsWith('.jpeg') ||
+        lowerUrl.endsWith('.png') ||
+        lowerUrl.endsWith('.webp') ||
+        lowerUrl.endsWith('.gif');
 
     if (isImage) {
       await _downloadImage(url);
@@ -1689,7 +1948,9 @@ class JobDetailView extends StatelessWidget {
     }
 
     try {
-      String fileName = Uri.parse(url).pathSegments.isNotEmpty ? Uri.parse(url).pathSegments.last : 'file_${DateTime.now().millisecondsSinceEpoch}';
+      String fileName = Uri.parse(url).pathSegments.isNotEmpty
+          ? Uri.parse(url).pathSegments.last
+          : 'file_${DateTime.now().millisecondsSinceEpoch}';
       if (fileName.trim().isEmpty) {
         fileName = 'file_${DateTime.now().millisecondsSinceEpoch}';
       }
@@ -1698,7 +1959,9 @@ class JobDetailView extends StatelessWidget {
       Directory saveDir;
 
       if (Platform.isAndroid) {
-        final bool granted = await Permission.manageExternalStorage.request().isGranted || await Permission.storage.request().isGranted;
+        final bool granted =
+            await Permission.manageExternalStorage.request().isGranted ||
+                await Permission.storage.request().isGranted;
 
         if (granted) {
           saveDir = Directory('/storage/emulated/0/Download/Gyzyleller');
@@ -1726,57 +1989,74 @@ class JobDetailView extends StatelessWidget {
     if (normalized.startsWith('/')) {
       normalized = normalized.substring(1);
     }
-    final result = normalized.startsWith('http') ? normalized : "${Api().urlImage}$normalized";
+    final result = normalized.startsWith('http')
+        ? normalized
+        : "${Api().urlImage}$normalized";
     print('📸 [JOB_DETAIL] Resolved URL: $result');
     return result;
   }
 
   void _showDownloadOption(BuildContext context, String url) {
     showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstants.kPrimaryColor2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  _downloadImage(url);
-                },
-                icon: const Icon(Icons.download, color: Colors.white),
-                label: Text(
-                  'download'.tr,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-      ),
-    );
+        builder: (context) => Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColorConstants.kPrimaryColor2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _downloadImage(url);
+                      },
+                      icon: const Icon(Icons.download, color: Colors.white),
+                      label: Text(
+                        'download'.tr,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ));
+  }
+
+  bool _isCoordinateString(String s) {
+    final clean = s.replaceAll('(', '').replaceAll(')', '').trim();
+    final parts = clean.split(',');
+    if (parts.length != 2) return false;
+    try {
+      double.parse(parts[0].trim());
+      double.parse(parts[1].trim());
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
@@ -1829,11 +2109,26 @@ class _TaskRequestedDetailTagResolver {
       );
     }
 
+    if (job.status == 4) {
+      return AllViewTagData(
+        label: 'status_done'.tr,
+        textColor: const Color(0xFF616161),
+        bgColor: const Color(0xFFF0F0F0),
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedCheckmarkBadge04,
+          size: 14,
+          color: Color(0xFF616161),
+        ),
+      );
+    }
+
     if (job.status == 3) {
       final user = _auth.getUser();
       final myId = int.tryParse((user?['id'] ?? '').toString());
-      final isMe = myId != null && job.userId == myId;
-      if (!isMe) {
+      final isOtherSelected = myId != null &&
+          job.selectedUserId != null &&
+          job.selectedUserId != myId;
+      if (isOtherSelected) {
         return AllViewTagData(
           label: 'task_status_other_selected'.tr,
           textColor: const Color(0xFF165500),
@@ -1844,7 +2139,57 @@ class _TaskRequestedDetailTagResolver {
             color: Color(0xFF165500),
           ),
         );
+      } else {
+        // Biz saýlandyk (Ýerine ýetiriji biz)
+        if (job.finished == true) {
+          return AllViewTagData(
+            label: 'task_status_done_no_rating'.tr,
+            textColor: const Color(0xFF616161),
+            bgColor: const Color(0xFFF0F0F0),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedCheckmarkCircle03,
+              size: 14,
+              color: Color(0xFF616161),
+            ),
+          );
+        } else {
+          return AllViewTagData(
+            label: 'task_status_working'.tr,
+            textColor: Colors.black,
+            bgColor: const Color.fromARGB(255, 120, 229, 118),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedWorkAlert,
+              size: 14,
+              color: Colors.black,
+            ),
+          );
+        }
       }
+    }
+
+    if (job.finished == true) {
+      return AllViewTagData(
+        label: 'status_done'.tr,
+        textColor: const Color(0xFF616161),
+        bgColor: const Color(0xFFF0F0F0),
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedCheckmarkBadge04,
+          size: 14,
+          color: Color(0xFF616161),
+        ),
+      );
+    }
+
+    if (job.hasSeen) {
+      return AllViewTagData(
+        label: 'status_viewedd'.tr,
+        textColor: const Color(0xFF165500),
+        bgColor: const Color.fromARGB(255, 120, 229, 118),
+        icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedEye,
+            size: 14,
+            color: Color(0xFF165500)),
+      );
     }
 
     return const AllViewTagData(
@@ -1863,12 +2208,12 @@ class _TaskProcessingDetailTagResolver {
     if (job.selected == true && job.finished == false) {
       return AllViewTagData(
         label: 'task_status_working'.tr,
-        textColor: Colors.white,
-        bgColor: ColorConstants.greenColor,
+        textColor: Colors.black,
+        bgColor: const Color.fromARGB(255, 120, 229, 118),
         icon: const HugeIcon(
           icon: HugeIcons.strokeRoundedWorkAlert,
           size: 14,
-          color: Colors.white,
+          color: Colors.black,
         ),
       );
     }

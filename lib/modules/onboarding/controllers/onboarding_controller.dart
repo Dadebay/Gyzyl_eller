@@ -26,7 +26,7 @@ class OnboardingController {
 
   final List<OnboardingPage> _executorOnboardingPages = [
     OnboardingPage(
-      image: ImageConstants.onboarding13,
+      image: 'assets/images/workers.json',
       title: 'title_onbor_13'.tr,
       description: 'desc_onbor_13'.tr,
     ),
@@ -69,7 +69,7 @@ class OnboardingController {
 
   final List<OnboardingPage> _executorOnboardingPagesRu = [
     OnboardingPage(
-      image: ImageConstants.onboarding13_ru,
+      image: 'assets/images/workers.json',
       title: 'title_onbor_13'.tr,
       description: 'desc_onbor_13'.tr,
     ),

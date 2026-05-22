@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/job_notification_controller.dart';
 import 'package:location/location.dart' as loc;
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:gyzyleller/core/models/job_model.dart';
@@ -104,8 +105,11 @@ class TaskController extends GetxController {
     if (isRefresh) {
       _requestedPage = 0;
       requestedRefreshController.resetNoData(); // 🔄 Reset pagination state
-      isRequestedFirstLoad.value = true;
+      // Don't set isRequestedFirstLoad to true on refresh to avoid showing loading spinner
       fetchBalance();
+      if (Get.isRegistered<JobNotificationController>()) {
+        Get.find<JobNotificationController>().fetchNotificationCounters();
+      }
     }
 
     isRequestedLoading.value = true;
@@ -173,8 +177,11 @@ class TaskController extends GetxController {
     if (isRefresh) {
       _processingPage = 0;
       processingRefreshController.resetNoData(); // 🔄 Reset pagination state
-      isProcessingFirstLoad.value = true;
+      // Don't set isProcessingFirstLoad to true on refresh to avoid showing loading spinner
       fetchBalance();
+      if (Get.isRegistered<JobNotificationController>()) {
+        Get.find<JobNotificationController>().fetchNotificationCounters();
+      }
     }
 
     isProcessingLoading.value = true;
@@ -380,6 +387,15 @@ class TaskController extends GetxController {
       return procCatIds.isNotEmpty ||
           procWelayatIds.isNotEmpty ||
           procEtrapIds.isNotEmpty;
+    }
+  }
+
+  /// Refresh the currently active tab
+  Future<void> refreshCurrentTab() async {
+    if (activeTabIndex.value == 0) {
+      await fetchRequestedJobs(isRefresh: true);
+    } else {
+      await fetchProcessingJobs(isRefresh: true);
     }
   }
 }
