@@ -1,5 +1,6 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:gyzyleller/core/utils/all_view_tag_resolver.dart';
 import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
 import 'package:gyzyleller/modules/all/views/pages/job_card_services.dart';
 import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
@@ -17,6 +18,7 @@ class _AllSearchViewState extends State<AllSearchView> {
   Timer? _debounce;
   final TextEditingController _searchController = TextEditingController();
   final AllController _allController = Get.find<AllController>();
+  final AllViewTagResolver _tagResolver = AllViewTagResolver();
 
   @override
   void initState() {
@@ -34,25 +36,39 @@ class _AllSearchViewState extends State<AllSearchView> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _allController.status.value = 1;
-      _allController.applyFilters(newSearch: query);
+      _allController.search.value = query;
+      _allController.fetchJobs(isRefresh: true);
     });
+  }
+
+  // Called before pop so all_view sees clean state during the back animation.
+  void _exitSearch() {
+    _debounce?.cancel();
+    _allController.search.value = "";
+    _allController.status.value = _allController.orderBy.value.statusFilter;
+    _allController.fetchJobs(isRefresh: true);
+    Navigator.pop(context);
   }
 
   @override
   void dispose() {
-    final homeController = Get.find<HomeController>();
-    homeController.enableBottomNavBar();
+    Get.find<HomeController>().enableBottomNavBar();
     _debounce?.cancel();
     _searchController.dispose();
-
-    _allController.status.value = null;
-    _allController.applyFilters(newSearch: "");
+    // Ensure search is cleared even if page was dismissed by other means.
+    _allController.search.value = "";
+    _allController.status.value = _allController.orderBy.value.statusFilter;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _exitSearch();
+      },
+      child: Scaffold(
       backgroundColor: ColorConstants.background,
       appBar: AppBar(
         backgroundColor: ColorConstants.background,
@@ -64,10 +80,9 @@ class _AllSearchViewState extends State<AllSearchView> {
             size: 24,
             color: ColorConstants.kPrimaryColor2,
           ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: _exitSearch,
         ),
+        leadingWidth: 30,
         title: Container(
           height: 44,
           decoration: BoxDecoration(
@@ -112,9 +127,9 @@ class _AllSearchViewState extends State<AllSearchView> {
                   onTap: () {
                     _debounce?.cancel();
                     _searchController.clear();
-                    setState(() {});
+                    _allController.search.value = "";
                     _allController.status.value = null;
-                    _allController.applyFilters(newSearch: "");
+                    setState(() {});
                   },
                   child: const HugeIcon(
                     icon: HugeIcons.strokeRoundedCancel01,
@@ -181,14 +196,30 @@ class _AllSearchViewState extends State<AllSearchView> {
           padding: const EdgeInsets.all(12),
           itemCount: _allController.jobs.length,
           itemBuilder: (context, index) {
+            final job = _allController.jobs[index];
+            final tag = _tagResolver.resolve(
+              job,
+              isLoggedIn: _allController.isLoggedIn.value,
+            );
             return JobCard(
               showDelete: false,
-              job: _allController.jobs[index],
+              job: job,
               isNew: false,
+              fromAllView: true,
+              hideTag: tag.hideTag,
+              customTagLabel: tag.label,
+              customTagTextColor: tag.textColor,
+              customTagBgColor: tag.bgColor,
+              customTagIcon: tag.icon,
+              onOpened: () {
+                _tagResolver.markViewed(job.id);
+                _allController.jobs.refresh();
+              },
             );
           },
         );
       }),
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:latlong2/latlong.dart';
@@ -504,10 +505,11 @@ class JobDetailController extends GetxController {
     Navigator.of(context).pop();
     await Future.delayed(const Duration(milliseconds: 200));
 
-    // Capture controller references BEFORE any navigation
-    final homeController =
+    // Capture controller references BEFORE any navigation so the closure always
+    // has a valid reference even if GetX re-creates them during Get.offAll/login.
+    final HomeController? capturedHome =
         Get.isRegistered<HomeController>() ? Get.find<HomeController>() : null;
-    final taskController =
+    final TaskController? capturedTask =
         Get.isRegistered<TaskController>() ? Get.find<TaskController>() : null;
 
     // Show dialog and wait for user confirmation
@@ -519,15 +521,34 @@ class JobDetailController extends GetxController {
         final success = await _submitValidatedJobRequest(price, comment);
         if (!success) return;
 
-        // Navigate to TaskView BEFORE closing the page
-        homeController?.changePage(1);
+        // ── Step 1: Pop ALL routes back to BottomNavBar ─────────────────────
+        Get.until((route) => route.isFirst);
 
-        // Close job detail page
-        Get.back();
+        // ── Step 2: Switch tab — use captured ref first, fall back to Get.find.
+        // Use addPostFrameCallback so changePage always runs after the current
+        // frame completes (route animations included), regardless of device speed.
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          final home = capturedHome ??
+              (Get.isRegistered<HomeController>()
+                  ? Get.find<HomeController>()
+                  : null);
+          if (home != null) {
+            home.changePage(1);
+            print('✅ [Offer] Switched to TaskView (tab 1)');
+          } else {
+            print('❌ [Offer] HomeController not found — tab switch skipped');
+          }
 
-        // Force refresh TaskView after navigation
-        await Future.delayed(const Duration(milliseconds: 300));
-        taskController?.refreshCurrentTab();
+          // ── Step 3: Force-refresh the my_offers list ─────────────────────
+          Future.delayed(const Duration(milliseconds: 300), () {
+            final task = capturedTask ??
+                (Get.isRegistered<TaskController>()
+                    ? Get.find<TaskController>()
+                    : null);
+            task?.fetchRequestedJobs(isRefresh: true);
+            print('✅ [Offer] Tekliplerim list refreshed');
+          });
+        });
       },
     );
   }
@@ -744,6 +765,12 @@ class JobDetailController extends GetxController {
         Future.delayed(const Duration(milliseconds: 400), () {
           _fetchReviewReplies(int.tryParse(reviewId) ?? 0);
         });
+        // Reply yapılınca type_id=5 bildirimi karşı tarafa gider;
+        // kendi sayacını güncelle (başka job'lardan gelen type_id=5 olabilir)
+        if (Get.isRegistered<JobNotificationController>()) {
+          print('🔔 [replyToReview] reply başarılı → fetchNotificationCounters');
+          Get.find<JobNotificationController>().fetchNotificationCounters();
+        }
         return true;
       } else {
         CustomWidgets.showSnackBar(
@@ -779,6 +806,11 @@ class JobDetailController extends GetxController {
         Future.delayed(const Duration(milliseconds: 400), () {
           fetchJobDetail(int.tryParse(job.value?.id.toString() ?? '') ?? 0);
         });
+        // Edit yapılınca da sayacı güncelle
+        if (Get.isRegistered<JobNotificationController>()) {
+          print('🔔 [editReview] edit başarılı → fetchNotificationCounters');
+          Get.find<JobNotificationController>().fetchNotificationCounters();
+        }
         return true;
       } else {
         CustomWidgets.showSnackBar(

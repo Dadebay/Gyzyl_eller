@@ -441,7 +441,8 @@ class MyJobsService {
     final langWeb = GetStorage().read('langCode') ?? 'tk';
     const String endpoint = 'api/service-cats';
     try {
-      print('DEBUG: Fetching categories from $endpoint with lang: $langWeb');
+      print('==============================================');
+      print('📦 [getCategories] GET $endpoint  lang=$langWeb');
       final response = await _api.getRequest(
         endpoint,
         requiresToken: false,
@@ -449,15 +450,24 @@ class MyJobsService {
           'Content-Language': langWeb,
         },
       );
-      print('DEBUG: Categories response: $response');
       if (response != null && response['data'] != null) {
-        return (response['data'] as List)
+        final cats = (response['data'] as List)
             .map((e) => CategoryModel.fromJson(e))
             .toList();
+        print('✅ [getCategories] ${cats.length} categories loaded');
+        for (final c in cats) {
+          print(
+              '   cat id=${c.id}  name="${c.name}"  subcats=${c.subcategories.length}');
+        }
+        print('==============================================');
+        return cats;
       }
+      print('⚠️ [getCategories] empty or null data');
+      print('==============================================');
       return [];
     } catch (e) {
-      print('Error in getCategories: $e');
+      print('❌ [getCategories] error: $e');
+      print('==============================================');
       return [];
     }
   }
@@ -487,6 +497,8 @@ class MyJobsService {
     required List<int> etrapIds,
     required double? minPrice,
     required double? maxPrice,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     const String endpoint = 'api/user/master/save-search';
     final body = {
@@ -494,10 +506,21 @@ class MyJobsService {
       'etraps': etrapIds,
       'min_price': minPrice,
       'max_price': maxPrice,
+      if (startDate != null)
+        'start_date': DateFormat('yyyy-MM-dd').format(startDate),
+      if (endDate != null) 'end_date': DateFormat('yyyy-MM-dd').format(endDate),
     };
-    print('🚀 [MyJobsService] POST - Save Master Search');
-    print('Endpoint: $endpoint');
-    print('Request Body: $body');
+    print('==============================================');
+    print('💾 [saveMasterSearch] POST $endpoint');
+    print('   cats      : $catIds');
+    print('   etraps    : $etrapIds');
+    print('   min_price : $minPrice');
+    print('   max_price : $maxPrice');
+    print(
+        '   start_date: ${startDate != null ? DateFormat('yyyy-MM-dd').format(startDate) : null}');
+    print(
+        '   end_date  : ${endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null}');
+    print('   full body : $body');
     try {
       final response = await _api.handleApiRequest(
         endpoint,
@@ -505,10 +528,11 @@ class MyJobsService {
         body: body,
         requiresToken: true,
       );
-      print('✅ [MyJobsService] Save Response: $response');
+      print('✅ [saveMasterSearch] response: $response');
     } catch (e) {
-      print('❌ [MyJobsService] Error in saveMasterSearch: $e');
+      print('❌ [saveMasterSearch] error: $e');
     }
+    print('==============================================');
   }
 
   Future<Map<String, dynamic>?> getMasterSavedSearch() async {
@@ -559,6 +583,16 @@ class MyJobsService {
         final dynamic maxPriceData = firstItem['max_price'];
         if (maxPriceData != null) {
           result['max_price'] = double.tryParse(maxPriceData.toString());
+        }
+
+        // Parse Dates
+        final dynamic startDateData = firstItem['start_date'];
+        if (startDateData != null && startDateData.toString().isNotEmpty) {
+          result['start_date'] = startDateData.toString();
+        }
+        final dynamic endDateData = firstItem['end_date'];
+        if (endDateData != null && endDateData.toString().isNotEmpty) {
+          result['end_date'] = endDateData.toString();
         }
 
         return result;

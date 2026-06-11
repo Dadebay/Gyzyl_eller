@@ -120,6 +120,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
           if (minPrice != null && maxPrice != null) {
             _priceRange = RangeValues(minPrice, maxPrice);
           }
+
+          // Dates — only load if user has not already selected dates
+          final String? startDateStr = savedData['start_date'] as String?;
+          final String? endDateStr = savedData['end_date'] as String?;
+          if (_startDate == null && startDateStr != null) {
+            _startDate = DateTime.tryParse(startDateStr);
+          }
+          if (_endDate == null && endDateStr != null) {
+            _endDate = DateTime.tryParse(endDateStr);
+          }
         });
         _fetchCount();
       }
@@ -135,6 +145,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
       etrapIds: _selectedEtrapIds,
       minPrice: _priceRange.start == 0 ? null : _priceRange.start,
       maxPrice: _priceRange.end == 1000000 ? null : _priceRange.end,
+      startDate: _startDate,
+      endDate: _endDate,
     );
   }
 
@@ -979,7 +991,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
               ),
               onPressed: () {
                 if (_currentPage != _FilterPage.main) {
-                  // Save if we are leaving a filter-related sub-page
                   if (_currentPage == _FilterPage.category ||
                       _currentPage == _FilterPage.subcategory ||
                       _currentPage == _FilterPage.etrap ||
@@ -988,8 +999,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                   }
                   _goBack();
                 } else {
-                  _saveSearch();
-                  widget.onApply({
+                  final applyData = {
                     'catIds': _selectedCatIds,
                     'welayatIds': _selectedWelayatIds,
                     'etrap_id': _selectedEtrapIds,
@@ -1002,7 +1012,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                         ? [_startDate!, if (_endDate != null) _endDate!]
                         : null,
                     'search': widget.initialSearch,
-                  });
+                  };
+                  print('==============================================');
+                  print('🔍 [FilterBottomSheet] onApply (SAVE buton)');
+                  print('   catIds    : ${applyData['catIds']}');
+                  print('   welayatIds: ${applyData['welayatIds']}');
+                  print('   etrapIds  : ${applyData['etrapIds']}');
+                  print('   minPrice  : ${applyData['minPrice']}');
+                  print('   maxPrice  : ${applyData['maxPrice']}');
+                  print('   dates     : ${applyData['dates']}');
+                  print('   search    : ${applyData['search']}');
+                  print('==============================================');
+                  _saveSearch();
+                  widget.onApply(applyData);
                   Navigator.pop(context);
                 }
               },

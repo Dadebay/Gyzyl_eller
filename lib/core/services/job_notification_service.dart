@@ -17,6 +17,7 @@ class JobNotificationService {
   static const int REQUEST_SELECTED = 2;
   static const int REQUEST_FINISHED = 3;
   static const int JOB_STATUS_CHANGED = 4;
+  static const int MASTER_REPLY = 5;
 
   /// GET /api/user/job/notification-counters
   /// Fetch all notification counters

@@ -1,6 +1,5 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -271,7 +270,8 @@ class LoginView extends GetView<LoginController> {
                 Obx(() => SizedBox(
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: controller.isLoading.value
+                        onPressed: (controller.isLoading.value ||
+                                controller.remainingSeconds.value > 0)
                             ? null
                             : controller.login,
                         style: ElevatedButton.styleFrom(
@@ -298,7 +298,9 @@ class LoginView extends GetView<LoginController> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    'continue_button'.tr,
+                                    controller.remainingSeconds.value > 0
+                                        ? '${'continue_button'.tr} (${controller.remainingSeconds.value} s)'
+                                        : 'continue_button'.tr,
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,

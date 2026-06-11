@@ -71,8 +71,9 @@ class SettingsController extends GetxController {
           masterUsername.value = data['username']?.toString() ?? '';
           masterImage.value = data['image']?.toString() ?? '';
 
-          print(
-              '📡 [SettingsController] Master profile fetched: ${masterUsername.value}');
+          print('📡 [SettingsController] master API full data: $data');
+          print('📡 [SettingsController] masterUsername: ${masterUsername.value}');
+          print('📡 [SettingsController] masterImage: ${masterImage.value}');
         }
       } else {
         hasSpecialProfile.value = false;
@@ -89,6 +90,7 @@ class SettingsController extends GetxController {
 
   void loadUser() {
     user.value = _authStorage.getUser();
+    print('🟡 [loadUser] user data: ${user.value}');
   }
 
   String get username => masterUsername.value.isNotEmpty

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:gyzyleller/core/services/api_service.dart';
+import 'package:gyzyleller/shared/utils/image_compress_util.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:gyzyleller/core/models/special_profile_model.dart';
 import 'package:gyzyleller/core/models/review_model.dart';
@@ -396,7 +397,8 @@ class SpecialProfileController extends GetxController {
     }
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      images.add(File(image.path));
+      final compressed = await compressToWebP(File(image.path));
+      images.add(compressed);
     }
   }
 
@@ -409,8 +411,8 @@ class SpecialProfileController extends GetxController {
   Future<void> pickProfileImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(source: source);
     if (image != null) {
-      selectedProfileImage.value = File(image.path);
-      // uploadProfileImageAndUsername çağrılmıyor, sadece kaydet ile birlikte gönderilecek
+      final compressed = await compressToWebP(File(image.path));
+      selectedProfileImage.value = compressed;
     }
   }
 

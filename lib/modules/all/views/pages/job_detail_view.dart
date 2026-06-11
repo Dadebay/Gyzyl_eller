@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print, depend_on_referenced_packages
 
-import 'package:feather_icons/feather_icons.dart';
 import 'package:gyzyleller/core/models/review_model.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/review_tile.dart';
 // ignore_for_file: deprecated_member_use, unused_element
@@ -514,7 +513,7 @@ class JobDetailView extends StatelessWidget {
                           const Padding(
                             padding: EdgeInsets.only(right: 14),
                             child: Icon(
-                              FeatherIcons.info,
+                              Icons.info_outline,
                               color: Colors.grey,
                             ),
                           ),

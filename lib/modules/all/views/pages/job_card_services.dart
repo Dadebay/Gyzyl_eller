@@ -17,6 +17,7 @@ import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/job_notification_controller.dart';
 
 class JobCard extends StatelessWidget {
   final JobModel job;
@@ -240,6 +241,30 @@ class _DateStatusRowState extends State<_DateStatusRow> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant _DateStatusRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.job.id != widget.job.id ||
+        oldWidget.job.startDate != widget.job.startDate ||
+        oldWidget.job.whenToDo != widget.job.whenToDo) {
+      setState(() {
+        _resolvedDate = _globalDateCache[widget.job.id];
+      });
+
+      final isInvalidDate = widget.job.startDate == null ||
+          widget.job.startDate!.isEmpty ||
+          widget.job.startDate == 'null';
+
+      final needsFetch = widget.job.whenToDo == 'special_date' &&
+          isInvalidDate &&
+          widget.job.answers.every((a) => a.date == null || a.date!.isEmpty);
+
+      if (needsFetch && _resolvedDate == null) {
+        _fetchDate();
+      }
+    }
+  }
+
   Future<void> _fetchDate() async {
     if (_isFetching) return;
     _isFetching = true;
@@ -346,8 +371,17 @@ class _DateStatusRowState extends State<_DateStatusRow> {
 
   @override
   Widget build(BuildContext context) {
-    final text = _resolvedDate ?? _formatDateStatus(context, widget.job);
+    String text = _resolvedDate ?? _formatDateStatus(context, widget.job);
+    if (_resolvedDate == null && _isFetching) {
+      text = '...';
+    }
     return InfoRowRed(icon: IconConstants.calendar, text: text);
+  }
+
+  String _localizedDayMonth(DateTime date) {
+    final weekday = 'weekday_${date.weekday}'.tr;
+    final month = 'month_${date.month}'.tr;
+    return '$weekday, ${date.day.toString().padLeft(2, '0')} $month';
   }
 
   String _formatDateStatus(BuildContext context, JobModel job) {
@@ -370,10 +404,8 @@ class _DateStatusRowState extends State<_DateStatusRow> {
           job.startDate != 'null') {
         try {
           final taskDate = DateTime.parse(job.startDate!);
-          final dateFormat = DateFormat(
-              'EEEE, dd MMMM', Localizations.localeOf(context).languageCode);
           final timeStr = DateFormat('HH:mm').format(taskDate);
-          return "${job.whenToDo.tr} (${dateFormat.format(taskDate)}) $timeStr";
+          return "${job.whenToDo.tr} (${_localizedDayMonth(taskDate)}) $timeStr";
         } catch (_) {}
       }
       return job.whenToDo.tr;
@@ -388,19 +420,17 @@ class _DateStatusRowState extends State<_DateStatusRow> {
         final taskDate = DateTime.parse(job.startDate!);
         final now = DateTime.now();
         final tomorrow = now.add(const Duration(days: 1));
-        final dateFormat = DateFormat(
-            'EEEE, dd MMMM', Localizations.localeOf(context).languageCode);
 
         if (taskDate.year == now.year &&
             taskDate.month == now.month &&
             taskDate.day == now.day) {
-          return "${"date_today".tr} (${dateFormat.format(now)}) ${DateFormat('HH:mm').format(taskDate)}";
+          return "${"date_today".tr} (${_localizedDayMonth(now)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
         if (taskDate.year == tomorrow.year &&
             taskDate.month == tomorrow.month &&
             taskDate.day == tomorrow.day) {
-          return "${"date_tomorrow".tr} (${dateFormat.format(tomorrow)}) ${DateFormat('HH:mm').format(taskDate)}";
+          return "${"date_tomorrow".tr} (${_localizedDayMonth(tomorrow)}) ${DateFormat('HH:mm').format(taskDate)}";
         }
 
         final range = _formatDateRange(job.startDate, job.endDate);
@@ -423,8 +453,7 @@ class _DateStatusRowState extends State<_DateStatusRow> {
       // If no answer date, fallback to job's start and end dates
       if (job.startDate != null &&
           job.startDate!.isNotEmpty &&
-          job.endDate != null &&
-          job.endDate!.isNotEmpty) {
+          job.startDate != 'null') {
         final range = _formatDateRange(job.startDate, job.endDate);
         if (range.isNotEmpty) return range;
       }

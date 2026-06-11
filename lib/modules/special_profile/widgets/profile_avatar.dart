@@ -7,6 +7,7 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/full_screen_image_page.dart';
+import 'package:gyzyleller/core/services/api_constants.dart';
 
 class ProfileAvatar extends StatelessWidget {
   final SpecialProfileController controller;
@@ -31,13 +32,23 @@ class ProfileAvatar extends StatelessWidget {
                     final imageUrl = controller.profile.value.imageUrl;
                     final hasNetworkImage =
                         imageUrl != null && imageUrl.isNotEmpty;
+                    final userRawImage =
+                        settingsController.user.value?['image']?.toString();
+                    final userImageUrl =
+                        (userRawImage != null && userRawImage.isNotEmpty)
+                            ? ApiConstants.imageURL + userRawImage
+                            : null;
+                    final effectiveImageUrl =
+                        hasNetworkImage ? imageUrl : userImageUrl;
+                    final hasEffectiveImage = effectiveImageUrl != null &&
+                        effectiveImageUrl.isNotEmpty;
                     return GestureDetector(
-                      onTap: hasNetworkImage
+                      onTap: hasEffectiveImage
                           ? () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      FullScreenImagePage(imageUrl: imageUrl),
+                                  builder: (_) => FullScreenImagePage(
+                                      imageUrl: effectiveImageUrl!),
                                 ),
                               );
                             }
@@ -49,7 +60,7 @@ class ProfileAvatar extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: (controller.selectedProfileImage.value ==
                                       null &&
-                                  !hasNetworkImage)
+                                  !hasEffectiveImage)
                               ? ColorConstants.noUserBackground[(int.tryParse(
                                           controller.profile.value.id ?? '0') ??
                                       0) %
@@ -71,9 +82,9 @@ class ProfileAvatar extends StatelessWidget {
                                       controller.selectedProfileImage.value!,
                                       fit: BoxFit.cover,
                                     )
-                                  : (hasNetworkImage
+                                  : (hasEffectiveImage
                                       ? CachedNetworkImage(
-                                          imageUrl: imageUrl,
+                                          imageUrl: effectiveImageUrl!,
                                           fit: BoxFit.cover,
                                           errorWidget: (context, url, error) =>
                                               _buildInitial(

@@ -1,11 +1,10 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:iconly/iconly.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:gyzyleller/core/services/api.dart';
@@ -23,9 +22,6 @@ import 'package:gyzyleller/modules/onboarding/views/onboarding_view.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'package:gyzyleller/shared/dialogs/contact_us_dialog.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
-import 'package:gyzyleller/modules/bottomnavbar/bindings/home_binding.dart';
-import 'package:gyzyleller/modules/bottomnavbar/controllers/home_controller.dart';
-import 'package:gyzyleller/modules/bottomnavbar/views/bottom_nav_bar_view.dart';
 
 class SettingsView extends GetView<SettingsController> {
   final bool showAppBar;
@@ -44,10 +40,7 @@ class SettingsView extends GetView<SettingsController> {
   }
 
   Future<void> _confirmAndDeleteMasterProfile(BuildContext context) async {
-    final SpecialProfileController specialProfileController =
-        Get.isRegistered<SpecialProfileController>()
-            ? Get.find<SpecialProfileController>()
-            : Get.put(SpecialProfileController());
+    final SpecialProfileController specialProfileController = Get.isRegistered<SpecialProfileController>() ? Get.find<SpecialProfileController>() : Get.put(SpecialProfileController());
 
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
@@ -144,17 +137,18 @@ class SettingsView extends GetView<SettingsController> {
     final bool deleted = await specialProfileController.deleteMasterProfile();
     if (!deleted) return;
 
-    controller.clearMasterProfile();
-
-    final HomeController homeController = Get.isRegistered<HomeController>()
-        ? Get.find<HomeController>()
-        : Get.put(HomeController());
-    homeController.changePage(3);
-
-    Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
+    await _showLogoutDialog(context, confirmed: true);
   }
 
-  Future<void> _showLogoutDialog(BuildContext context) async {
+  Future<void> _showLogoutDialog(
+    BuildContext context, {
+    bool confirmed = false,
+  }) async {
+    if (confirmed) {
+      await controller.logout();
+      return;
+    }
+
     final bool? shouldLogout = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -279,9 +273,7 @@ class SettingsView extends GetView<SettingsController> {
                     children: [
                       _buildMenuItem(
                         context,
-                        controller.hasSpecialProfile.value
-                            ? 'professional_profile'.tr
-                            : 'create_professional_profile'.tr,
+                        controller.hasSpecialProfile.value ? 'professional_profile'.tr : 'create_professional_profile'.tr,
                         IconConstants.new_releases,
                         () {
                           controller.navigateToSpecialProfile();
@@ -294,8 +286,7 @@ class SettingsView extends GetView<SettingsController> {
                 return const SizedBox.shrink();
               }),
               Obx(() {
-                if (!controller.isLoggedIn ||
-                    !controller.hasSpecialProfile.value) {
+                if (!controller.isLoggedIn || !controller.hasSpecialProfile.value) {
                   return const SizedBox.shrink();
                 }
                 return Column(
@@ -369,19 +360,19 @@ class SettingsView extends GetView<SettingsController> {
                       IconConstants.logout,
                       () => _showLogoutDialog(context),
                       iconColor: Colors.red,
-                      iconData: IconlyLight.logout,
+                      iconData: Icons.logout,
                     ),
-                    if (controller.hasSpecialProfile.value) ...[
-                      const SizedBox(height: 10.0),
-                      _buildMenuItem(
-                        context,
-                        'delete_my_profile'.tr,
-                        IconConstants.deletee,
-                        () => _confirmAndDeleteMasterProfile(context),
-                        iconColor: Colors.red,
-                        iconData: IconlyLight.delete,
-                      ),
-                    ],
+                    // if (controller.hasSpecialProfile.value) ...[
+                    const SizedBox(height: 10.0),
+                    _buildMenuItem(
+                      context,
+                      'delete_my_profile'.tr,
+                      IconConstants.deletee,
+                      () => _confirmAndDeleteMasterProfile(context),
+                      iconColor: Colors.red,
+                      iconData: Icons.delete_outline,
+                    ),
+                    // ],
                   ],
                 );
               }),
@@ -410,13 +401,11 @@ class SettingsView extends GetView<SettingsController> {
       child: Row(
         children: <Widget>[
           GestureDetector(
-            onTap: (controller.imageUrl != null &&
-                    controller.imageUrl!.startsWith('http'))
+            onTap: (controller.imageUrl != null && controller.imageUrl!.startsWith('http'))
                 ? () {
                     Navigator.of(Get.context ?? context).push(
                       MaterialPageRoute(
-                        builder: (_) =>
-                            FullScreenImagePage(imageUrl: controller.imageUrl!),
+                        builder: (_) => FullScreenImagePage(imageUrl: controller.imageUrl!),
                       ),
                     );
                   }
@@ -430,8 +419,7 @@ class SettingsView extends GetView<SettingsController> {
                   shape: BoxShape.circle,
                   color: ColorConstants.background,
                 ),
-                child: (controller.imageUrl != null &&
-                        controller.imageUrl!.startsWith('http'))
+                child: (controller.imageUrl != null && controller.imageUrl!.startsWith('http'))
                     ? CachedNetworkImage(
                         imageUrl: controller.imageUrl!,
                         fit: BoxFit.cover,
@@ -562,9 +550,7 @@ class SettingsView extends GetView<SettingsController> {
                       iconPath,
                       width: 24,
                       height: 24,
-                      colorFilter: iconColor == null
-                          ? null
-                          : ColorFilter.mode(iconColor, BlendMode.srcIn),
+                      colorFilter: iconColor == null ? null : ColorFilter.mode(iconColor, BlendMode.srcIn),
                     ),
               const SizedBox(width: 16.0),
               Expanded(
@@ -581,9 +567,7 @@ class SettingsView extends GetView<SettingsController> {
                 IconConstants.expandMore,
                 width: 24,
                 height: 24,
-                colorFilter: trailingColor == null
-                    ? null
-                    : ColorFilter.mode(trailingColor, BlendMode.srcIn),
+                colorFilter: trailingColor == null ? null : ColorFilter.mode(trailingColor, BlendMode.srcIn),
               ),
             ],
           ),
@@ -592,8 +576,7 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildMenuItemSay(
-      BuildContext context, String title, String iconPath, VoidCallback onTap) {
+  Widget _buildMenuItemSay(BuildContext context, String title, String iconPath, VoidCallback onTap) {
     return Container(
       height: 50,
       decoration: BoxDecoration(

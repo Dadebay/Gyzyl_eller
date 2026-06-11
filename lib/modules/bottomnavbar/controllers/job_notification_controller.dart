@@ -1,49 +1,73 @@
-import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../core/models/job_notification_model.dart';
 import '../../../core/services/job_notification_service.dart';
-import '../../task/controllers/task_controller.dart';
-import 'home_controller.dart';
 import '../../../core/utils/all_view_tag_resolver.dart';
 import '../../all/controllers/all_controller.dart';
 
 class JobNotificationController extends GetxController {
   final JobNotificationService _service = JobNotificationService();
 
+  /// Job IDs where another user was selected (task_status_other_selected).
+  /// Populated by TaskController after each requestedJobs load.
+  final Set<String> _otherSelectedJobIds = <String>{};
+
+  /// Callback registered by TaskController to sync _otherSelectedJobIds
+  /// before tab counts are computed. Avoids circular imports.
+  VoidCallback? _otherSelectedSyncCallback;
+
+  void registerOtherSelectedSync(VoidCallback cb) {
+    _otherSelectedSyncCallback = cb;
+  }
+
+  /// Re-entrancy guard: prevents updateTasksTabCount() → sync callback →
+  /// updateOtherSelectedJobIds() → updateTasksTabCount() infinite recursion.
+  bool _updatingTabCount = false;
+
+  void updateOtherSelectedJobIds(Set<String> ids) {
+    _otherSelectedJobIds
+      ..clear()
+      ..addAll(ids);
+    // Skip recursive call; the outer updateTasksTabCount() will use the
+    // freshly updated _otherSelectedJobIds once the sync callback returns.
+    if (counterResponse.value != null && !_updatingTabCount) {
+      updateTasksTabCount();
+    }
+  }
+
   final RxInt allTabCount = 0.obs;
   final RxInt tasksTabCount = 0.obs;
+
+  /// Per-tab counts inside TaskView:
+  ///   tab0 = my_offers  (JOB_STATUS_CHANGED=4)
+  ///   tab1 = my_jobs    (REQUEST_SELECTED=2 + REQUEST_FINISHED=3)
+  final RxInt tab0Count = 0.obs;
+  final RxInt tab1Count = 0.obs;
+
+  /// Tracks locally cleared tabs so updateTasksTabCount() does not restore
+  /// the badge until a fresh fetchNotificationCounters() completes.
+  bool _tab0Cleared = false;
+  bool _tab1Cleared = false;
+
   final Rx<JobNotificationCounterResponse?> counterResponse = Rx(null);
   final RxBool isLoading = false.obs;
   final RxBool ignoreLocalAllTabCount = false.obs;
-
-  Timer? _pollingTimer;
 
   @override
   void onInit() {
     super.onInit();
     fetchNotificationCounters();
-    _startPolling();
-  }
-
-  void _startPolling() {
-    _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      fetchNotificationCounters();
-    });
-  }
-
-  @override
-  void onClose() {
-    _pollingTimer?.cancel();
-    super.onClose();
   }
 
   void reset() {
-    _pollingTimer?.cancel();
-    _pollingTimer = null;
     allTabCount.value = 0;
     tasksTabCount.value = 0;
+    tab0Count.value = 0;
+    tab1Count.value = 0;
     counterResponse.value = null;
+    _tab0Cleared = false;
+    _tab1Cleared = false;
+    _updatingTabCount = false;
   }
 
   /// Fetch notification counters and update tab counts
@@ -53,13 +77,25 @@ class JobNotificationController extends GetxController {
       final response = await _service.getNotificationCounters();
       if (response != null) {
         counterResponse.value = response;
+        print('🌐 [fetchCounters] API raw → '
+            't1=${response.newRequestCount} '
+            't2=${response.requestSelectedCount} '
+            't3=${response.requestFinishedCount} '
+            't4=${response.jobStatusChangedCount} '
+            't5=${response.masterReplyCount}');
+
+        // Fresh server data — allow badges to show again
+        _tab0Cleared = false;
+        _tab1Cleared = false;
 
         // 1. Tab (AllView): Update dynamically based on local status_new jobs
         updateAllTabCount();
 
         // 2. Tab (TaskView): Dynamic based on sub-tab
         updateTasksTabCount();
-      } else {}
+      } else {
+        print('🌐 [fetchCounters] API returned null');
+      }
     } finally {
       isLoading.value = false;
     }
@@ -71,7 +107,8 @@ class JobNotificationController extends GetxController {
     if (ignoreLocalAllTabCount.value) {
       final response = counterResponse.value;
       allTabCount.value = response?.newRequestCount ?? 0;
-      print('🔔 [JobNotificationController] updated allTabCount to: ${allTabCount.value} based on backend (ignoring local)');
+      print(
+          '🔔 [JobNotificationController] updated allTabCount to: ${allTabCount.value} based on backend (ignoring local)');
       return;
     }
 
@@ -89,44 +126,96 @@ class JobNotificationController extends GetxController {
           }
         }
         allTabCount.value = count;
-        print('🔔 [JobNotificationController] updated allTabCount to: $count based on local status_new jobs');
+        print(
+            '🔔 [JobNotificationController] updated allTabCount to: $count based on local status_new jobs');
         return;
       }
     }
 
     final response = counterResponse.value;
     allTabCount.value = response?.newRequestCount ?? 0;
-    print('🔔 [JobNotificationController] updated allTabCount to: ${allTabCount.value} based on backend newRequestCount');
+    print(
+        '🔔 [JobNotificationController] updated allTabCount to: ${allTabCount.value} based on backend newRequestCount');
   }
 
-  /// Update the Tasks tab badge count dynamically based on the active page and sub-tab
+  /// Update the Tasks tab badge count and both inner-tab counts.
+  /// Badge is cleared only when the user navigates away from the Tasks tab
+  /// (or switches between inner tabs).
   void updateTasksTabCount() {
+    // Always sync _otherSelectedJobIds from TaskController before calculating.
+    // The re-entrancy guard ensures the callback cannot trigger a second
+    // updateTasksTabCount() call, so _otherSelectedJobIds is updated
+    // synchronously and this method continues with correct data.
+    if (!_updatingTabCount) {
+      _updatingTabCount = true;
+      _otherSelectedSyncCallback?.call();
+      _updatingTabCount = false;
+    }
+
     final response = counterResponse.value;
     if (response == null) {
+      tab0Count.value = 0;
+      tab1Count.value = 0;
       tasksTabCount.value = 0;
+      print('📊 [TasksCount] response is null → all counts = 0');
       return;
     }
 
-    final bool isPage1Active = Get.isRegistered<HomeController>() &&
-        Get.find<HomeController>().bottomNavBarSelectedIndex.value == 1;
+    // Split REQUEST_SELECTED (type 2) between tabs:
+    //   tab0 → other user was selected (task_status_other_selected)
+    //   tab1 → you were selected
+    int selectedForTab0 = 0;
+    int selectedForTab1 = 0;
 
-    if (isPage1Active && Get.isRegistered<TaskController>()) {
-      final taskController = Get.find<TaskController>();
-      if (taskController.activeTabIndex.value == 0) {
-        // User is currently viewing My Offers (types 2 and 4).
-        // Show only My Jobs notifications (type 3: REQUEST_FINISHED).
-        tasksTabCount.value = response.requestFinishedCount;
-      } else {
-        // User is currently viewing My Jobs (type 3).
-        // Show only My Offers notifications (types 2 and 4).
-        tasksTabCount.value = response.requestSelectedCount + response.jobStatusChangedCount;
+    if (response.items.isNotEmpty) {
+      for (final item in response.items) {
+        if (item.typeId != JobNotificationService.REQUEST_SELECTED) continue;
+        if (_otherSelectedJobIds.contains(item.jobId)) {
+          selectedForTab0++;
+        } else {
+          selectedForTab1++;
+        }
       }
     } else {
-      // User is not on TaskView, show the total sum of all Tasks tab notifications
-      tasksTabCount.value = response.requestSelectedCount +
-          response.requestFinishedCount +
-          response.jobStatusChangedCount;
+      // No items: estimate from known other-selected job count
+      selectedForTab0 =
+          _otherSelectedJobIds.length.clamp(0, response.requestSelectedCount);
+      selectedForTab1 = (response.requestSelectedCount - selectedForTab0)
+          .clamp(0, response.requestSelectedCount);
     }
+
+    // Respect locally cleared state — don't restore until fetchNotificationCounters() resets flags
+    tab0Count.value = _tab0Cleared ? 0 : selectedForTab0 + response.masterReplyCount;
+    tab1Count.value = _tab1Cleared
+        ? 0
+        : selectedForTab1 +
+            response.requestFinishedCount +
+            response.jobStatusChangedCount;
+    tasksTabCount.value = tab0Count.value + tab1Count.value;
+
+    // ── Per-type analysis print ──────────────────────────────────────────────
+    print('📊 [TasksCount] ─────────────────────────────────────────');
+    print('📊 type_id=1 newRequest       : ${response.newRequestCount}'
+        '  → AllTab (not TaskView)');
+    _printTypeStatus('type_id=2 requestSelected', response.requestSelectedCount,
+        detail:
+            'tab0(otherSelected)=$selectedForTab0  tab1(youSelected)=$selectedForTab1');
+    _printTypeStatus('type_id=3 requestFinished', response.requestFinishedCount,
+        detail: 'tab1');
+    _printTypeStatus(
+        'type_id=4 jobStatusChanged', response.jobStatusChangedCount,
+        detail: 'tab1');
+    _printTypeStatus('type_id=5 masterReply    ', response.masterReplyCount,
+        detail: 'tab0 (rejected/cancelled/expired)');
+    print('📊 tab0Count=${tab0Count.value}  tab1Count=${tab1Count.value}'
+        '  tasksTotal=${tasksTabCount.value}');
+    print('📊 ─────────────────────────────────────────────────────');
+  }
+
+  void _printTypeStatus(String label, int count, {String detail = ''}) {
+    final status = count > 0 ? '✅ ÇYKDY ($count)' : '❌ ÇYKMADY (0)';
+    final detailStr = detail.isNotEmpty ? '  [$detail]' : '';
+    print('📊 $label: $status$detailStr');
   }
 
   /// Delete a single notification
@@ -173,30 +262,82 @@ class JobNotificationController extends GetxController {
 
   /// Clear notifications for All tab (type 1)
   Future<void> clearAllTabNotifications() async {
-    print('🧹 [JobNotificationController] Clearing AllView tab notifications...');
+    print(
+        '🧹 [JobNotificationController] Clearing AllView tab API notifications...');
 
-    // Set flag to ignore local count from now on
-    ignoreLocalAllTabCount.value = true;
-
-    // Clear API notifications
+    // Only clear the server-side notification records.
+    // The local badge (count of status_new jobs visible in AllView) is NOT
+    // zeroed out here — it persists until the job status actually changes,
+    // which is what the user expects.
     await clearByType(JobNotificationService.NEW_REQUEST);
 
-    // Reset the badge count to 0 immediately (don't wait for next polling)
-    allTabCount.value = 0;
-    print('🧹 [JobNotificationController] Reset allTabCount to 0 and set ignoreLocalAllTabCount flag');
+    // Make sure local count is not suppressed after the API clear.
+    ignoreLocalAllTabCount.value = false;
+    updateAllTabCount();
+
+    print(
+        '🧹 [JobNotificationController] API notifications cleared; local badge preserved until status changes');
   }
 
-  /// Clear notifications for Tasks tab based on active sub-tab index
-  Future<void> clearTasksTabNotifications(int activeSubTabIndex) async {
-    print('🧹 [JobNotificationController] Clearing TaskView tab notifications for sub-tab $activeSubTabIndex...');
-    if (activeSubTabIndex == 0) {
-      // Clear My Offers notifications (REQUEST_SELECTED: 2 and JOB_STATUS_CHANGED: 4)
-      await clearByType(JobNotificationService.REQUEST_SELECTED);
-      await clearByType(JobNotificationService.JOB_STATUS_CHANGED);
-    } else if (activeSubTabIndex == 1) {
-      // Clear My Jobs notifications (REQUEST_FINISHED: 3)
-      await clearByType(JobNotificationService.REQUEST_FINISHED);
-    }
+  /// Clear Tab 0 (my_offers) badge visually. No API call here — server-side clearing
+  /// happens when the user opens a specific job (clearByJob) or leaves the Tasks tab
+  /// (clearTasksTabNotifications). Avoids race conditions with fetchNotificationCounters.
+  void clearTab0Notifications() {
+    print('🧹 [JobNotificationController] tab0 badge cleared (local only)');
+    _tab0Cleared = true;
+    tab0Count.value = 0;
+    tasksTabCount.value = tab1Count.value;
+  }
+
+  /// Clear Tab 1 (my_jobs) badge visually. No API call here — server-side clearing
+  /// happens when the user opens a specific job (clearByJob) or leaves the Tasks tab
+  /// (clearTasksTabNotifications). Avoids race conditions with fetchNotificationCounters.
+  void clearTab1Notifications() {
+    print('🧹 [JobNotificationController] tab1 badge cleared (local only)');
+    _tab1Cleared = true;
+    tab1Count.value = 0;
+    tasksTabCount.value = tab0Count.value;
+  }
+
+  /// Clear all Tasks tab notifications (called when user navigates away from Tasks tab).
+  Future<void> clearTasksTabNotifications() async {
+    print(
+        '🧹 [JobNotificationController] Clearing all TaskView tab notifications...');
+    print('🧹  type_id=2 requestSelected  → will clear');
+    print('🧹  type_id=3 requestFinished  → will clear');
+    print('🧹  type_id=4 jobStatusChanged → will clear');
+    print('🧹  type_id=5 masterReply      → will clear');
+    // Immediate visual feedback for bottom nav badge
+    tab0Count.value = 0;
+    tab1Count.value = 0;
+    tasksTabCount.value = 0;
+    // Async API clear
+    await clearByType(JobNotificationService.REQUEST_SELECTED);
+    await clearByType(JobNotificationService.REQUEST_FINISHED);
+    await clearByType(JobNotificationService.JOB_STATUS_CHANGED);
+    await clearByType(JobNotificationService.MASTER_REPLY);
+  }
+
+  /// Returns true if [jobId] has an unread notification in tab0:
+  ///   - type_id=2 (other user selected) OR
+  ///   - type_id=5 (job rejected/cancelled/expired — master_reply)
+  bool hasTab0Notification(String jobId) {
+    final items = counterResponse.value?.items ?? [];
+    return items.any((i) =>
+        i.jobId == jobId &&
+        ((i.typeId == JobNotificationService.REQUEST_SELECTED &&
+                _otherSelectedJobIds.contains(jobId)) ||
+            i.typeId == JobNotificationService.MASTER_REPLY));
+  }
+
+  /// Returns true if [jobId] has an unread "hünärmen saýlandy" notification
+  /// (type_id=2, you were selected). Used for per-card dot in tab1.
+  bool hasTab1Notification(String jobId) {
+    final items = counterResponse.value?.items ?? [];
+    return items.any((i) =>
+        i.jobId == jobId &&
+        i.typeId == JobNotificationService.REQUEST_SELECTED &&
+        !_otherSelectedJobIds.contains(jobId));
   }
 
   /// Get count by type
@@ -210,6 +351,8 @@ class JobNotificationController extends GetxController {
         return counterResponse.value?.requestFinishedCount ?? 0;
       case JobNotificationService.JOB_STATUS_CHANGED:
         return counterResponse.value?.jobStatusChangedCount ?? 0;
+      case JobNotificationService.MASTER_REPLY:
+        return counterResponse.value?.masterReplyCount ?? 0;
       default:
         return 0;
     }

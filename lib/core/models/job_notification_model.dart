@@ -1,8 +1,7 @@
 class JobNotificationCounter {
   final String id;
   final String jobId;
-  final int
-      typeId; // 1: NEW_REQUEST, 2: REQUEST_SELECTED, 3: REQUEST_FINISHED, 4: JOB_STATUS_CHANGED
+  final int typeId;
   final String? description;
   final DateTime? createdAt;
 
@@ -58,6 +57,7 @@ class JobNotificationCounterResponse {
   final int requestSelectedCount;
   final int requestFinishedCount;
   final int jobStatusChangedCount;
+  final int masterReplyCount;
   final List<JobNotificationCounter> items;
 
   JobNotificationCounterResponse({
@@ -65,6 +65,7 @@ class JobNotificationCounterResponse {
     required this.requestSelectedCount,
     required this.requestFinishedCount,
     required this.jobStatusChangedCount,
+    this.masterReplyCount = 0,
     required this.items,
   });
 
@@ -72,7 +73,8 @@ class JobNotificationCounterResponse {
       newRequestCount +
       requestSelectedCount +
       requestFinishedCount +
-      jobStatusChangedCount;
+      jobStatusChangedCount +
+      masterReplyCount;
 
   Map<String, dynamic> toMap() {
     return {
@@ -80,6 +82,7 @@ class JobNotificationCounterResponse {
       'request_selected_count': requestSelectedCount,
       'request_finished_count': requestFinishedCount,
       'job_status_changed_count': jobStatusChangedCount,
+      'master_reply_count': masterReplyCount,
       'items': items.map((i) => i.toMap()).toList(),
     };
   }
@@ -89,6 +92,7 @@ class JobNotificationCounterResponse {
     int selected = 0;
     int finished = 0;
     int statusChanged = 0;
+    int masterReply = 0;
 
     final List? byType = map['by_type'] as List?;
     if (byType != null) {
@@ -99,6 +103,7 @@ class JobNotificationCounterResponse {
         if (typeId == 2) selected = count;
         if (typeId == 3) finished = count;
         if (typeId == 4) statusChanged = count;
+        if (typeId == 5) masterReply = count;
       }
     }
 
@@ -107,6 +112,7 @@ class JobNotificationCounterResponse {
       requestSelectedCount: selected,
       requestFinishedCount: finished,
       jobStatusChangedCount: statusChanged,
+      masterReplyCount: masterReply,
       items: (map['items'] as List?)
               ?.map((e) =>
                   JobNotificationCounter.fromMap(e as Map<String, dynamic>))
@@ -120,6 +126,7 @@ class JobNotificationCounterResponse {
     int? requestSelectedCount,
     int? requestFinishedCount,
     int? jobStatusChangedCount,
+    int? masterReplyCount,
     List<JobNotificationCounter>? items,
   }) {
     return JobNotificationCounterResponse(
@@ -128,6 +135,7 @@ class JobNotificationCounterResponse {
       requestFinishedCount: requestFinishedCount ?? this.requestFinishedCount,
       jobStatusChangedCount:
           jobStatusChangedCount ?? this.jobStatusChangedCount,
+      masterReplyCount: masterReplyCount ?? this.masterReplyCount,
       items: items ?? this.items,
     );
   }

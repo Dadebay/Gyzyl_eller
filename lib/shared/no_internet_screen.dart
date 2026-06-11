@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/splash/splash_screen.dart';
 import 'package:gyzyleller/shared/constants/image_constants.dart';
@@ -16,13 +17,14 @@ class NoInternetScreen extends StatefulWidget {
 
 class _NoInternetScreenState extends State<NoInternetScreen> {
   bool _isChecking = false;
+  final String _healthCheckHost = Uri.parse(Api().urlSimple).host;
 
   Future<void> _retry() async {
     setState(() => _isChecking = true);
     bool ok = false;
     try {
       final result = await InternetAddress.lookup(
-        'ayterek.ajayyptilsimatlar.com',
+        _healthCheckHost,
       ).timeout(const Duration(seconds: 5));
       ok = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } on TimeoutException catch (_) {
@@ -62,8 +64,7 @@ class _NoInternetScreenState extends State<NoInternetScreen> {
           ),
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).size.height * 0.45),
+              padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.45),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -94,8 +95,7 @@ class _NoInternetScreenState extends State<NoInternetScreen> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ColorConstants.kPrimaryColor2,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Aýterek Ussalar"
+        android:label="Aýterek master"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
            <!-- Enable edge-to-edge for Android 15+ proper system bars handling -->

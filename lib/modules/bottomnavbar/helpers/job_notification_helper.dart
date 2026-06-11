@@ -1,5 +1,3 @@
-
-
 import 'package:get/get.dart';
 import '../controllers/job_notification_controller.dart';
 import '../../../core/services/job_notification_service.dart';
@@ -54,6 +52,8 @@ class JobNotificationHelper {
           controller.getCountByType(JobNotificationService.REQUEST_FINISHED),
       'job_status_changed':
           controller.getCountByType(JobNotificationService.JOB_STATUS_CHANGED),
+      'master_reply':
+          controller.getCountByType(JobNotificationService.MASTER_REPLY),
     };
   }
 
@@ -62,5 +62,4 @@ class JobNotificationHelper {
     return controller.allTabCount.value > 0 ||
         controller.tasksTabCount.value > 0;
   }
-
 }

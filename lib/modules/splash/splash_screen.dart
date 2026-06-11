@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 
 import 'package:gyzyleller/modules/bottomnavbar/bindings/home_binding.dart';
@@ -24,8 +25,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -72,9 +72,12 @@ class _SplashScreenState extends State<SplashScreen>
     // Internet barmy-ýok barla: DNS cache aldatmasyn diýip real TCP bağlantı synanyşylýar
     bool hasInternet = false;
     try {
+      final baseUri = Uri.parse(Api().urlSimple);
+      final host = baseUri.host;
+      final port = baseUri.hasPort ? baseUri.port : (baseUri.scheme == 'https' ? 443 : 80);
       final socket = await Socket.connect(
-        'ayterek.ajayyptilsimatlar.com',
-        80,
+        host,
+        port,
         timeout: const Duration(seconds: 5),
       );
       socket.destroy();
@@ -161,8 +164,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: ColorConstants.kPrimaryColor
-                                        .withOpacity(0.4),
+                                    color: ColorConstants.kPrimaryColor.withOpacity(0.4),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),

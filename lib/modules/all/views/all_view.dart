@@ -67,7 +67,8 @@ class _AllViewState extends State<AllView> {
     if (!Get.isRegistered<JobNotificationController>()) return;
 
     _clearedNotificationJobIds.add(jobId);
-    final success = await Get.find<JobNotificationController>().clearByJob(jobId.toString());
+    final success = await Get.find<JobNotificationController>()
+        .clearByJob(jobId.toString());
 
     // If API clear was successful, immediately update the badge count
     if (success) {
@@ -342,6 +343,9 @@ class _AllViewState extends State<AllView> {
         initialCatIds: controller.catIds,
         initialWelayatIds: controller.welayatIds,
         initialEtrapIds: controller.etrapIds,
+        initialDates: controller.selectedDates.isEmpty
+            ? null
+            : controller.selectedDates.toList(),
         initialMinPrice: controller.minPrice.value,
         initialMaxPrice: controller.maxPrice.value,
         initialSearch: controller.search.value,

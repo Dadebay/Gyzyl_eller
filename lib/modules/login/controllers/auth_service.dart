@@ -31,7 +31,7 @@ class AuthService {
 
   final AuthStorage _auth = AuthStorage();
 
-  Future<void> login({required String phone, required String password}) async {
+  Future<bool> login({required String phone, required String password}) async {
     try {
       final lang = GetStorage().read('langCode') ?? 'tk';
       final url = Uri.parse('${Api().urlLink}api/user/$lang/login');
@@ -66,6 +66,7 @@ class AuthService {
         _auth.saveToken(responseData['access_token'].toString());
         _auth.saveRefreshToken(responseData['refresh_token'].toString());
         if (responseData['data'] is Map<String, dynamic>) {
+          print('🟢 [LOGIN] user data: ${responseData['data']}');
           _auth.saveUser(responseData['data'] as Map<String, dynamic>);
         }
         GetStorage().write(
@@ -97,6 +98,7 @@ class AuthService {
         CustomWidgets.showSnackBar('login_success_title'.tr,
             'login_success_subtitle'.tr, ColorConstants.greenColor);
         Get.offAll(() => const BottomNavBar(), binding: HomeBinding());
+        return true;
       } else {
         // Extract backend error message and show it directly
         String errorMsg = 'login_failed'.tr;
@@ -115,16 +117,19 @@ class AuthService {
         } catch (_) {}
 
         CustomWidgets.showErrorMessageDialog(errorMsg);
+        return false;
       }
     } on SocketException {
       if (!(Get.isDialogOpen ?? false)) {
         CustomWidgets.showErrorDialog('login_error');
       }
+      return false;
     } catch (e) {
       print('🔴 LOGIN CATCH: $e');
       if (!(Get.isDialogOpen ?? false)) {
         CustomWidgets.showErrorDialog('login_error');
       }
+      return false;
     }
   }
 

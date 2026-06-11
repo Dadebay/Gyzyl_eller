@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:gyzyleller/modules/login/controllers/auth_service.dart';
 
 class LoginController extends GetxController {
@@ -17,11 +19,57 @@ class LoginController extends GetxController {
   final phoneError = ''.obs;
   final passwordError = ''.obs;
 
+  final remainingSeconds = 0.obs;
+  final storage = GetStorage();
+  Timer? lockoutTimer;
+
+  @override
+  void onInit() {
+    super.onInit();
+    checkLockoutState();
+  }
+
   @override
   void onClose() {
+    lockoutTimer?.cancel();
     phoneNumberController.dispose();
     passwordController.dispose();
     super.onClose();
+  }
+
+  void checkLockoutState() {
+    final lockoutEndTimeStr = storage.read<String>('lockout_end_time');
+    if (lockoutEndTimeStr != null) {
+      final lockoutEndTime = DateTime.tryParse(lockoutEndTimeStr);
+      if (lockoutEndTime != null) {
+        final diff = lockoutEndTime.difference(DateTime.now());
+        if (diff.inSeconds > 0) {
+          startLockout(diff.inSeconds);
+        } else {
+          clearLockout();
+        }
+      }
+    }
+  }
+
+  void startLockout(int seconds) {
+    remainingSeconds.value = seconds;
+    lockoutTimer?.cancel();
+    lockoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (remainingSeconds.value > 1) {
+        remainingSeconds.value--;
+      } else {
+        timer.cancel();
+        clearLockout();
+      }
+    });
+  }
+
+  void clearLockout() {
+    remainingSeconds.value = 0;
+    lockoutTimer?.cancel();
+    storage.remove('lockout_end_time');
+    storage.write('failed_login_attempts', 0);
   }
 
   void toggleObscureText() {
@@ -61,16 +109,29 @@ class LoginController extends GetxController {
   }
 
   Future<void> login() async {
+    if (remainingSeconds.value > 0) return;
+
     submitted.value = true;
     final isFormValid = formKey.currentState?.validate() ?? false;
     if (!isFormValid) return;
 
     try {
       isLoading.value = true;
-      await _authService.login(
+      final success = await _authService.login(
         phone: phoneNumberController.text,
         password: passwordController.text,
       );
+      if (success) {
+        storage.write('failed_login_attempts', 0);
+      } else {
+        final attempts = (storage.read<int>('failed_login_attempts') ?? 0) + 1;
+        storage.write('failed_login_attempts', attempts);
+        if (attempts >= 3) {
+          final endTime = DateTime.now().add(const Duration(minutes: 1));
+          storage.write('lockout_end_time', endTime.toIso8601String());
+          startLockout(60);
+        }
+      }
     } finally {
       isLoading.value = false;
     }

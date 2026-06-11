@@ -48,6 +48,13 @@ class TaskController extends GetxController {
   // Track active tab index
   final RxInt activeTabIndex = 0.obs;
 
+  // Prevents fetchNotificationCounters from firing during tab-switch-triggered refreshes
+  bool _skipNextNotifRefresh = false;
+
+  void setSkipNextNotifRefresh() {
+    _skipNextNotifRefresh = true;
+  }
+
   // Filter state for tab 1 (requested / Tekliplerim)
   final RxList<int> reqCatIds = <int>[].obs;
   final RxList<int> reqWelayatIds = <int>[].obs;
@@ -79,6 +86,20 @@ class TaskController extends GetxController {
     isLoggedIn.value = AuthStorage().isLoggedIn;
     fetchBalance();
 
+    // Register sync callback so fetchNotificationCounters always has fresh data.
+    // Uses Get.find at call-time (not capture-time) so a re-created controller
+    // instance is always used instead of a stale disposed one.
+    if (Get.isRegistered<JobNotificationController>()) {
+      Get.find<JobNotificationController>().registerOtherSelectedSync(() {
+        if (!Get.isRegistered<TaskController>()) return;
+        final tc = Get.find<TaskController>();
+        // requestedJobs boşsa (API henüz dönmedi veya controller yeni oluşturuldu)
+        // senkronizasyonu atla — eski doğru veriyi silmemek için.
+        if (tc.requestedJobs.isEmpty) return;
+        tc.syncOtherSelectedJobIds();
+      });
+    }
+
     // Auto load the first tab initially. Let the View call the second tab if needed.
     fetchRequestedJobs(isRefresh: true);
     fetchProcessingJobs(isRefresh: true);
@@ -107,9 +128,6 @@ class TaskController extends GetxController {
       requestedRefreshController.resetNoData(); // 🔄 Reset pagination state
       // Don't set isRequestedFirstLoad to true on refresh to avoid showing loading spinner
       fetchBalance();
-      if (Get.isRegistered<JobNotificationController>()) {
-        Get.find<JobNotificationController>().fetchNotificationCounters();
-      }
     }
 
     isRequestedLoading.value = true;
@@ -147,6 +165,19 @@ class TaskController extends GetxController {
       hasRequestedMore.value = requestedJobs.length < requestedTotalCount.value;
       _requestedPage++;
 
+      // Notify notification controller which jobs have another user selected
+      syncOtherSelectedJobIds();
+
+      // Fetch fresh notification counts AFTER job IDs are synced to avoid race condition.
+      // Skip during tab-switch-triggered refreshes to preserve locally cleared badges.
+      if (isRefresh) {
+        final skip = _skipNextNotifRefresh;
+        _skipNextNotifRefresh = false;
+        if (!skip && Get.isRegistered<JobNotificationController>()) {
+          Get.find<JobNotificationController>().fetchNotificationCounters();
+        }
+      }
+
       isRequestedFirstLoad.value = false;
       isRequestedLoading.value = false;
 
@@ -179,9 +210,8 @@ class TaskController extends GetxController {
       processingRefreshController.resetNoData(); // 🔄 Reset pagination state
       // Don't set isProcessingFirstLoad to true on refresh to avoid showing loading spinner
       fetchBalance();
-      if (Get.isRegistered<JobNotificationController>()) {
-        Get.find<JobNotificationController>().fetchNotificationCounters();
-      }
+      // Consume the skip flag so it doesn't linger into the next fetchRequestedJobs call
+      _skipNextNotifRefresh = false;
     }
 
     isProcessingLoading.value = true;
@@ -376,6 +406,22 @@ class TaskController extends GetxController {
       procSearch.value = "";
       fetchProcessingJobs(isRefresh: true);
     }
+  }
+
+  void syncOtherSelectedJobIds() {
+    if (!Get.isRegistered<JobNotificationController>()) return;
+    final user = AuthStorage().getUser();
+    final myId = int.tryParse((user?['id'] ?? '').toString());
+    if (myId == null) return;
+    final ids = requestedJobs
+        .where((j) =>
+            j.status == 3 &&
+            j.selectedUserId != null &&
+            j.selectedUserId != myId &&
+            !j.finished)
+        .map((j) => j.id.toString())
+        .toSet();
+    Get.find<JobNotificationController>().updateOtherSelectedJobIds(ids);
   }
 
   bool get isAnyFilterActive {

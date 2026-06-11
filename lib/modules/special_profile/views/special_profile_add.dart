@@ -51,9 +51,12 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
         _selectedLegalizationType == null ? 'field_required'.tr : '';
     final longBioErr =
         longBioController.text.trim().isEmpty ? 'field_required'.tr : '';
-    final profileImageErr = controller.selectedProfileImage.value == null
-        ? 'field_required'.tr
-        : '';
+    final hasExistingImage = controller.profile.value.imageUrl != null &&
+        controller.profile.value.imageUrl!.isNotEmpty;
+    final profileImageErr =
+        controller.selectedProfileImage.value == null && !hasExistingImage
+            ? 'field_required'.tr
+            : '';
     setState(() {
       _submitted = true;
       _nameError = nameErr;

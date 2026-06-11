@@ -53,6 +53,7 @@ class AllController extends GetxController {
 
   int _page = 0;
   final int _limit = 20;
+  bool _pendingRefresh = false;
 
   RefreshController refreshController =
       RefreshController(initialRefresh: false);
@@ -108,6 +109,7 @@ class AllController extends GetxController {
     _storage.write('all_filter_dates',
         selectedDates.map((d) => d.toIso8601String()).toList());
     _storage.write('all_filter_search', search.value);
+    // Dates are session-only — not persisted.
   }
 
   void _loadFilters() {
@@ -189,7 +191,12 @@ class AllController extends GetxController {
   }
 
   Future<void> fetchJobs({bool isRefresh = false}) async {
-    if (isLoading.value) return;
+    if (isLoading.value) {
+      if (isRefresh) {
+        _pendingRefresh = true;
+      }
+      return;
+    }
 
     if (isRefresh) {
       _page = 0;
@@ -259,6 +266,11 @@ class AllController extends GetxController {
       } else {
         refreshController.loadFailed();
       }
+    }
+
+    if (_pendingRefresh && !isLoading.value) {
+      _pendingRefresh = false;
+      Future.microtask(() => fetchJobs(isRefresh: true));
     }
   }
 

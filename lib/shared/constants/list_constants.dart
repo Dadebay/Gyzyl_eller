@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:gyzyleller/shared/extensions/packages.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 @immutable
 class ListConstants {
-  static List<String> pageNames = ['all', 'tasks', 'Çatlar', 'menu_tab'.tr];
+  static const List<String> pageTitleKeys = [
+    'all_tab',
+    'tasks_tab',
+    'chat',
+    'menu_tab',
+  ];
 
   // Unselected (stroke) icons
   static List<IconData> mainIcons = [

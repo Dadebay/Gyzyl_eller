@@ -15,6 +15,16 @@ class ChatSocketService extends GetxService {
 
   bool get isConnected => isInitialized && _socket!.connected;
 
+  // socket_io_client expects an HTTP(S) base URL; websocket transport
+  // is negotiated via options during the Socket.IO handshake.
+  String _normalizeSocketBaseUrl(String rawUrl) {
+    final uri = Uri.parse(rawUrl.trim());
+    if (uri.scheme == 'ws') return uri.replace(scheme: 'http').toString();
+    if (uri.scheme == 'wss') return uri.replace(scheme: 'https').toString();
+    if (uri.scheme == 'http' || uri.scheme == 'https') return uri.toString();
+    return 'https://${rawUrl.trim()}';
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -23,15 +33,25 @@ class ChatSocketService extends GetxService {
 
   void _connect() {
     final token = _auth.token;
-    if (token == null) {
+    final user = _auth.getUser();
+    if (token == null || token.isEmpty || user == null) {
+      debugPrint('ℹ️ [ChatSocket] Login ýok, socket birikmesi goýberilýär');
       return;
     }
 
-    debugPrint('🔌 [ChatSocket] Bağlanýar: ${_api.chatWebSocketUrl}');
+    final socketBaseUrl = _normalizeSocketBaseUrl(_api.chatWebSocketUrl);
+    final baseUri = Uri.parse(socketBaseUrl);
+    final bool secure = baseUri.scheme == 'https';
+    final int effectivePort =
+        baseUri.hasPort ? baseUri.port : (secure ? 443 : 80);
+    final String socketUri = baseUri.replace(port: effectivePort).toString();
+
+    debugPrint('🔌 [ChatSocket] Bağlanýar: $socketUri');
     _socket = IO.io(
-      _api.chatWebSocketUrl,
+      socketUri,
       IO.OptionBuilder()
           .setTransports(['websocket'])
+          .setPath('/socket.io/')
           .setQuery({'access_token': token})
           .enableForceNewConnection()
           .disableAutoConnect()

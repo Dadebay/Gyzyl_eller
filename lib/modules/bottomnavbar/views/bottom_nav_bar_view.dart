@@ -13,7 +13,6 @@ import 'package:gyzyleller/shared/constants/list_constants.dart';
 import 'package:gyzyleller/modules/all/views/all_view.dart';
 import 'package:gyzyleller/modules/chats/controllers/chat_controller.dart';
 import 'package:gyzyleller/modules/task/task_view.dart';
-import 'package:gyzyleller/modules/task/controllers/task_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/views/settings_view.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
@@ -30,12 +29,9 @@ class BottomNavBar extends StatefulWidget {
 
 class _BottomNavBarState extends State<BottomNavBar> {
   final HomeController homeController = Get.put(HomeController());
-  final ChatController chatController =
-      Get.put(ChatController(), permanent: true);
-  final NotificationController notifController =
-      Get.put(NotificationController(), permanent: true);
-  final JobNotificationController jobNotifController =
-      Get.put(JobNotificationController(), permanent: true);
+  final ChatController chatController = Get.put(ChatController(), permanent: true);
+  final NotificationController notifController = Get.put(NotificationController(), permanent: true);
+  final JobNotificationController jobNotifController = Get.put(JobNotificationController(), permanent: true);
 
   final List<Widget> _pages = [
     const AllView(),
@@ -70,18 +66,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Widget build(BuildContext context) {
     return UpgradeAlert(
       upgrader: Upgrader(languageCode: 'ru'),
-      dialogStyle: Platform.isAndroid
-          ? UpgradeDialogStyle.material
-          : UpgradeDialogStyle.cupertino,
+      dialogStyle: Platform.isAndroid ? UpgradeDialogStyle.material : UpgradeDialogStyle.cupertino,
       child: Obx(() => Scaffold(
             appBar: PreferredSize(
-              preferredSize: Size.fromHeight(
-                  homeController.bottomNavBarSelectedIndex.value == 3
-                      ? kToolbarHeight
-                      : 0),
+              preferredSize: Size.fromHeight(homeController.bottomNavBarSelectedIndex.value == 3 ? kToolbarHeight : 0),
               child: CustomAppBar(
-                title: ListConstants
-                    .pageNames[homeController.bottomNavBarSelectedIndex.value],
+                title: ListConstants.pageTitleKeys[homeController.bottomNavBarSelectedIndex.value].tr,
               ),
             ),
             body: IndexedStack(
@@ -93,61 +83,50 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 currentIndex: homeController.bottomNavBarSelectedIndex.value,
                 onTap: (index) {
                   if (homeController.isBottomNavBarEnabled.value) {
-                    final previousIndex =
-                        homeController.bottomNavBarSelectedIndex.value;
+                    final previousIndex = homeController.bottomNavBarSelectedIndex.value;
                     homeController.changePage(index);
 
                     final bool isLoggedIn = AuthStorage().isLoggedIn;
 
-                    // If we switch TO the first tab (index 0), reset the ignore flag
-                    if (index == 0 && isLoggedIn &&
-                        Get.isRegistered<JobNotificationController>()) {
-                      Get.find<JobNotificationController>()
-                          .ignoreLocalAllTabCount.value = false;
+                    final jobNotif = isLoggedIn && Get.isRegistered<JobNotificationController>() ? Get.find<JobNotificationController>() : null;
+
+                    // Switch TO tab 0: reset ignore flag and refresh local badge
+                    if (index == 0 && jobNotif != null) {
+                      jobNotif.ignoreLocalAllTabCount.value = false;
+                      jobNotif.updateAllTabCount();
                     }
 
-                    // If we switch away from the first tab (index 0) to another tab:
-                    if (previousIndex == 0 && index != 0) {
-                      if (isLoggedIn &&
-                          Get.isRegistered<JobNotificationController>()) {
-                        Get.find<JobNotificationController>()
-                            .clearAllTabNotifications();
-                      }
+                    // Switch AWAY from tab 0: clear tab 0 badge
+                    if (previousIndex == 0 && index != 0 && jobNotif != null) {
+                      jobNotif.clearAllTabNotifications();
                     }
 
-                    // If we switch away from the second tab (index 1) to another tab (NOT when entering tab 1):
-                    if (previousIndex == 1 && index != 1) {
-                      if (isLoggedIn &&
-                          Get.isRegistered<JobNotificationController>() &&
-                          Get.isRegistered<TaskController>()) {
-                        final activeSubTabIndex =
-                            Get.find<TaskController>().activeTabIndex.value;
-                        Get.find<JobNotificationController>()
-                            .clearTasksTabNotifications(activeSubTabIndex);
-                      }
+                    // Switch AWAY from tab 1: immediately zero the badge,
+                    // then async-clear on the API side
+                    if (previousIndex == 1 && index != 1 && jobNotif != null) {
+                      jobNotif.tasksTabCount.value = 0;
+                      jobNotif.clearTasksTabNotifications();
+                      return; // skip updateTasksTabCount — badge is already 0
                     }
 
-                    // Dynamically update Tasks tab badge for the new page selection
-                    if (isLoggedIn &&
-                        Get.isRegistered<JobNotificationController>()) {
-                      Get.find<JobNotificationController>().updateTasksTabCount();
+                    // Switch TO tab 1 (Tasks): immediately update badge from cached
+                    // data so the correct split is visible before the API returns,
+                    // then fetch fresh counts from the server.
+                    if (index == 1 && jobNotif != null) {
+                      print('🔔 [BottomNav] Tasks tab açıldı → önce cache güncelleniyor, sonra API çekiliyor');
+                      jobNotif.updateTasksTabCount();
+                      jobNotif.fetchNotificationCounters();
+                      return;
                     }
+
+                    // For all other switches: refresh the tasks badge from cache
+                    jobNotif?.updateTasksTabCount();
                   }
                 },
                 icons: ListConstants.mainIcons,
                 selectedIcons: ListConstants.selectedIcons,
-                labels: [
-                  "all_tab".tr,
-                  "tasks_tab".tr,
-                  "chat".tr,
-                  "menu_tab".tr
-                ],
-                badges: [
-                  jobNotifController.allTabCount.value,
-                  jobNotifController.tasksTabCount.value,
-                  chatController.unreadCount.value,
-                  chatController.notifCount.value
-                ],
+                labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
+                badges: [jobNotifController.allTabCount.value, jobNotifController.tasksTabCount.value, chatController.unreadCount.value, chatController.notifCount.value],
               ),
             ),
           )),

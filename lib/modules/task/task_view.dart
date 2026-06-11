@@ -26,12 +26,17 @@ class _TaskViewState extends State<TaskView>
   final TaskController controller = Get.put(TaskController());
   final Set<int> _clearedNotificationJobIds = <int>{};
 
-  void _clearNotificationForOpenedJob(int jobId) {
+  Future<void> _clearNotificationForOpenedJob(int jobId) async {
     if (_clearedNotificationJobIds.contains(jobId)) return;
     if (!Get.isRegistered<JobNotificationController>()) return;
 
     _clearedNotificationJobIds.add(jobId);
-    Get.find<JobNotificationController>().clearByJob(jobId.toString());
+    final success = await Get.find<JobNotificationController>()
+        .clearByJob(jobId.toString());
+
+    if (success) {
+      Get.find<JobNotificationController>().updateTasksTabCount();
+    }
   }
 
   @override
@@ -43,23 +48,62 @@ class _TaskViewState extends State<TaskView>
         final previousIndex = controller.activeTabIndex.value;
         controller.activeTabIndex.value = _tabController.index;
 
-        // Only refresh if tab actually changed
+        // Only act if tab actually changed
         if (previousIndex != _tabController.index) {
-          _refreshCurrentTabSilently();
-
-          // Clear notifications of the sub-tab the user just left
           if (Get.isRegistered<JobNotificationController>()) {
-            final jobNotifController = Get.find<JobNotificationController>();
-            jobNotifController.clearTasksTabNotifications(previousIndex);
-            jobNotifController.updateTasksTabCount();
+            final jobNotif = Get.find<JobNotificationController>();
+            final resp = jobNotif.counterResponse.value;
+
+            // ── Tab-switch analysis print ────────────────────────────────────
+            print(
+                '🔔 [TaskView] tab switch: $previousIndex → ${_tabController.index}');
+            print(
+                '🔔 [TaskView] ─── Mevcut sayaç durumu ──────────────────────');
+            if (resp != null) {
+              _logTypeStatus(
+                  'type_id=2 requestSelected', resp.requestSelectedCount);
+              _logTypeStatus(
+                  'type_id=3 requestFinished', resp.requestFinishedCount);
+              _logTypeStatus(
+                  'type_id=4 jobStatusChanged', resp.jobStatusChangedCount);
+              _logTypeStatus(
+                  'type_id=5 masterReply(tab0)', resp.masterReplyCount);
+            } else {
+              print(
+                  '🔔 [TaskView] counterResponse is null — API henüz gelmedi');
+            }
+            print('🔔 [TaskView] tab0Count=${jobNotif.tab0Count.value}'
+                '  tab1Count=${jobNotif.tab1Count.value}');
+            print(
+                '🔔 [TaskView] ─────────────────────────────────────────────');
+
+            // Clear the badge of the tab being LEFT
+            if (previousIndex == 0) {
+              print(
+                  '🔔 [TaskView] Tab 0 (my_offers) terk edildi → clearTab0 çalışıyor');
+              jobNotif.clearTab0Notifications();
+            } else if (previousIndex == 1) {
+              print(
+                  '🔔 [TaskView] Tab 1 (my_jobs) terk edildi → clearTab1 çalışıyor');
+              jobNotif.clearTab1Notifications();
+            }
+            // tasksTabCount is updated inside clearTabX — no extra call needed
+
+            _refreshCurrentTabSilently();
           }
         }
       }
     });
   }
 
+  static void _logTypeStatus(String label, int count) {
+    final status = count > 0 ? '✅ ÇYKDY ($count)' : '❌ ÇYKMADY (0)';
+    print('🔔 [TaskView] $label: $status');
+  }
+
   void _refreshCurrentTabSilently() {
-    // Trigger pull-to-refresh animation for smooth visual feedback
+    // Skip notification re-fetch so locally cleared badges are not restored
+    controller.setSkipNextNotifRefresh();
     if (_tabController.index == 0) {
       controller.requestedRefreshController.requestRefresh();
     } else {
@@ -121,6 +165,14 @@ class _TaskViewState extends State<TaskView>
               child: Obx(() {
                 final reqCount = controller.requestedTotalCount.value;
                 final procCount = controller.processingTotalCount.value;
+                final activeTab = controller.activeTabIndex.value;
+
+                // Per-tab notification badge counts
+                final jobNotif = Get.isRegistered<JobNotificationController>()
+                    ? Get.find<JobNotificationController>()
+                    : null;
+                final t0 = jobNotif?.tab0Count.value ?? 0;
+                final t1 = jobNotif?.tab1Count.value ?? 0;
 
                 return TabBar(
                   controller: _tabController,
@@ -138,24 +190,57 @@ class _TaskViewState extends State<TaskView>
                   dividerColor: Colors.transparent,
                   tabs: [
                     Tab(
-                      child: Text(
-                        "my_offers_tab"
-                            .trParams({"count": reqCount.toString()}),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: Get.locale?.languageCode == 'ru' ? 13 : 18,
-                          fontFamily: 'Gilroy',
-                        ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          Text(
+                            "my_offers_tab"
+                                .trParams({"count": reqCount.toString()}),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize:
+                                  Get.locale?.languageCode == 'ru' ? 13 : 18,
+                              fontFamily: 'Gilroy',
+                            ),
+                          ),
+                          if (t0 > 0)
+                            Positioned(
+                              top: -4,
+                              right: -12,
+                              child: _buildTabBadge(t0,
+                                  isSelected: activeTab == 0),
+                            ),
+                        ],
                       ),
                     ),
                     Tab(
-                      child: Text(
-                        "my_jobs_tab".trParams({"count": procCount.toString()}),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: Get.locale?.languageCode == 'ru' ? 14 : 18,
-                          fontFamily: 'Gilroy',
-                        ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          Text(
+                            "my_jobs_tab"
+                                .trParams({"count": procCount.toString()}),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize:
+                                  Get.locale?.languageCode == 'ru' ? 14 : 18,
+                              fontFamily: 'Gilroy',
+                            ),
+                          ),
+                          if (t1 > 0)
+                            Positioned(
+                              top: -8,
+                              right: -14,
+                              child: _buildTabBadge(t1,
+                                  isSelected: activeTab == 1),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -220,41 +305,79 @@ class _TaskViewState extends State<TaskView>
                       itemBuilder: (context, index) {
                         final job = controller.processingJobs[index];
                         final tag = _TaskProcessingTagResolver().resolve(job);
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                        final jobNotif =
+                            Get.isRegistered<JobNotificationController>()
+                                ? Get.find<JobNotificationController>()
+                                : null;
+                        final hasDot =
+                            jobNotif?.hasTab1Notification(job.id.toString()) ??
+                                false;
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: JobCard(
-                            job: job,
-                            isNew: false,
-                            showDelete: true,
-                            fromTaskView: true,
-                            taskTabIndex: 1,
-                            hideTag: tag.hideTag,
-                            customTagLabel: tag.label,
-                            customTagTextColor: tag.textColor,
-                            customTagBgColor: tag.bgColor,
-                            customTagIcon: tag.icon,
-                            onOpened: () =>
-                                _clearNotificationForOpenedJob(job.id),
-                            onDeleted: () =>
-                                controller.fetchProcessingJobs(isRefresh: true),
-                          ),
+                              child: JobCard(
+                                job: job,
+                                isNew: false,
+                                showDelete: true,
+                                fromTaskView: true,
+                                taskTabIndex: 1,
+                                hideTag: tag.hideTag,
+                                customTagLabel: tag.label,
+                                customTagTextColor: tag.textColor,
+                                customTagBgColor: tag.bgColor,
+                                customTagIcon: tag.icon,
+                                onOpened: () =>
+                                    _clearNotificationForOpenedJob(job.id),
+                                onDeleted: () => controller.fetchProcessingJobs(
+                                    isRefresh: true),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
             );
           }),
         ],
+      ),
+    );
+  }
+
+  /// Small pill-shaped badge for a tab label.
+  /// [isSelected] = true  → white pill on red background (active tab)
+  /// [isSelected] = false → red pill on white background (inactive tab)
+  Widget _buildTabBadge(int count, {required bool isSelected}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.white : ColorConstants.kPrimaryColor2,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      constraints: const BoxConstraints(minWidth: 9, minHeight: 9),
+    );
+  }
+
+  /// Small red dot shown on a job card when there is an unread notification.
+  Widget _buildNotifDot() {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: const BoxDecoration(
+        color: Color.fromARGB(255, 15, 3, 3),
+        shape: BoxShape.circle,
       ),
     );
   }
@@ -315,39 +438,50 @@ class _TaskViewState extends State<TaskView>
                   final bool canDeleteJob = (job.status != 3 ||
                       job.selectedUserId == null ||
                       job.finished);
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                  final jobNotif = Get.isRegistered<JobNotificationController>()
+                      ? Get.find<JobNotificationController>()
+                      : null;
+                  final hasDot =
+                      jobNotif?.hasTab0Notification(job.id.toString()) ?? false;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: JobCard(
-                      job: job,
-                      isNew: false,
-                      showDelete: (job.status == 5 ||
-                              job.status == 4 ||
-                              job.finished == true ||
-                              job.status == 7)
-                          ? true
-                          : !canDeleteJob,
-                      fromTaskView: true,
-                      taskTabIndex: 0,
-                      hideTag: tag.hideTag,
-                      customTagLabel: tag.label,
-                      customTagTextColor: tag.textColor,
-                      customTagBgColor: tag.bgColor,
-                      customTagIcon: tag.icon,
-                      onOpened: () => _clearNotificationForOpenedJob(job.id),
-                      onDeleted: () =>
-                          controller.fetchRequestedJobs(isRefresh: true),
-                    ),
+                        child: JobCard(
+                          job: job,
+                          isNew: false,
+                          showDelete: (job.status == 5 ||
+                                  job.status == 4 ||
+                                  job.finished == true ||
+                                  job.status == 7)
+                              ? true
+                              : !canDeleteJob,
+                          fromTaskView: true,
+                          taskTabIndex: 0,
+                          hideTag: tag.hideTag,
+                          customTagLabel: tag.label,
+                          customTagTextColor: tag.textColor,
+                          customTagBgColor: tag.bgColor,
+                          customTagIcon: tag.icon,
+                          onOpened: () =>
+                              _clearNotificationForOpenedJob(job.id),
+                          onDeleted: () =>
+                              controller.fetchRequestedJobs(isRefresh: true),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),

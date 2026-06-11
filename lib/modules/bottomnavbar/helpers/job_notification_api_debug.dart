@@ -8,7 +8,6 @@ class JobNotificationAPIDebug {
   static final JobNotificationService _service = JobNotificationService();
 
   static Future<void> debugGetNotificationCounters() async {
-
     try {
       final response = await _service.getNotificationCounters();
 
@@ -23,6 +22,8 @@ class JobNotificationAPIDebug {
             '   ├─ REQUEST_FINISHED (3):    ${response.requestFinishedCount}');
         print(
             '   ├─ JOB_STATUS_CHANGED (4):  ${response.jobStatusChangedCount}');
+        print(
+            '   ├─ MASTER_REPLY (5):        ${response.masterReplyCount}');
         print('   └─ TOTAL:                   ${response.totalCount}');
         print('');
         print('📍 BADGE VALUES:');
@@ -182,6 +183,8 @@ class JobNotificationAPIDebug {
         return 'REQUEST_FINISHED';
       case 4:
         return 'JOB_STATUS_CHANGED';
+      case 5:
+        return 'MASTER_REPLY';
       default:
         return 'UNKNOWN';
     }
