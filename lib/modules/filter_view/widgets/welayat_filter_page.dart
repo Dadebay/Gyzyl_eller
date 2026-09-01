@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/core/models/metadata_models.dart';
 
@@ -56,8 +57,6 @@ class WelayatFilterPage extends StatelessWidget {
             itemCount: locations.length,
             itemBuilder: (context, i) {
               final location = locations[i];
-              final isWelayatSelected =
-                  selectedWelayatIds.contains(location.id);
               final selectedEtrapCount = location.etraps
                   .where((e) => selectedEtrapIds.contains(e.id))
                   .length;
@@ -68,60 +67,28 @@ class WelayatFilterPage extends StatelessWidget {
                   onTap: () => onWelayatSelected(location),
                   child: Row(
                     children: [
-                      // Custom checkbox
-                      GestureDetector(
-                        onTap: () => onWelayatCheckChanged(location.id),
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color:
-                                  isWelayatSelected ? Colors.red : Colors.grey,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(5),
-                            color: isWelayatSelected
-                                ? Colors.red
-                                : Colors.transparent,
-                          ),
-                          child: isWelayatSelected
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 18,
-                                )
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      // Name + sub-count
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              location.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (selectedEtrapCount > 0)
-                              Text(
-                                "$selectedEtrapCount ${"etrap_selected".tr}",
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: ColorConstants.blue,
-                                ),
-                              ),
-                          ],
+                        child: Text(
+                          location.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
+                      if (selectedEtrapCount > 0)
+                        Text(
+                          selectedEtrapCount.toString(),
+                          style: const TextStyle(
+                            color: ColorConstants.kPrimaryColor2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      const HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
                         color: ColorConstants.greyColor,
-                        size: 18,
+                        size: 20,
                       ),
                     ],
                   ),

@@ -1,24 +1,35 @@
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
+import 'package:gyzyleller/core/services/my_jobs_service.dart';
+import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart' as loc;
 import 'package:gyzyleller/core/models/location_model.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/shared/widgets/custom_flutter_map.dart';
+import 'package:gyzyleller/core/models/metadata_models.dart' as mm;
 
 class ServicesMapScreen extends StatefulWidget {
   final Location location;
   final String placeName;
   final String catName;
+  final String? welayat;
+  final String? etrap;
+  final int? welayatId;
+  final int? etrapId;
 
   const ServicesMapScreen({
     super.key,
     required this.location,
     required this.placeName,
     required this.catName,
+    this.welayat,
+    this.etrap,
+    this.welayatId,
+    this.etrapId,
   });
 
   @override
@@ -26,13 +37,72 @@ class ServicesMapScreen extends StatefulWidget {
 }
 
 class _ServicesMapScreenState extends State<ServicesMapScreen> {
+  static const double _initialZoom = 16.9;
+  static const double _navigationZoom = 13.5;
   List<LatLng> _routePoints = [];
   bool _isLoadingRoute = false;
   bool _isLoadingGPS = false;
+  bool _hasStartedNavigation = false;
   LatLng? _currentUserLocation;
   bool _showUserLocation = false;
+  LatLngBounds? _fitBounds;
 
   final loc.Location _location = loc.Location();
+  String? _welayatName;
+  String? _etrapName;
+
+  @override
+  void initState() {
+    super.initState();
+    _welayatName = widget.welayat;
+    _etrapName = widget.etrap;
+
+    if ((_welayatName == null || _etrapName == null) &&
+        (widget.welayatId != null || widget.etrapId != null)) {
+      _resolveLocationNames();
+    }
+  }
+
+  Future<void> _resolveLocationNames() async {
+    try {
+      final List<mm.LocationModel> allLocations = [];
+
+      // 1. Try to get from AllController if available
+      try {
+        if (Get.isRegistered<AllController>()) {
+          allLocations.assignAll(Get.find<AllController>().allLocations);
+        }
+      } catch (_) {}
+
+      // 2. If empty, fetch from API
+      if (allLocations.isEmpty) {
+        final MyJobsService service = MyJobsService();
+        final fetched = await service.getLocations();
+        allLocations.assignAll(fetched);
+      }
+
+      if (allLocations.isNotEmpty) {
+        if (widget.welayatId != null) {
+          final w =
+              allLocations.firstWhereOrNull((l) => l.id == widget.welayatId);
+          if (w != null) _welayatName = w.name;
+        }
+        if (widget.etrapId != null) {
+          // Etraps are nested in welayats
+          for (var w in allLocations) {
+            final e = w.etraps.firstWhereOrNull((c) => c.id == widget.etrapId);
+            if (e != null) {
+              _etrapName = e.name;
+              break;
+            }
+          }
+        }
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Error resolving location names: $e');
+    }
+  }
 
   Future<void> _getCurrentLocation() async {
     setState(() {
@@ -104,6 +174,10 @@ class _ServicesMapScreenState extends State<ServicesMapScreen> {
                 .map(
                     (coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
                 .toList();
+
+            if (_routePoints.isNotEmpty) {
+              _fitBounds = LatLngBounds.fromPoints(_routePoints);
+            }
           });
         }
       }
@@ -135,7 +209,7 @@ class _ServicesMapScreenState extends State<ServicesMapScreen> {
 
     if (_showUserLocation && _currentUserLocation != null) {
       locations.add(_currentUserLocation!);
-      markerIcons.add(Icons.person_pin_circle);
+      markerIcons.add(Icons.circle);
       markerColors.add(Colors.blue);
     }
 
@@ -163,14 +237,17 @@ class _ServicesMapScreenState extends State<ServicesMapScreen> {
                   color: Colors.white,
                   fontWeight: FontWeight.bold),
             ),
-            Text(
-              widget.catName,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-                fontWeight: FontWeight.w400,
+            if (_welayatName != null || _etrapName != null)
+              Text(
+                _welayatName == _etrapName
+                    ? (_welayatName ?? '')
+                    : "${_welayatName ?? ''}${(_welayatName != null && _etrapName != null && _etrapName!.isNotEmpty) ? ', ' : ''}${_etrapName ?? ''}",
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.white60,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -188,6 +265,12 @@ class _ServicesMapScreenState extends State<ServicesMapScreen> {
               ),
             ),
             onPressed: () async {
+              if (!_hasStartedNavigation) {
+                setState(() {
+                  _hasStartedNavigation = true;
+                });
+              }
+
               if (!_showUserLocation) {
                 setState(() {
                   _showUserLocation = true;
@@ -227,12 +310,15 @@ class _ServicesMapScreenState extends State<ServicesMapScreen> {
           CustomFlutterMap(
             center: destination,
             markerSize: 35,
-            zoom: 14.0,
+            zoom: _hasStartedNavigation ? _navigationZoom : _initialZoom,
             locations: locations,
             markerIcons: markerIcons,
             markerColors: markerColors,
             polylines: _routePoints.isNotEmpty ? _routePoints : null,
             polylineColor: const Color(0xFF2563EB),
+            strokeCap: StrokeCap.round,
+            strokeJoin: StrokeJoin.round,
+            fitBounds: _fitBounds,
           ),
           if (_isLoadingGPS)
             Center(
@@ -252,4 +338,3 @@ class _ServicesMapScreenState extends State<ServicesMapScreen> {
     );
   }
 }
-

@@ -35,8 +35,8 @@ class AboutView extends StatelessWidget {
           homeController.changePage(index);
         },
         selectedIcons: ListConstants.selectedIcons,
-        unselectedIcons: ListConstants.mainIcons,
-         labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
+        icons: ListConstants.mainIcons,
+        labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
       ),
     );
   }

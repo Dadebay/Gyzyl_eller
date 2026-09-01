@@ -1,29 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
 
 class MainFilterPage extends StatelessWidget {
   final VoidCallback onCategoryTap;
   final String categoryValue;
+  final VoidCallback? onClearCategory;
+  final int categoryCount;
   final VoidCallback onLocationTap;
   final String locationValue;
+  final VoidCallback? onClearLocation;
+  final int locationCount;
   final VoidCallback onPriceTap;
   final String priceValue;
+  final VoidCallback? onClearPrice;
   final VoidCallback? onYearTap;
   final String? selectedYear;
+  final VoidCallback? onClearYear;
 
   const MainFilterPage({
     super.key,
     required this.onCategoryTap,
     required this.categoryValue,
+    this.onClearCategory,
+    this.categoryCount = 0,
     required this.onLocationTap,
     required this.locationValue,
+    this.onClearLocation,
+    this.locationCount = 0,
     required this.onPriceTap,
     required this.priceValue,
+    this.onClearPrice,
     this.onYearTap,
     this.selectedYear,
+    this.onClearYear,
   });
 
   @override
@@ -32,30 +43,36 @@ class MainFilterPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
         _buildFilterItem(
-          svgIcon: IconConstants.categoryFilled,
+          iconData: HugeIcons.strokeRoundedGridView,
           title: "category".tr,
           value: categoryValue,
           onTap: onCategoryTap,
+          onClear: onClearCategory,
+          count: categoryCount,
         ),
         _buildFilterItem(
-          svgIcon: IconConstants.locationHouse,
+          iconData: HugeIcons.strokeRoundedLocation04,
           title: "location".tr,
           value: locationValue,
           onTap: onLocationTap,
+          onClear: onClearLocation,
+          count: locationCount,
         ),
         _buildFilterItem(
-          svgIcon: IconConstants.payment,
+          iconData: HugeIcons.strokeRoundedMoney03,
           title: "price".tr,
           value: priceValue,
           onTap: onPriceTap,
+          onClear: onClearPrice,
         ),
         _buildFilterItem(
-          svgIcon: IconConstants.calendar,
+          iconData: HugeIcons.strokeRoundedCalendar01,
           title: "job_date_label".tr,
           value: selectedYear != null && selectedYear!.isNotEmpty
               ? selectedYear!
               : "all".tr,
           onTap: onYearTap,
+          onClear: onClearYear,
         ),
         const SizedBox(height: 30),
       ],
@@ -63,11 +80,14 @@ class MainFilterPage extends StatelessWidget {
   }
 
   Widget _buildFilterItem({
-    required String svgIcon,
+    required IconData iconData,
     required String title,
     required String value,
     VoidCallback? onTap,
+    VoidCallback? onClear,
+    int count = 0,
   }) {
+    final bool isActive = onClear != null;
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
@@ -80,11 +100,15 @@ class MainFilterPage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            SvgPicture.asset(
-              svgIcon,
-              width: 26,
-              height: 26,
-              colorFilter: const ColorFilter.mode(Colors.red, BlendMode.srcIn),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                HugeIcon(
+                  icon: iconData,
+                  color: Colors.red,
+                  size: 26,
+                ),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -109,7 +133,29 @@ class MainFilterPage extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 18),
+            GestureDetector(
+              onTap: isActive ? onClear : onTap,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) => ScaleTransition(
+                  scale: animation,
+                  child: FadeTransition(opacity: animation, child: child),
+                ),
+                child: isActive
+                    ? HugeIcon(
+                        key: const ValueKey('delete'),
+                        icon: HugeIcons.strokeRoundedDelete02,
+                        color: Colors.red.shade600,
+                        size: 22,
+                      )
+                    : const HugeIcon(
+                        key: ValueKey('arrow'),
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        color: Colors.black,
+                        size: 18,
+                      ),
+              ),
+            ),
           ],
         ),
       ),

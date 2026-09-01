@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print, empty_catches
+
 import 'package:gyzyleller/core/models/metadata_models.dart';
 import 'package:gyzyleller/modules/filter_view/widgets/category_filter_page.dart';
 import 'package:gyzyleller/modules/filter_view/widgets/etrap_filter_page.dart';
@@ -6,10 +8,10 @@ import 'package:gyzyleller/modules/filter_view/widgets/price_filter_page.dart';
 import 'package:gyzyleller/modules/filter_view/widgets/subcategory_filter_page.dart';
 import 'package:gyzyleller/modules/filter_view/widgets/welayat_filter_page.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
 
-// Enum to manage the current page view inside the bottom sheet
 enum _FilterPage { main, category, subcategory, price, welayat, etrap }
 
 class FilterBottomSheet extends StatefulWidget {
@@ -42,29 +44,29 @@ class FilterBottomSheet extends StatefulWidget {
   State<FilterBottomSheet> createState() => _FilterBottomSheetState();
 }
 
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  // State variables
+class _FilterBottomSheetState extends State<FilterBottomSheet>
+    with SingleTickerProviderStateMixin {
   _FilterPage _currentPage = _FilterPage.main;
 
-  // Selection state
   final List<int> _selectedCatIds = [];
   final List<int> _selectedWelayatIds = [];
   final List<int> _selectedEtrapIds = [];
   DateTime? _startDate;
   DateTime? _endDate;
-  RangeValues _priceRange = const RangeValues(0, 10000);
+  RangeValues _priceRange = const RangeValues(0, 1000000);
 
-  // Current view context
   CategoryModel? _activeCategory;
   LocationModel? _activeWelayat;
 
   int _resultCount = 0;
   bool _isCountLoading = false;
+  Timer? _countDebounce;
+  Timer? _applyDebounce; // Debounce for real-time filter application
 
   final MyJobsService _jobsService = MyJobsService();
   List<LocationModel> _locations = [];
-  bool _isLocationsLoading = false;
   List<CategoryModel> _categories = [];
+  bool _isCategoriesLoading = false;
 
   @override
   void initState() {
@@ -84,66 +86,194 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     }
     _priceRange = RangeValues(
       widget.initialMinPrice ?? 0,
-      widget.initialMaxPrice ?? 10000,
+      widget.initialMaxPrice ?? 1000000,
     );
     _fetchCount();
     _fetchLocations();
     _fetchCategories();
+    if (_selectedCatIds.isEmpty) {
+      _fetchSavedSearch();
+    }
+  }
+
+  /// Derive parent welayat IDs from currently selected etrap IDs.
+  void _syncWelayatIdsFromEtraps() {
+    if (_locations.isEmpty || _selectedEtrapIds.isEmpty) return;
+    for (final loc in _locations) {
+      final locEtrapIds = loc.etraps.map((e) => e.id).toSet();
+      if (_selectedEtrapIds.any((eid) => locEtrapIds.contains(eid))) {
+        if (!_selectedWelayatIds.contains(loc.id)) {
+          _selectedWelayatIds.add(loc.id);
+        }
+      }
+    }
+  }
+
+  Future<void> _fetchSavedSearch() async {
+    if (!AuthStorage().isLoggedIn) return;
+    try {
+      final savedData = await _jobsService.getMasterSavedSearch();
+      if (savedData != null && mounted) {
+        setState(() {
+          // Categories
+          final List<int> savedCats = (savedData['cats'] as List<int>?) ?? [];
+          if (_selectedCatIds.isEmpty && savedCats.isNotEmpty) {
+            _selectedCatIds.addAll(savedCats);
+          }
+
+          // Etraps
+          final List<int> savedEtraps =
+              (savedData['etraps'] as List<int>?) ?? [];
+          if (_selectedEtrapIds.isEmpty && savedEtraps.isNotEmpty) {
+            _selectedEtrapIds.addAll(savedEtraps);
+          }
+
+          // Price
+          final double? minPrice = savedData['min_price'] as double?;
+          final double? maxPrice = savedData['max_price'] as double?;
+          if (minPrice != null && maxPrice != null) {
+            _priceRange = RangeValues(minPrice, maxPrice);
+          }
+
+          // Dates — only load if user has not already selected dates
+          final String? startDateStr = savedData['start_date'] as String?;
+          final String? endDateStr = savedData['end_date'] as String?;
+          if (_startDate == null && startDateStr != null) {
+            _startDate = DateTime.tryParse(startDateStr);
+          }
+          if (_endDate == null && endDateStr != null) {
+            _endDate = DateTime.tryParse(endDateStr);
+          }
+
+          // Derive welayat IDs from loaded etraps
+          _syncWelayatIdsFromEtraps();
+        });
+        _fetchCount();
+      }
+    } catch (e) {
+      print('Error fetching saved search in view: $e');
+    }
+  }
+
+  void _saveSearch() {
+    if (!AuthStorage().isLoggedIn) return;
+    _jobsService.saveMasterSearch(
+      catIds: _selectedCatIds,
+      etrapIds: _selectedEtrapIds,
+      welayatIds: _selectedWelayatIds,
+      minPrice: _priceRange.start == 0 ? null : _priceRange.start,
+      maxPrice: _priceRange.end == 1000000 ? null : _priceRange.end,
+      startDate: _startDate,
+      endDate: _endDate,
+    );
   }
 
   Future<void> _fetchCategories() async {
+    setState(() => _isCategoriesLoading = true);
     try {
       final cats = await _jobsService.getCategories();
       setState(() {
         _categories = cats;
+        _isCategoriesLoading = false;
       });
-    } catch (e) {}
+    } catch (e) {
+      setState(() => _isCategoriesLoading = false);
+    }
   }
 
   Future<void> _fetchLocations() async {
-    setState(() => _isLocationsLoading = true);
     try {
       final locations = await _jobsService.getLocations();
       setState(() {
         _locations = locations;
-        _isLocationsLoading = false;
+        // Sync welayat IDs from any already-selected etraps
+        _syncWelayatIdsFromEtraps();
       });
-    } catch (e) {
-      setState(() => _isLocationsLoading = false);
+    } catch (e) {}
+  }
+
+  void _scheduleFetchCount() {
+    _countDebounce?.cancel();
+    _countDebounce = Timer(const Duration(milliseconds: 400), _fetchCount);
+  }
+
+  /// Schedule real-time filter application (debounced)
+  void _scheduleApplyFilters() {
+    _applyDebounce?.cancel();
+    _applyDebounce =
+        Timer(const Duration(milliseconds: 500), _applyFiltersRealtime);
+  }
+
+  /// Apply filters in real-time as user changes them
+  void _applyFiltersRealtime() {
+    if (_currentPage != _FilterPage.main) {
+      // Only apply when on main page to avoid rapid calls
+      return;
     }
+
+    final applyData = {
+      'catIds': _selectedCatIds.isEmpty ? null : _selectedCatIds,
+      'welayatIds': _selectedWelayatIds.isEmpty ? null : _selectedWelayatIds,
+      'etrapIds': _selectedEtrapIds.isEmpty ? null : _selectedEtrapIds,
+      'minPrice': _priceRange.start == 0 ? null : _priceRange.start,
+      'maxPrice': _priceRange.end == 1000000 ? null : _priceRange.end,
+      'dates': _startDate != null
+          ? [_startDate!, if (_endDate != null) _endDate!]
+          : null,
+      'search': widget.initialSearch,
+    };
+
+    print('⚡ [FilterBottomSheet] Real-time apply');
+    widget.onApply(applyData);
+  }
+
+  @override
+  void dispose() {
+    _countDebounce?.cancel();
+    _applyDebounce?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchCount() async {
+    if (!mounted) return;
     setState(() => _isCountLoading = true);
     try {
       final response = await _jobsService.getMyJobs(
         limit: 1,
         catIds: _selectedCatIds,
-        welayatIds: _selectedWelayatIds,
+        welayatIds: _selectedEtrapIds.isEmpty ? _selectedWelayatIds : [],
         etrapIds: _selectedEtrapIds,
-        minPrice: _priceRange.start,
-        maxPrice: _priceRange.end,
+        minPrice: _priceRange.start == 0 ? null : _priceRange.start,
+        maxPrice: _priceRange.end == 1000000 ? null : _priceRange.end,
         dates: _startDate != null
             ? [_startDate!, if (_endDate != null) _endDate!]
             : null,
         search: widget.initialSearch,
         requestedInput: widget.requestedInput,
         processingInput: widget.processingInput,
-        requiresToken: widget.requestedInput || widget.processingInput,
+        // NEVER use token in filter - works for both guest and logged-in users
+        // AllView always sends false values, TaskView tabs (Requested/Processing) also use no token
+        requiresToken: true,
       );
+      if (!mounted) return;
       setState(() {
         _resultCount = response.data.count;
         _isCountLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isCountLoading = false);
     }
   }
 
   void _showCustomYearPicker() {
+    final DateTime today = DateTime.now();
     DateTime? tempStart = _startDate;
     DateTime? tempEnd = _endDate;
-    DateTime focusedDay = _startDate ?? DateTime.now();
+    DateTime focusedDay = _startDate ?? today;
+    if (focusedDay.isBefore(today)) {
+      focusedDay = today;
+    }
     bool isPickerVisible = false;
     int selectedYearForPicker = focusedDay.year;
     final yearScrollController = ScrollController(
@@ -266,7 +396,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       Stack(
                         children: [
                           TableCalendar(
-                            firstDay: DateTime(2000),
+                            firstDay: today,
                             lastDay: DateTime(2101),
                             focusedDay: focusedDay,
                             rangeStartDay: tempStart,
@@ -419,6 +549,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 _startDate = tempStart;
                                 _endDate = tempEnd;
                               });
+                              _scheduleFetchCount();
                               Navigator.pop(context);
                             },
                             child: Text(
@@ -443,16 +574,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  void _goToPricePage() {
-    setState(() {
-      _currentPage = _FilterPage.price;
-    });
-  }
+  void _goToPricePage() => setState(() => _currentPage = _FilterPage.price);
 
   void _goToCategoryPage() {
-    setState(() {
-      _currentPage = _FilterPage.category;
-    });
+    setState(() => _currentPage = _FilterPage.category);
+    if (_categories.isEmpty && !_isCategoriesLoading) {
+      _fetchCategories();
+    }
   }
 
   void _goToSubcategoryPage(CategoryModel category) {
@@ -462,17 +590,61 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     });
   }
 
-  void _goToLocationPage() {
-    setState(() {
-      _currentPage = _FilterPage.welayat;
-    });
+  void _handleCategoryTap(CategoryModel category) {
+    // Some categories do not have subcategories. Treat them as directly selectable.
+    if (category.subcategories.isEmpty) {
+      setState(() {
+        if (_selectedCatIds.contains(category.id)) {
+          _selectedCatIds.remove(category.id);
+        } else {
+          _selectedCatIds.add(category.id);
+        }
+      });
+      _scheduleFetchCount();
+      return;
+    }
+
+    _goToSubcategoryPage(category);
   }
+
+  void _goToLocationPage() =>
+      setState(() => _currentPage = _FilterPage.welayat);
 
   void _goToEtrapPage(LocationModel welayat) {
     setState(() {
       _currentPage = _FilterPage.etrap;
       _activeWelayat = welayat;
     });
+  }
+
+  void _selectAllActiveSubcategories() {
+    final category = _activeCategory;
+    if (category == null) return;
+    setState(() {
+      for (final subcategory in category.subcategories) {
+        if (!_selectedCatIds.contains(subcategory.id)) {
+          _selectedCatIds.add(subcategory.id);
+        }
+      }
+    });
+    _scheduleFetchCount();
+  }
+
+  void _selectAllActiveEtraps() {
+    final welayat = _activeWelayat;
+    if (welayat == null) return;
+    setState(() {
+      for (final etrap in welayat.etraps) {
+        if (!_selectedEtrapIds.contains(etrap.id)) {
+          _selectedEtrapIds.add(etrap.id);
+        }
+      }
+      // Also add parent welayat ID
+      if (!_selectedWelayatIds.contains(welayat.id)) {
+        _selectedWelayatIds.add(welayat.id);
+      }
+    });
+    _scheduleFetchCount();
   }
 
   void _goBack() {
@@ -548,23 +720,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         height: 40,
         child: Row(
           children: [
-            /// BACK BUTTON
             SizedBox(
               width: 40,
               child: showBackButton
                   ? IconButton(
                       padding: EdgeInsets.zero,
                       onPressed: _goBack,
-                      icon: const Icon(
-                        Icons.arrow_back_ios,
-                        size: 16,
+                      icon: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowLeft01,
+                        size: 24,
                         color: Colors.black,
                       ),
                     )
                   : null,
             ),
-
-            /// TITLE
             Expanded(
               child: Text(
                 title,
@@ -577,18 +746,27 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
               ),
             ),
-
-            /// CLOSE BUTTON
             SizedBox(
               width: 40,
               child: !showBackButton
-                  ? IconButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(
-                        Icons.close,
-                        size: 24,
-                        color: Colors.black,
+                  ? AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) => ScaleTransition(
+                        scale: animation,
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      ),
+                      child: IconButton(
+                        key: const ValueKey('close'),
+                        padding: EdgeInsets.zero,
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const HugeIcon(
+                          icon: HugeIcons.strokeRoundedCancel01,
+                          size: 24,
+                          color: Colors.black,
+                        ),
                       ),
                     )
                   : null,
@@ -600,18 +778,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   Widget _buildContent() {
-    String selectedYearText;
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+
+    String selectedYearText = '';
     if (_startDate != null && _endDate != null) {
-      if (isSameDay(_startDate, _endDate)) {
-        selectedYearText = _startDate!.year.toString();
-      } else {
-        selectedYearText =
-            " 20${_startDate!.year % 100} - 20${_endDate!.year % 100}";
-      }
+      selectedYearText = isSameDay(_startDate, _endDate)
+          ? fmt(_startDate!)
+          : '${fmt(_startDate!)} - ${fmt(_endDate!)}';
     } else if (_startDate != null) {
-      selectedYearText = _startDate!.year.toString();
-    } else {
-      selectedYearText = '';
+      selectedYearText = fmt(_startDate!);
     }
 
     switch (_currentPage) {
@@ -619,21 +795,87 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         return MainFilterPage(
           onCategoryTap: _goToCategoryPage,
           categoryValue: _getCategoryValueText(),
+          categoryCount: _selectedCatIds.length,
+          onClearCategory: _selectedCatIds.isNotEmpty
+              ? () {
+                  setState(() => _selectedCatIds.clear());
+                  _saveSearch();
+                  _scheduleFetchCount();
+                  _scheduleApplyFilters(); // Apply in real-time
+                }
+              : null,
           onLocationTap: _goToLocationPage,
           locationValue: _getLocationValueText(),
+          locationCount: _selectedEtrapIds.isNotEmpty
+              ? _selectedEtrapIds.length
+              : _selectedWelayatIds.length,
+          onClearLocation:
+              (_selectedWelayatIds.isNotEmpty || _selectedEtrapIds.isNotEmpty)
+                  ? () {
+                      setState(() {
+                        _selectedWelayatIds.clear();
+                        _selectedEtrapIds.clear();
+                      });
+                      _saveSearch();
+                      _scheduleFetchCount();
+                      _scheduleApplyFilters(); // Apply in real-time
+                    }
+                  : null,
           onPriceTap: _goToPricePage,
           priceValue:
               "${_priceRange.start.toInt()} TMT – ${_priceRange.end.toInt()} TMT",
+          onClearPrice: (_priceRange.start != 0 || _priceRange.end != 1000000)
+              ? () {
+                  setState(() => _priceRange = const RangeValues(0, 1000000));
+                  _saveSearch();
+                  _scheduleFetchCount();
+                  _scheduleApplyFilters(); // Apply in real-time
+                }
+              : null,
           onYearTap: _showCustomYearPicker,
           selectedYear: selectedYearText,
+          onClearYear: (_startDate != null || _endDate != null)
+              ? () {
+                  setState(() {
+                    _startDate = null;
+                    _endDate = null;
+                  });
+                  _saveSearch();
+                  _scheduleFetchCount();
+                  _scheduleApplyFilters(); // Apply in real-time
+                }
+              : null,
         );
       case _FilterPage.category:
+        if (_isCategoriesLoading) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Colors.grey[200],
+            ),
+          );
+        }
         return CategoryFilterPage(
           categories: _categories,
           selectedCatIds: _selectedCatIds,
-          onCategorySelected: _goToSubcategoryPage,
+          onCategorySelected: _handleCategoryTap,
+          onClear: () {
+            setState(() => _selectedCatIds.clear());
+            _saveSearch();
+            _scheduleFetchCount();
+            _scheduleApplyFilters(); // Apply in real-time
+          },
         );
       case _FilterPage.subcategory:
+        if (_isCategoriesLoading) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Colors.grey[200],
+            ),
+          );
+        }
+        if (_activeCategory == null) {
+          return const SizedBox.shrink();
+        }
         return SubcategoryFilterPage(
           category: _activeCategory!,
           selectedCatIds: _selectedCatIds,
@@ -645,34 +887,36 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 _selectedCatIds.add(id);
               }
             });
-            _fetchCount();
+            _scheduleFetchCount();
+            _scheduleApplyFilters(); // Apply in real-time
+          },
+          onSelectAll: _selectAllActiveSubcategories,
+          onClear: () {
+            setState(() => _selectedCatIds.clear());
+            _saveSearch();
+            _scheduleFetchCount();
+            _scheduleApplyFilters(); // Apply in real-time
           },
         );
       case _FilterPage.price:
         return PriceFilterPage(
           priceRange: _priceRange,
           minPrice: 0,
-          maxPrice: 10000,
+          maxPrice: 1000000,
           onPriceChanged: (values) {
-            setState(() {
-              _priceRange = values;
-            });
-            _fetchCount();
+            setState(() => _priceRange = values);
+            _scheduleFetchCount();
+            _scheduleApplyFilters(); // Apply in real-time
           },
           onClear: () {
-            setState(() {
-              _priceRange = const RangeValues(0, 10000);
-            });
-            _fetchCount();
+            setState(() => _priceRange = const RangeValues(0, 1000000));
+            _saveSearch();
+            _scheduleFetchCount();
+            _scheduleApplyFilters(); // Apply in real-time
           },
+          onApply: _goBack,
         );
       case _FilterPage.welayat:
-        if (_isLocationsLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (_locations.isEmpty) {
-          return Center(child: Text('no_data_found'.tr));
-        }
         return WelayatFilterPage(
           locations: _locations,
           selectedWelayatIds: _selectedWelayatIds,
@@ -686,14 +930,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 _selectedWelayatIds.add(id);
               }
             });
-            _fetchCount();
+            _scheduleFetchCount();
+            _scheduleApplyFilters(); // Apply in real-time
           },
           onClear: () {
             setState(() {
               _selectedWelayatIds.clear();
               _selectedEtrapIds.clear();
             });
-            _fetchCount();
+            _saveSearch();
+            _scheduleFetchCount();
+            _scheduleApplyFilters(); // Apply in real-time
           },
           onApply: _goBack,
         );
@@ -705,33 +952,45 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             setState(() {
               if (_selectedEtrapIds.contains(id)) {
                 _selectedEtrapIds.remove(id);
+                // Remove welayat ID if no more of its etraps are selected
+                if (_activeWelayat != null) {
+                  final welayatEtrapIds =
+                      _activeWelayat!.etraps.map((e) => e.id).toSet();
+                  if (!_selectedEtrapIds
+                      .any((eid) => welayatEtrapIds.contains(eid))) {
+                    _selectedWelayatIds.remove(_activeWelayat!.id);
+                  }
+                }
               } else {
                 _selectedEtrapIds.add(id);
+                // Auto-add parent welayat ID
+                if (_activeWelayat != null &&
+                    !_selectedWelayatIds.contains(_activeWelayat!.id)) {
+                  _selectedWelayatIds.add(_activeWelayat!.id);
+                }
               }
             });
-            _fetchCount();
+            _scheduleFetchCount();
           },
+          onSelectAll: _selectAllActiveEtraps,
+          onClear: () {
+            setState(() {
+              _selectedEtrapIds.clear();
+              _selectedWelayatIds.clear();
+            });
+            _saveSearch();
+            _scheduleFetchCount();
+          },
+          onApply: _goBack,
         );
     }
   }
 
   String _getLocationValueText() {
     if (_selectedEtrapIds.isNotEmpty) {
-      if (_selectedEtrapIds.length == 1) {
-        for (var l in _locations) {
-          for (var e in l.etraps) {
-            if (e.id == _selectedEtrapIds.first) return e.name;
-          }
-        }
-      }
       return "${_selectedEtrapIds.length} ${"etrap_selected".tr}";
     }
     if (_selectedWelayatIds.isNotEmpty) {
-      if (_selectedWelayatIds.length == 1) {
-        for (var l in _locations) {
-          if (l.id == _selectedWelayatIds.first) return l.name;
-        }
-      }
       return "${_selectedWelayatIds.length} ${"welayat_selected".tr}";
     }
     return "all".tr;
@@ -739,23 +998,36 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   String _getCategoryValueText() {
     if (_selectedCatIds.isNotEmpty) {
-      if (_selectedCatIds.length == 1) {
-        final id = _selectedCatIds.first;
-        for (var c in _categories) {
-          if (c.id == id) return c.name;
-          for (var s in c.subcategories) {
-            if (s.id == id) return s.name;
-          }
-        }
-      }
       return "${_selectedCatIds.length} ${"category_selected".tr}";
     }
     return "all".tr;
   }
 
+  int _getSelectedCountForCurrentPage() {
+    switch (_currentPage) {
+      case _FilterPage.category:
+        return _selectedCatIds.length;
+      case _FilterPage.subcategory:
+        if (_activeCategory == null) return 0;
+        final activeSubIds =
+            _activeCategory!.subcategories.map((s) => s.id).toSet();
+        return _selectedCatIds.where(activeSubIds.contains).length;
+      case _FilterPage.welayat:
+        return _selectedEtrapIds.isNotEmpty
+            ? _selectedEtrapIds.length
+            : _selectedWelayatIds.length;
+      case _FilterPage.etrap:
+        if (_activeWelayat == null) return 0;
+        final activeEtrapIds = _activeWelayat!.etraps.map((e) => e.id).toSet();
+        return _selectedEtrapIds.where(activeEtrapIds.contains).length;
+      default:
+        return 0;
+    }
+  }
+
   Widget _buildBottomButtons(double width) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         children: [
           if (_currentPage == _FilterPage.main)
@@ -765,8 +1037,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
-                  backgroundColor: ColorConstants.kPrimaryColor,
-                  foregroundColor: Colors.white,
+                  backgroundColor: ColorConstants.background,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -776,19 +1048,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     _selectedCatIds.clear();
                     _selectedWelayatIds.clear();
                     _selectedEtrapIds.clear();
-                    _priceRange = const RangeValues(0, 10000);
+                    _priceRange = const RangeValues(0, 1000000);
                     _startDate = null;
                     _endDate = null;
                   });
+                  _saveSearch();
+                  _scheduleFetchCount();
                   widget.onApply({
                     'catIds': <int>[],
                     'welayatIds': <int>[],
                     'etrapIds': <int>[],
                     'minPrice': null,
                     'maxPrice': null,
-                    'dates': <DateTime>[],
+                    'dates': null,
                   });
-                  // Navigator.pop(context);
                 },
                 child: Text(
                   "clear_all".tr,
@@ -797,10 +1070,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
               ),
             ),
-          if (_currentPage == _FilterPage.main) const SizedBox(height: 12),
+          const SizedBox(height: 12),
           SizedBox(
             width: width,
-            height: 50,
+            height: 55,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 elevation: 0,
@@ -810,34 +1083,59 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: _isCountLoading
-                  ? null
-                  : () {
-                      widget.onApply({
-                        'catIds': _selectedCatIds,
-                        'welayatIds': _selectedWelayatIds,
-                        'etrapIds': _selectedEtrapIds,
-                        'minPrice': _priceRange.start,
-                        'maxPrice': _priceRange.end,
-                        'dates': _startDate != null
-                            ? [_startDate!, if (_endDate != null) _endDate!]
-                            : null,
-                      });
-                      Navigator.pop(context);
-                    },
-              child: _isCountLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white))
-                  : Text(
-                      "jobs_found".trParams({"count": _resultCount.toString()}),
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
+              onPressed: () {
+                if (_currentPage != _FilterPage.main) {
+                  if (_currentPage == _FilterPage.category ||
+                      _currentPage == _FilterPage.subcategory ||
+                      _currentPage == _FilterPage.etrap ||
+                      _currentPage == _FilterPage.price) {
+                    _saveSearch();
+                  }
+                  _goBack();
+                } else {
+                  final applyData = {
+                    'catIds': _selectedCatIds,
+                    'welayatIds': _selectedWelayatIds,
+                    'etrap_id': _selectedEtrapIds,
+                    'etrapIds': _selectedEtrapIds,
+                    'minPrice':
+                        _priceRange.start == 0 ? null : _priceRange.start,
+                    'maxPrice':
+                        _priceRange.end == 1000000 ? null : _priceRange.end,
+                    'dates': _startDate != null
+                        ? [_startDate!, if (_endDate != null) _endDate!]
+                        : null,
+                    'search': widget.initialSearch,
+                  };
+                  print('==============================================');
+                  print('🔍 [FilterBottomSheet] onApply (SAVE buton)');
+                  print('   catIds    : ${applyData['catIds']}');
+                  print('   welayatIds: ${applyData['welayatIds']}');
+                  print('   etrapIds  : ${applyData['etrapIds']}');
+                  print('   minPrice  : ${applyData['minPrice']}');
+                  print('   maxPrice  : ${applyData['maxPrice']}');
+                  print('   dates     : ${applyData['dates']}');
+                  print('   search    : ${applyData['search']}');
+                  print('==============================================');
+                  _saveSearch();
+                  widget.onApply(applyData);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text(
+                (_currentPage != _FilterPage.main)
+                    ? _getSelectedCountForCurrentPage() > 0
+                        ? "${"saylamak".tr} (${_getSelectedCountForCurrentPage()})"
+                        : "saylamak".tr
+                    : "jobs_found".trParams({
+                        "count":
+                            _isCountLoading ? "..." : _resultCount.toString()
+                      }),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
-          const SizedBox(height: 10),
         ],
       ),
     );

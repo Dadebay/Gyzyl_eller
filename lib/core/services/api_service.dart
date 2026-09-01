@@ -1,4 +1,7 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:http/http.dart' as http;
 import 'package:gyzyleller/core/services/api.dart';
 import '../../shared/extensions/packages.dart';
@@ -7,26 +10,36 @@ enum HttpMethod { get, post, put, delete }
 
 class ApiService {
   final _auth = AuthStorage();
+  final _storage = GetStorage();
 
-  Future<dynamic> getRequest(String endpoint,
-      {bool requiresToken = true,
-      void Function(dynamic)? handleSuccess}) async {
+  /// Gets the current app language code for Content-Language header
+  String get _currentLanguage => _storage.read<String>('langCode') ?? 'tk';
+
+  Future<dynamic> getRequest(
+    String endpoint, {
+    bool requiresToken = true,
+    void Function(dynamic)? handleSuccess,
+    Map<String, String>? headers,
+  }) async {
     try {
       final token = _auth.token;
-      final headers = <String, String>{
+      final requestHeaders = <String, String>{
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Content-Language': _currentLanguage,
         if (requiresToken && token != null) 'Authorization': 'Bearer $token',
+        ...?headers,
       };
-      final fullUrl = '${Api().urlLink}/$endpoint';
+      final fullUrl = '${Api().urlLink}$endpoint';
 
-      final response = await http.get(Uri.parse(fullUrl), headers: headers);
+      final response =
+          await http.get(Uri.parse(fullUrl), headers: requestHeaders);
       final decodedBody = utf8.decode(response.bodyBytes);
 
       print('-----------------------------------------');
       print('🌐 API GET REQUEST 🌐');
       print('URL: $fullUrl');
-      print('Token: $token');
+      if (requiresToken) print('Token: $token');
       print('Status Code: ${response.statusCode}');
       print('-----------------------------------------');
 
@@ -37,10 +50,18 @@ class ApiService {
         return responseJson;
       } else {
         print('Response Body: $decodedBody');
-        final responseJson =
-            decodedBody.isNotEmpty ? json.decode(decodedBody) : {};
-        _handleApiError(response.statusCode,
-            responseJson['message']?.toString() ?? 'anErrorOccurred'.tr);
+        final dynamic responseJson =
+            decodedBody.isNotEmpty ? _decodeJsonSafe(decodedBody) : {};
+
+        String message = 'anErrorOccurred'.tr;
+        if (responseJson is Map<String, dynamic> &&
+            responseJson['message'] != null) {
+          message = responseJson['message'].toString();
+        } else if (responseJson is String && responseJson.trim().isNotEmpty) {
+          message = responseJson;
+        }
+
+        _handleApiError(response.statusCode, message);
         return null;
       }
     } on SocketException catch (e) {
@@ -50,6 +71,14 @@ class ApiService {
     } catch (e) {
       print('ApiService Error in getRequest: $e');
       return null;
+    }
+  }
+
+  dynamic _decodeJsonSafe(String body) {
+    try {
+      return json.decode(body);
+    } catch (_) {
+      return body;
     }
   }
 
@@ -104,7 +133,7 @@ class ApiService {
     try {
       final token = _auth.token;
       final uriString =
-          endpoint.startsWith('http') ? endpoint : '${Api().urlLink}/$endpoint';
+          endpoint.startsWith('http') ? endpoint : '${Api().urlLink}$endpoint';
 
       final uri = Uri.parse(uriString);
       late http.BaseRequest request;
@@ -118,14 +147,19 @@ class ApiService {
         if (multipartFiles != null) {
           (request as http.MultipartRequest).files.addAll(multipartFiles);
         }
+        print('Request Body (Form): $body');
       } else {
         request = http.Request(method, uri);
         request.headers[HttpHeaders.contentTypeHeader] =
             'application/json; charset=UTF-8';
         if (body.isNotEmpty) {
-          (request as http.Request).body = jsonEncode(body);
+          final bodyString = jsonEncode(body);
+          (request as http.Request).body = bodyString;
+          print('Request Body: $bodyString');
         }
       }
+
+      request.headers['Content-Language'] = _currentLanguage;
 
       if (requiresToken && token != null) {
         request.headers[HttpHeaders.authorizationHeader] = 'Bearer $token';
@@ -169,8 +203,7 @@ class ApiService {
         return statusCode;
       }
     } on SocketException {
-      CustomWidgets.showSnackBar('Internet Hatası'.tr,
-          'Internet baglanşygyňyzy barlaň'.tr, Colors.red);
+      // CustomWidgets.showSnackBar('Internet Hatası'.tr, 'Internet baglanşygyňyzy barlaň'.tr, Colors.red);
       rethrow;
     } catch (e) {
       rethrow;
@@ -193,6 +226,114 @@ class ApiService {
         break;
 
       default:
+    }
+  }
+
+  /// Fetches reviews for a master profile by their user ID.
+  /// Calls `master-reviews/{userId}` and returns a list of raw JSON maps.
+  Future<List<dynamic>> getMasterReviews(String userId,
+      {String? column, String? direction}) async {
+    String endpoint = 'api/master-reviews/$userId';
+    final Map<String, String> queryParams = {};
+    if (column != null) queryParams['column'] = column;
+    if (direction != null) queryParams['direction'] = direction;
+    if (queryParams.isNotEmpty) {
+      endpoint += '?${Uri(queryParameters: queryParams).query}';
+    }
+    print('📡 [getMasterReviews] ========================================');
+    print('📡 [getMasterReviews] endpoint=$endpoint');
+    try {
+      final response = await getRequest(endpoint);
+      print('📡 [getMasterReviews] full response=$response');
+      if (response != null && response['data'] != null) {
+        final list = response['data'] as List<dynamic>;
+        print('📡 [getMasterReviews] ${list.length} reviews received');
+        for (var i = 0; i < list.length; i++) {
+          print('📡 [getMasterReviews] review[$i]=${list[i]}');
+          if (list[i] is Map) {
+            print(
+                '📡 [getMasterReviews] review[$i].replies=${list[i]['replies']}');
+          }
+        }
+        print('📡 [getMasterReviews] ========================================');
+        return list;
+      }
+      print('⚠️ [getMasterReviews] response[data] is null');
+      print('📡 [getMasterReviews] ========================================');
+      return [];
+    } catch (e) {
+      print('❌ [getMasterReviews] error: $e');
+      print('📡 [getMasterReviews] ========================================');
+      return [];
+    }
+  }
+
+  /// Fetches replies for a specific review by review ID.
+  /// Calls `api/review-replies/{reviewId}` and returns a list of raw JSON maps.
+  Future<List<dynamic>> getReviewReplies(String reviewId) async {
+    final String endpoint = 'api/review-replies/$reviewId';
+    print('📡 [getReviewReplies] reviewId=$reviewId, endpoint=$endpoint');
+    try {
+      final response = await getRequest(endpoint);
+      print('📡 [getReviewReplies] full response=$response');
+      if (response != null && response['data'] != null) {
+        final list = response['data'] as List<dynamic>;
+        print('📡 [getReviewReplies] ${list.length} replies received');
+        return list;
+      }
+      // Some APIs return the list directly
+      if (response is List) {
+        print('📡 [getReviewReplies] ${response.length} replies (direct list)');
+        return response;
+      }
+      print('⚠️ [getReviewReplies] no replies data');
+      return [];
+    } catch (e) {
+      print('❌ [getReviewReplies] error: $e');
+      return [];
+    }
+  }
+
+  /// Uploads a single file to [api/user/upload-file] and returns the server path.
+  Future<String?> uploadFile(
+    String filePath, {
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    try {
+      final token = _auth.token;
+      final fullUrl = '${Api().urlLink}api/user/upload-file';
+
+      final dioClient = dio_pkg.Dio();
+      if (token != null) {
+        dioClient.options.headers['Authorization'] = 'Bearer $token';
+      }
+      dioClient.options.headers['Content-Language'] = _currentLanguage;
+
+      final formData = dio_pkg.FormData.fromMap({
+        'file': await dio_pkg.MultipartFile.fromFile(filePath),
+      });
+
+      print('📤 [ApiService] uploadFile → $fullUrl');
+
+      final response = await dioClient.post(
+        fullUrl,
+        data: formData,
+        onSendProgress: onSendProgress != null
+            ? (sent, total) => onSendProgress(sent, total)
+            : null,
+      );
+
+      final data = response.data;
+      print('📡 [ApiService] uploadFile response → $data');
+
+      if (data is Map) {
+        if (data['path'] != null) return data['path'].toString();
+        if (data['url'] != null) return data['url'].toString();
+      }
+      return data?.toString();
+    } catch (e) {
+      print('❌ [ApiService] uploadFile failed: $e');
+      rethrow;
     }
   }
 }

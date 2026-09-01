@@ -7,7 +7,7 @@ import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 final class CustomDarkTheme {
   final ThemeData themeData = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Inter',
+    fontFamily: 'Gilroy',
     brightness: Brightness.dark,
     colorScheme: CustomColorScheme.darkColorScheme,
     scaffoldBackgroundColor: const Color(0xff121212),
@@ -25,14 +25,14 @@ final class CustomDarkTheme {
       ),
       iconTheme: IconThemeData(color: Colors.white),
     ),
-    cardTheme: CardTheme(
-      color: const Color(0xff1E1E1E),
-      elevation: 3,
-      shadowColor: Colors.black.withOpacity(0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-    ),
+    // cardTheme: CardTheme(
+    //   color: const Color(0xff1E1E1E),
+    //   elevation: 3,
+    //   shadowColor: Colors.black.withOpacity(0.3),
+    //   shape: RoundedRectangleBorder(
+    //     borderRadius: BorderRadius.circular(16),
+    //   ),
+    // ),
     snackBarTheme: const SnackBarThemeData(
       backgroundColor: Color(0xff2C2C2C),
       contentTextStyle: TextStyle(color: Colors.white),
@@ -42,8 +42,7 @@ final class CustomDarkTheme {
       displayLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
       displayMedium: TextStyle(color: Colors.white),
       displaySmall: TextStyle(color: Colors.white),
-      headlineLarge:
-          TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       headlineMedium: TextStyle(color: Colors.white),
       headlineSmall: TextStyle(color: Colors.white),
       titleLarge: TextStyle(color: Colors.white),

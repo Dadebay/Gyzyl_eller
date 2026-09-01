@@ -88,6 +88,7 @@ class IconConstants {
   static const String tmmflag = 'assets/icons/tmmflag.svg';
   static const String tour = 'assets/icons/tour.svg';
   static const String trash = 'assets/icons/trash.svg';
+  static const String deletee = 'assets/icons/deletee.svg';
   static const String unselected1 = 'assets/icons/unselected1.svg';
   static const String unselected2 = 'assets/icons/unselected2.svg';
   static const String unselected3 = 'assets/icons/unselected3.svg';

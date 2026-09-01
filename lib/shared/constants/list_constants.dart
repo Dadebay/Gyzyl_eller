@@ -1,20 +1,28 @@
-
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
-import 'package:gyzyleller/shared/extensions/packages.dart';
+import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 @immutable
 class ListConstants {
-  static List<String> pageNames = ['all', 'tasks', 'Çatlar', 'menu_tab'.tr];
-  static List<String> mainIcons = [
-    IconConstants.selected2,
-    IconConstants.selected3,
-    IconConstants.selected1,
-    IconConstants.selected4,
+  static const List<String> pageTitleKeys = [
+    'all_tab',
+    'tasks_tab',
+    'chat',
+    'menu_tab',
   ];
-  static List<String> selectedIcons = [
-    IconConstants.unselected2,
-    IconConstants.unselected3,
-    IconConstants.unselected1,
-    IconConstants.unselected4,
+
+  // Unselected (stroke) icons
+  static List<IconData> mainIcons = [
+    HugeIcons.strokeRoundedHome09,
+    HugeIcons.strokeRoundedTaskDaily01,
+    HugeIcons.strokeRoundedMessage01,
+    HugeIcons.strokeRoundedUserCircle,
+  ];
+
+  // Selected (solid/filled) icons
+  static List<IconData> selectedIcons = [
+    HugeIcons.strokeRoundedHome09,
+    HugeIcons.strokeRoundedTaskDaily01,
+    HugeIcons.strokeRoundedMessage01,
+    HugeIcons.strokeRoundedUserCircle,
   ];
 }

@@ -1,10 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
-import 'package:gyzyleller/shared/extensions/packages.dart';
 
 class AccountSummaryBar extends StatelessWidget {
   final String balanceText;
@@ -22,57 +21,119 @@ class AccountSummaryBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 5, right: 10, left: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      margin: const EdgeInsets.only(bottom: 12, right: 0, left: 0),
       decoration: BoxDecoration(
-        color: ColorConstants.blue,
-        borderRadius: BorderRadius.circular(10),
+        gradient: const LinearGradient(
+          colors: [Color(0xE61A4DB5), Color(0xD41F55BC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
+            color: const Color(0xFF1F55BC).withOpacity(0.45),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: onBalanceTap,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onBalanceTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                SvgPicture.asset(IconConstants.leaderboard),
-                const SizedBox(width: 5),
-                Text(
-                  balanceText,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
+                // Wallet icon circle
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedWallet01,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Balance info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'wallet'.tr,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.75),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          // letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        balanceText.replaceFirst('${'wallet'.tr}: ', ''),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Action button
+                GestureDetector(
+                  onTap: onPressed,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: ColorConstants.kPrimaryColor2,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ColorConstants.kPrimaryColor2.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'ginis'.tr,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const HugeIcon(
+                          icon: HugeIcons.strokeRoundedArrowUpRight01,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const Spacer(),
-          ElevatedButton.icon(
-            onPressed: onPressed,
-            icon: SvgPicture.asset(IconConstants.arrowOutward),
-            label: Text('ginis'.tr,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ColorConstants.kPrimaryColor2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              elevation: 0,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

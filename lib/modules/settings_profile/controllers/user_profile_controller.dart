@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:gyzyleller/shared/utils/image_compress_util.dart';
 
 class UserProfilController extends GetxController {
   var isLoading = true.obs;
@@ -13,9 +14,10 @@ class UserProfilController extends GetxController {
   var selectedImageFile = Rx<File?>(null);
   var uploadProgress = 0.0.obs;
 
-  void onImageSelected(XFile? pickedFile) {
+  Future<void> onImageSelected(XFile? pickedFile) async {
     if (pickedFile != null) {
-      selectedImageFile.value = File(pickedFile.path);
+      final compressed = await compressToWebP(File(pickedFile.path));
+      selectedImageFile.value = compressed;
     }
   }
 

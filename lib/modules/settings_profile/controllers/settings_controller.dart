@@ -1,46 +1,106 @@
+// ignore_for_file: avoid_print
+
 import 'package:gyzyleller/modules/login/controllers/auth_service.dart';
 import 'package:gyzyleller/core/services/api_service.dart';
-import 'package:gyzyleller/core/services/my_jobs_service.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
 import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
-import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
+import 'package:gyzyleller/core/controllers/balance_controller.dart';
 
 class SettingsController extends GetxController {
   final AuthStorage _authStorage = AuthStorage();
   final AuthService _authService = AuthService();
   final ApiService _apiService = ApiService();
-  final MyJobsService _jobsService = MyJobsService();
 
   final Rx<Map<String, dynamic>?> user = Rx<Map<String, dynamic>?>(null);
   final RxBool isLoading = false.obs;
   final RxBool hasSpecialProfile = false.obs;
-  final RxDouble userBalance = 0.0.obs;
+  final BalanceController _balanceController = Get.find<BalanceController>();
+  RxDouble get userBalance => _balanceController.balance;
+
+  // Masters API'den gelen username ve image
+  final RxString masterUsername = ''.obs;
+  final RxString masterImage = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
+    refreshData();
+  }
+
+  Future<void> refreshData() async {
     loadUser();
-    checkSpecialProfile();
-    fetchBalance();
+    if (isLoggedIn) {
+      await fetchMasterProfileHeader();
+      await fetchBalance();
+    }
+  }
+
+  Future<void> fetchMasterProfileHeader() async {
+    try {
+      if (!isLoggedIn) {
+        hasSpecialProfile.value = false;
+        return;
+      }
+
+      // 0. Reload user data from storage just in case it changed
+      loadUser();
+
+      // 1. Check saved master profile ID first
+      String? masterId = _authStorage.masterProfileId;
+
+      // 2. If not in storage, fetch from /api/user/masters/profile
+      if (masterId == null) {
+        final profileResponse =
+            await _apiService.getRequest(ApiConstants.specialProfile);
+        if (profileResponse != null && profileResponse['data'] != null) {
+          masterId = profileResponse['data']['id']?.toString();
+          if (masterId != null) {
+            _authStorage.saveMasterProfileId(masterId);
+          }
+        }
+      }
+
+      if (masterId != null) {
+        hasSpecialProfile.value = true;
+        // 3. Fetch full master details from /api/get-master-by-id/{id}
+        final response =
+            await _apiService.getRequest(ApiConstants.getMasterById(masterId));
+        if (response != null && response['data'] != null) {
+          final data = response['data'];
+          masterUsername.value = data['username']?.toString() ?? '';
+          masterImage.value = data['image']?.toString() ?? '';
+
+          print('📡 [SettingsController] master API full data: $data');
+          print('📡 [SettingsController] masterUsername: ${masterUsername.value}');
+          print('📡 [SettingsController] masterImage: ${masterImage.value}');
+        }
+      } else {
+        hasSpecialProfile.value = false;
+      }
+    } catch (e) {
+      print('❌ [SettingsController] fetchMasterProfileHeader error: $e');
+      hasSpecialProfile.value = false;
+    }
   }
 
   Future<void> fetchBalance() async {
-    try {
-      final balance = await _jobsService.fetchBalance();
-      userBalance.value = balance;
-    } catch (e) {
-      print('Error fetching balance in settings: $e');
-    }
+    await _balanceController.fetchBalance();
   }
 
   void loadUser() {
     user.value = _authStorage.getUser();
+    print('🟡 [loadUser] user data: ${user.value}');
   }
 
-  String get username => user.value?['username'] ?? 'your_name'.tr;
+  String get username => masterUsername.value.isNotEmpty
+      ? masterUsername.value
+      : (user.value?['username'] ?? 'your_name'.tr);
   String get phone => user.value?['phone'] ?? '';
   String? get imageUrl {
+    if (masterImage.value.isNotEmpty) {
+      return ApiConstants.imageURL + masterImage.value;
+    }
     if (user.value != null && user.value!['image'] != null) {
       return ApiConstants.imageURL + user.value!['image'];
     }
@@ -53,43 +113,21 @@ class SettingsController extends GetxController {
     await _authService.logout();
     loadUser();
     hasSpecialProfile.value = false;
+    masterImage.value = '';
+    masterUsername.value = '';
   }
 
-  Future<void> checkSpecialProfile() async {
-    if (!isLoggedIn) return;
-    try {
-      final response =
-          await _apiService.getRequest(ApiConstants.specialProfile);
-      hasSpecialProfile.value = response != null && response['data'] != null;
-    } catch (e) {
-      hasSpecialProfile.value = false;
-    }
+  void clearMasterProfile() {
+    hasSpecialProfile.value = false;
+    masterImage.value = '';
+    masterUsername.value = '';
+    loadUser();
   }
 
-  Future<void> navigateToSpecialProfile() async {
-    try {
-      Get.dialog(CustomWidgets.loader(), barrierDismissible: false);
-      final response =
-          await _apiService.getRequest(ApiConstants.specialProfile);
-      Get.back();
-
-      if (response != null && response['data'] != null) {
-        hasSpecialProfile.value = true;
-        if (Get.isRegistered<SpecialProfileController>()) {
-          Get.find<SpecialProfileController>()
-              .setProfileFromData(response['data']);
-        }
-        Get.to(() => SpecialProfile(), arguments: response['data']);
-      } else {
-        hasSpecialProfile.value = false;
-        if (Get.isRegistered<SpecialProfileController>()) {
-          Get.find<SpecialProfileController>().loadInitialProfileData();
-        }
-        Get.to(() => const SpecialProfileAdd());
-      }
-    } catch (e) {
-      Get.back();
-
+  void navigateToSpecialProfile() {
+    if (hasSpecialProfile.value) {
+      Get.to(() => const SpecialProfile());
+    } else {
       Get.to(() => const SpecialProfileAdd());
     }
   }

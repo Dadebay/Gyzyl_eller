@@ -59,10 +59,10 @@ class JobRequestBottomSheet extends StatelessWidget {
 
               // Illustration
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: SvgPicture.asset(
                   IconConstants.teklipugrat,
-                  height: 120,
+                  height: 100,
                 ),
               ),
               const SizedBox(height: 20),
@@ -87,7 +87,6 @@ class JobRequestBottomSheet extends StatelessWidget {
                     fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 24),
-
               Container(
                 decoration: BoxDecoration(
                   color: ColorConstants.background,
@@ -95,51 +94,90 @@ class JobRequestBottomSheet extends StatelessWidget {
                 ),
                 child: TextFormField(
                   controller: controller.priceController,
+                  onChanged: (val) => controller.calculateDynamicFee(),
                   keyboardType: TextInputType.number,
+                  maxLength: 8,
                   textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.black,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: "0",
-                    hintStyle: TextStyle(
-                      color: ColorConstants.secondary,
-                    ),
-                    suffixText: " TMT",
-                    suffixStyle: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 16, horizontal: 15),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Comment Input
-              Container(
-                decoration: BoxDecoration(
-                  color: ColorConstants.background,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextFormField(
-                  controller: controller.commentController,
-                  maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: "comment_hint".tr,
+                    counterText: "",
+                    hintText: "price_hint".tr,
                     hintStyle: const TextStyle(
                       color: ColorConstants.secondary,
                     ),
+                    suffixText: " TMT",
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(16),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 15),
                   ),
                 ),
               ),
+              Obx(() {
+                final fee = controller.calculatedFee.value;
+                final balance = controller.userBalance.value;
+                if (fee <= 0) return const SizedBox(height: 16);
+                final bool hasEnough = balance >= fee;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: Text(
+                    hasEnough
+                        ? 'offer_fee_info'.trParams({
+                            'fee': fee.toStringAsFixed(0),
+                          })
+                        : '${'offer_fee_insufficient'.tr}\n${'offer_fee_balance_line'.trParams({
+                                'balance': balance.toStringAsFixed(0),
+                                'fee': fee.toStringAsFixed(0),
+                              })}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              Obx(() {
+                final hasError = controller.commentHasError.value;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: ColorConstants.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: hasError
+                            ? Border.all(color: Colors.red, width: 1.5)
+                            : null,
+                      ),
+                      child: TextFormField(
+                        controller: controller.commentController,
+                        maxLines: 4,
+                        maxLength: 1000,
+                        decoration: InputDecoration(
+                          hintText: "comment_hint".tr,
+                          hintStyle: const TextStyle(
+                            color: ColorConstants.secondary,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
+                      ),
+                    ),
+                    if (hasError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6, left: 4),
+                        child: Text(
+                          'enter_description'.tr,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }),
 
               if (controller.showSuccessBanner.value) ...[
                 const SizedBox(height: 16),
@@ -245,29 +283,37 @@ class JobRequestBottomSheet extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Submit Button
-              Container(
-                padding: const EdgeInsets.only(bottom: 20),
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => controller.submitJobRequest(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorConstants.kPrimaryColor2,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Obx(() {
+                final fee = controller.calculatedFee.value;
+                final balance = controller.userBalance.value;
+                final bool insufficientBalance = fee > 0 && balance < fee;
+                return Container(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: insufficientBalance
+                        ? null
+                        : () => controller.submitJobRequest(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorConstants.kPrimaryColor2,
+                      disabledBackgroundColor: Colors.grey[400],
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    "send_offer_title".tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    child: Text(
+                      "send_offer_title".tr,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              }),
             ],
           ),
         ),
@@ -295,7 +341,7 @@ class JobRequestBottomSheet extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios, size: 20),
                 onPressed: () => controller.showingTemplates.value = false,
               ),
-               Expanded(
+              Expanded(
                 child: Center(
                   child: Text(
                     "templates".tr,
@@ -321,7 +367,7 @@ class JobRequestBottomSheet extends StatelessWidget {
               }
 
               if (controller.templates.isEmpty) {
-                return  Center(
+                return Center(
                   child: Text(
                     "no_templates".tr,
                     style: const TextStyle(

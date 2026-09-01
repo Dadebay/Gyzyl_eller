@@ -55,7 +55,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                 Get.back();
                 final XFile? pickedFile =
                     await _picker.pickImage(source: ImageSource.camera);
-                userProfilController.onImageSelected(pickedFile);
+                await userProfilController.onImageSelected(pickedFile);
               },
             ),
             ListTile(
@@ -69,7 +69,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                 Get.back();
                 final XFile? pickedFile =
                     await _picker.pickImage(source: ImageSource.gallery);
-                userProfilController.onImageSelected(pickedFile);
+                await userProfilController.onImageSelected(pickedFile);
               },
             ),
           ],
@@ -168,7 +168,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
           homeController.changePage(index);
         },
         selectedIcons: ListConstants.selectedIcons,
-        unselectedIcons: ListConstants.mainIcons,
+        icons: ListConstants.mainIcons,
         labels: ["all_tab".tr, "tasks_tab".tr, "chat".tr, "menu_tab".tr],
       ),
     );

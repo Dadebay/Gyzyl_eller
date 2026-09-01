@@ -1,22 +1,28 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+
+import 'package:gyzyleller/core/services/api.dart';
 
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/login/bindings/login_binding.dart';
 import 'package:gyzyleller/modules/login/views/login_view.dart';
+import 'package:gyzyleller/modules/settings_profile/views/webview.dart';
 // ignore: unused_import
 import 'package:gyzyleller/modules/special_profile/views/special_profile_add.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/user_profile_controller.dart';
-import 'package:gyzyleller/modules/settings_profile/views/about_view.dart';
+import 'package:gyzyleller/modules/special_profile/widgets/full_screen_image_page.dart';
 import 'package:gyzyleller/modules/settings_profile/views/language_page.dart';
-import 'package:gyzyleller/modules/settings_profile/views/profile_edit_view.dart';
 import 'package:gyzyleller/modules/settings_profile/views/wallet_view.dart';
+import 'package:gyzyleller/modules/onboarding/views/onboarding_view.dart';
 import 'package:gyzyleller/shared/constants/icon_constants.dart';
-import 'package:gyzyleller/shared/dialogs/dialogs_utils.dart';
+import 'package:gyzyleller/shared/dialogs/contact_us_dialog.dart';
+import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 
 class SettingsView extends GetView<SettingsController> {
   final bool showAppBar;
@@ -24,6 +30,211 @@ class SettingsView extends GetView<SettingsController> {
   @override
   final SettingsController controller = Get.put(SettingsController());
   final UserProfilController profilController = Get.put(UserProfilController());
+
+  String get _langWeb => GetStorage().read('langCode') ?? 'tk';
+
+  void _launchURL(String url) {
+    Get.to(() => MyWebView(url: url));
+  }
+
+  Future<void> _confirmAndDeleteMasterProfile(BuildContext context) async {
+    final SpecialProfileController specialProfileController =
+        Get.isRegistered<SpecialProfileController>()
+            ? Get.find<SpecialProfileController>()
+            : Get.put(SpecialProfileController());
+
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'delete_my_profile'.tr,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.fonts,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 25),
+                SvgPicture.asset(
+                  IconConstants.removeProfile,
+                  width: 100,
+                  height: 100,
+                ),
+                const SizedBox(height: 25),
+                Text(
+                  'deleteProfileDescriptionn'.tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: ColorConstants.fonts,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+                Text(
+                  'deleteProfileDescriptionnn'.tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: ColorConstants.fonts,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: Text(
+                        'no'.tr.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.fonts,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: Text(
+                        'yes'.tr.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.kPrimaryColor2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    final bool deleted = await specialProfileController.deleteMasterProfile();
+    if (!deleted) return;
+
+    await _showLogoutDialog(context, confirmed: true);
+  }
+
+  Future<void> _showLogoutDialog(
+    BuildContext context, {
+    bool confirmed = false,
+  }) async {
+    if (confirmed) {
+      await controller.logout();
+      return;
+    }
+
+    final bool? shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'logout'.tr,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.fonts,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 25),
+                SvgPicture.asset(
+                  IconConstants.modalProfileExit,
+                  width: 100,
+                  height: 100,
+                ),
+                const SizedBox(height: 25),
+                Text(
+                  'logout_confirm'.tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: ColorConstants.fonts,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: Text(
+                        'no'.tr.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.fonts,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: Text(
+                        'yes'.tr.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.kPrimaryColor2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (shouldLogout == true) {
+      await controller.logout();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,104 +258,136 @@ class SettingsView extends GetView<SettingsController> {
               centerTitle: true,
             )
           : null,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            Obx(() => _buildUserHeader()),
-            const SizedBox(height: 20.0),
-            Obx(() {
-              if (controller.isLoggedIn) {
+      body: RefreshIndicator(
+        onRefresh: () => controller.refreshData(),
+        color: ColorConstants.kPrimaryColor,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: <Widget>[
+              Obx(() => _buildUserHeader(context)),
+              const SizedBox(height: 20.0),
+              Obx(() {
+                if (controller.isLoggedIn) {
+                  return Column(
+                    children: [
+                      _buildMenuItem(
+                        context,
+                        controller.hasSpecialProfile.value
+                            ? 'professional_profile'.tr
+                            : 'create_professional_profile'.tr,
+                        IconConstants.new_releases,
+                        () {
+                          controller.navigateToSpecialProfile();
+                        },
+                      ),
+                      const SizedBox(height: 10.0),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+              Obx(() {
+                if (!controller.isLoggedIn ||
+                    !controller.hasSpecialProfile.value) {
+                  return const SizedBox.shrink();
+                }
                 return Column(
                   children: [
-                    _buildMenuItem(
+                    _buildMenuItemSay(
                       context,
-                      controller.hasSpecialProfile.value
-                          ? 'professional_profile'.tr
-                          : 'create_professional_profile'.tr,
-                      IconConstants.new_releases,
+                      'my_account_title'.tr,
+                      IconConstants.leaderboard,
                       () {
-                        controller.navigateToSpecialProfile();
+                        Get.to(() => const WalletView());
                       },
                     ),
                     const SizedBox(height: 10.0),
                   ],
                 );
-              }
-              return const SizedBox.shrink();
-            }),
-            _buildMenuItemSay(
-              context,
-              'my_account_title'.tr,
-              IconConstants.leaderboard,
-              () {
-                if (!controller.isLoggedIn) {
-                  Get.to(() => const LoginView(), binding: LoginBinding());
-                } else {
-                  Get.to(() => const WalletView());
-                }
-              },
-            ),
-            const SizedBox(height: 10.0),
-            _buildMenuItem(
-              context,
-              'language'.tr,
-              IconConstants.language,
-              () {
-                Get.to(() => LanguagePage());
-              },
-            ),
-            const SizedBox(height: 10.0),
-            _buildMenuItem(
-              context,
-              'about'.tr,
-              IconConstants.description,
-              () {
-                Get.to(() => AboutView());
-              },
-            ),
-            const SizedBox(height: 10.0),
-            _buildMenuItem(
-              context,
-              'faq'.tr,
-              IconConstants.questionred,
-              () {},
-            ),
-            const SizedBox(height: 10.0),
-            _buildMenuItem(
-              context,
-              'learn'.tr,
-              IconConstants.tour,
-              () {},
-            ),
-            const SizedBox(height: 10.0),
-            _buildMenuItem(
-              context,
-              'contact'.tr,
-              IconConstants.support,
-              () {},
-            ),
-            const SizedBox(height: 10.0),
-            if (controller.isLoggedIn)
+              }),
               _buildMenuItem(
                 context,
-                'logout'.tr,
-                IconConstants.logout,
-                () async {
-                  final bool? confirmLogout =
-                      await DialogUtils().showDeleteProfileDialog(context);
-                  if (confirmLogout == true) {
-                    await controller.logout();
-                  }
+                'language'.tr,
+                IconConstants.language,
+                () {
+                  Get.to(() => LanguagePage());
                 },
               ),
-          ],
+              const SizedBox(height: 10.0),
+              _buildMenuItem(
+                context,
+                'about'.tr,
+                IconConstants.description,
+                () {
+                  _launchURL('${Api().urlSimple}general-rules/$_langWeb');
+                },
+              ),
+              const SizedBox(height: 10.0),
+              _buildMenuItem(
+                context,
+                'faq'.tr,
+                IconConstants.questionred,
+                () {
+                  _launchURL('${Api().urlSimple}$_langWeb/faq?type=hyzmat');
+                },
+              ),
+              const SizedBox(height: 10.0),
+              _buildMenuItem(
+                context,
+                'learn'.tr,
+                IconConstants.tour,
+                () {
+                  Get.to(() => const OnboardingScreen(skipTimer: true));
+                },
+              ),
+              const SizedBox(height: 10.0),
+              _buildMenuItem(
+                context,
+                'contact'.tr,
+                IconConstants.support,
+                () {
+                  showContactUsDialog(context);
+                },
+              ),
+              const SizedBox(height: 10.0),
+              Obx(() {
+                if (!controller.isLoggedIn) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    _buildMenuItem(
+                      context,
+                      'logout'.tr,
+                      IconConstants.logout,
+                      () => _showLogoutDialog(context),
+                      iconColor: Colors.red,
+                      iconData: Icons.logout,
+                    ),
+                    // if (controller.hasSpecialProfile.value) ...[
+                    const SizedBox(height: 10.0),
+                    _buildMenuItem(
+                      context,
+                      'delete_my_profile'.tr,
+                      IconConstants.deletee,
+                      () => _confirmAndDeleteMasterProfile(context),
+                      iconColor: Colors.red,
+                      iconData: Icons.delete_outline,
+                    ),
+                    // ],
+                  ],
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildUserHeader() {
+  Widget _buildUserHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -161,19 +404,49 @@ class SettingsView extends GetView<SettingsController> {
       ),
       child: Row(
         children: <Widget>[
-          CircleAvatar(
-            radius: 37,
-            backgroundColor: ColorConstants.background,
-            backgroundImage: controller.imageUrl != null
-                ? NetworkImage(controller.imageUrl!)
+          GestureDetector(
+            onTap: (controller.imageUrl != null &&
+                    controller.imageUrl!.startsWith('http'))
+                ? () {
+                    Navigator.of(Get.context ?? context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            FullScreenImagePage(imageUrl: controller.imageUrl!),
+                      ),
+                    );
+                  }
                 : null,
-            child: controller.imageUrl == null
-                ? SvgPicture.asset(
-                    IconConstants.person,
-                    width: 53,
-                    height: 54,
-                  )
-                : null,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(37),
+              child: Container(
+                width: 74,
+                height: 74,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ColorConstants.background,
+                ),
+                child: (controller.imageUrl != null &&
+                        controller.imageUrl!.startsWith('http'))
+                    ? CachedNetworkImage(
+                        imageUrl: controller.imageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => _buildImageShimmer(),
+                        errorWidget: (context, url, _) => SvgPicture.asset(
+                          IconConstants.person,
+                          width: 53,
+                          height: 54,
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: SvgPicture.asset(
+                          IconConstants.person,
+                          width: 53,
+                          height: 54,
+                        ),
+                      ),
+              ),
+            ),
           ),
           const SizedBox(width: 16.0),
           Expanded(
@@ -214,36 +487,50 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
+  // Widget _buildEditButton() {
+  //   return GestureDetector(
+  //     onTap: () {
+  //       Get.to(
+  //         () => ProfileEditView(userData: controller.user.value!),
+  //       );
+  //     },
+  //     child: Container(
+  //       decoration: BoxDecoration(
+  //         color: ColorConstants.background,
+  //         borderRadius: BorderRadius.circular(10),
+  //       ),
+  //       padding: const EdgeInsets.all(10),
+  //       child: SvgPicture.asset(
+  //         IconConstants.edit,
+  //         height: 20,
+  //         width: 20,
+  //         color: Colors.black,
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget _buildEditButton() {
-    return GestureDetector(
-      onTap: () {
-        Get.to(
-          () => ProfileEditView(userData: controller.user.value!),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: ColorConstants.background,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        padding: const EdgeInsets.all(10),
-        child: SvgPicture.asset(
-          IconConstants.edit,
-          height: 20,
-          width: 20,
-          color: Colors.black,
-        ),
-      ),
-    );
+    return const SizedBox();
   }
 
   Widget _buildMenuItem(
-      BuildContext context, String title, String iconPath, VoidCallback onTap) {
+    BuildContext context,
+    String title,
+    String iconPath,
+    VoidCallback onTap, {
+    IconData? iconData,
+    Color? iconColor,
+    Color? textColor,
+    Color? trailingColor,
+    Color? backgroundColor,
+    Color? borderColor,
+  }) {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: ColorConstants.whiteColor,
+        color: backgroundColor ?? ColorConstants.whiteColor,
         borderRadius: BorderRadius.circular(15),
+        border: borderColor == null ? null : Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -260,19 +547,28 @@ class SettingsView extends GetView<SettingsController> {
           padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 16.0),
           child: Row(
             children: <Widget>[
-              SvgPicture.asset(
-                iconPath,
-                width: 24,
-                height: 24,
-              ),
+              iconData != null
+                  ? Icon(
+                      iconData,
+                      size: 24,
+                      color: iconColor ?? ColorConstants.fonts,
+                    )
+                  : SvgPicture.asset(
+                      iconPath,
+                      width: 24,
+                      height: 24,
+                      colorFilter: iconColor == null
+                          ? null
+                          : ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    ),
               const SizedBox(width: 16.0),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: ColorConstants.fonts,
+                    color: textColor ?? ColorConstants.fonts,
                   ),
                 ),
               ),
@@ -280,6 +576,9 @@ class SettingsView extends GetView<SettingsController> {
                 IconConstants.expandMore,
                 width: 24,
                 height: 24,
+                colorFilter: trailingColor == null
+                    ? null
+                    : ColorFilter.mode(trailingColor, BlendMode.srcIn),
               ),
             ],
           ),
@@ -327,14 +626,16 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                 ),
               ),
-              Obx(() => Text(
-                    "${controller.userBalance.value.toStringAsFixed(0)} TMT",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: ColorConstants.greyColor,
-                    ),
-                  )),
+              Obx(() => controller.hasSpecialProfile.value
+                  ? Text(
+                      "${controller.userBalance.value.toStringAsFixed(0)} ŞAÝ",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: ColorConstants.greyColor,
+                      ),
+                    )
+                  : const SizedBox.shrink()),
               SvgPicture.asset(
                 IconConstants.expandMore,
                 width: 24,
@@ -344,6 +645,20 @@ class SettingsView extends GetView<SettingsController> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImageShimmer() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 0.6),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Container(
+          color: Colors.grey[200]!.withOpacity(value),
+        );
+      },
+      onEnd: () {},
     );
   }
 }

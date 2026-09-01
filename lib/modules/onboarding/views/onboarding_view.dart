@@ -5,12 +5,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:lottie/lottie.dart';
 import 'package:gyzyleller/modules/onboarding/controllers/onboarding_controller.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final bool skipTimer;
+  const OnboardingScreen({super.key, this.skipTimer = false});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -41,6 +43,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _startButtonTimer() {
+    if (widget.skipTimer) {
+      setState(() {
+        _isButtonEnabled = true;
+        _remainingSeconds = 0;
+      });
+      return;
+    }
     setState(() {
       _isButtonEnabled = false;
       _remainingSeconds = 3;
@@ -64,7 +73,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!_isButtonEnabled) return;
 
     if (controller.currentIndexNotifier.value == controller.pages.length - 1) {
-      controller.skipOnboarding(context);
+      if (widget.skipTimer) {
+        Get.back();
+      } else {
+        controller.skipOnboarding(context);
+      }
     } else {
       controller.nextPage();
       _startButtonTimer();
@@ -93,13 +106,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Expanded(
                   child: PageView.builder(
                     controller: controller.pageController,
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics: widget.skipTimer
+                        ? const BouncingScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
                     itemCount: controller.pages.length,
                     onPageChanged: (index) {
                       controller.onPageChanged(index);
                     },
                     itemBuilder: (context, index) {
                       final page = controller.pages[index];
+                      final isLottieAsset =
+                          page.image.toLowerCase().endsWith('.json');
                       return Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -108,10 +125,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 35.0, vertical: 15.0),
-                                child: Image.asset(
-                                  page.image,
-                                  fit: BoxFit.contain,
-                                ),
+                                child: isLottieAsset
+                                    ? Lottie.asset(
+                                        page.image,
+                                        fit: BoxFit.contain,
+                                      )
+                                    : Image.asset(
+                                        page.image,
+                                        fit: BoxFit.contain,
+                                      ),
                               ),
                             ),
                             const SizedBox(height: 10),

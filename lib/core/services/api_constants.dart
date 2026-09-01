@@ -8,4 +8,5 @@ class ApiConstants {
   static const String about = 'functions/about/';
   static const String specialProfileCreate = 'api/user/masters';
   static const String specialProfile = 'api/user/masters/profile';
+  static String getMasterById(String id) => 'api/get-master-by-id/$id';
 }

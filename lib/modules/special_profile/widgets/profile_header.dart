@@ -1,21 +1,48 @@
+// ignore_for_file: deprecated_member_use
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
-import 'package:gyzyleller/shared/constants/icon_constants.dart';
 import 'stat_box.dart';
+import 'full_screen_image_page.dart';
 
 class ProfileHeader extends StatelessWidget {
   final String name;
   final String? imageUrl;
   final String shortBio;
+  final num rating;
+  final int reviewCount;
+  final String createdAt;
+  final int doneJobsCount;
+  final int totalJobsCount;
+
+  final String? experience;
 
   const ProfileHeader({
     super.key,
     required this.name,
     this.imageUrl,
     required this.shortBio,
+    this.rating = 0,
+    this.reviewCount = 0,
+    this.createdAt = '',
+    this.doneJobsCount = 0,
+    this.totalJobsCount = 0,
+    this.experience,
   });
+
+  String get _formattedDate {
+    if (createdAt.isEmpty) return '';
+    try {
+      return DateFormat('dd.MM.yyyy')
+          .format(DateTime.parse(createdAt).toLocal());
+    } catch (_) {
+      return createdAt;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,56 +50,178 @@ class ProfileHeader extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             StatBox(
-              icon: SvgPicture.asset(IconConstants.Isolation_Mode),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedChampion,
+                color: ColorConstants.kPrimaryColor2,
+                size: 26,
+              ),
               label: "created_tasks".tr,
-              value: "12",
+              value: totalJobsCount.toString(),
             ),
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: imageUrl != null
-                  ? NetworkImage(imageUrl!)
-                  : const AssetImage("assets/images/profile_avatar.png")
-                      as ImageProvider,
+
+            // Avatar
+            GestureDetector(
+              onTap: (imageUrl != null && imageUrl!.startsWith('http'))
+                  ? () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              FullScreenImagePage(imageUrl: imageUrl!),
+                        ),
+                      );
+                    }
+                  : null,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (imageUrl == null || !imageUrl!.startsWith('http'))
+                      ? ColorConstants.noUserBackground[name.hashCode % 4]
+                      : Colors.white,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: (imageUrl != null && imageUrl!.startsWith('http'))
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => _buildShimmer(),
+                        errorWidget: (context, url, error) => Center(
+                          child: Text(
+                            () {
+                              final n = name.trim();
+                              if (n.isEmpty) return '?';
+                              for (int i = 0; i < n.length; i++) {
+                                final char = n[i];
+                                if (RegExp(r'[a-zA-Z0-9\u0400-\u04FF]')
+                                    .hasMatch(char)) {
+                                  return char.toUpperCase();
+                                }
+                              }
+                              return n[0].toUpperCase();
+                            }(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          () {
+                            final n = name.trim();
+                            if (n.isEmpty) return '?';
+                            for (int i = 0; i < n.length; i++) {
+                              final char = n[i];
+                              if (RegExp(r'[a-zA-Z0-9\u0400-\u04FF]')
+                                  .hasMatch(char)) {
+                                return char.toUpperCase();
+                              }
+                            }
+                            return n[0].toUpperCase();
+                          }(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                ),
+              ),
             ),
             StatBox(
-              icon: SvgPicture.asset(IconConstants.Isolation_Mode2),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedAssignments,
+                color: ColorConstants.kPrimaryColor2,
+                size: 26,
+              ),
               label: "completed_jobs".tr,
-              value: "28",
+              value: doneJobsCount.toString(),
             ),
           ],
         ),
         const SizedBox(height: 10),
         Text(
           name,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
-        Text(
-          shortBio,
-          style: const TextStyle(fontSize: 16, color: Colors.grey),
-        ),
+        if (experience != null && experience!.isNotEmpty) ...[
+          const SizedBox(height: 3),
+          Text(
+            experience!,
+            style: const TextStyle(
+                fontSize: 18,
+                color: ColorConstants.fonts,
+                fontWeight: FontWeight.w400),
+            textAlign: TextAlign.center,
+          ),
+        ],
         const SizedBox(height: 5),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(IconConstants.calendar),
+            const HugeIcon(
+              icon: HugeIcons.strokeRoundedCalendar01,
+              size: 18,
+              color: ColorConstants.kPrimaryColor2,
+            ),
             const SizedBox(width: 5),
-            const Text("24.07.2023",
-                style: TextStyle(color: ColorConstants.fonts)),
+            Text(
+              _formattedDate,
+              style: const TextStyle(
+                  fontSize: 16, color: ColorConstants.blackColor),
+            ),
           ],
         ),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            5,
-            (i) => Icon(Icons.star,
-                color: i < 3 ? Colors.amber : Colors.grey, size: 20),
-          ),
+          children: [
+            ...List.generate(
+              5,
+              (i) => Icon(
+                Icons.star,
+                color: i < rating ? Colors.amber : Colors.grey,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              rating.toStringAsFixed(1),
+              style: const TextStyle(
+                  color: ColorConstants.blackColor,
+                  fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 3),
+            Text(
+              '($reviewCount)',
+              style: const TextStyle(color: Colors.black),
+            ),
+          ],
         ),
-        const Text("(281)", style: TextStyle(color: Colors.grey)),
       ],
+    );
+  }
+
+  Widget _buildShimmer() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 0.6),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Container(
+          color: Colors.grey[200]!.withOpacity(value),
+        );
+      },
+      onEnd: () {},
     );
   }
 }

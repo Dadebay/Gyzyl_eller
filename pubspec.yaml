@@ -27,13 +27,13 @@ dependencies:
 
   #==================== UI & UX ====================#
   pull_to_refresh: ^2.0.0
-  flutter_staggered_grid_view: ^0.7.0
   dotted_border: ^2.1.0
   hugeicons: ^0.0.11
   cupertino_icons: ^1.0.8
   lottie: ^3.1.0
   upgrader: ^10.3.0
   in_app_update: 4.2.2
+  showcaseview: ^3.0.0
 
   #==================== LOCAL STORAGE ====================#
   get_storage: ^2.1.1
@@ -44,22 +44,30 @@ dependencies:
   url_launcher: ^6.2.1
   latlong2: ^0.9.1
   flutter_map: ^8.1.1
-  file_picker: ^9.2.1 # TODO: remove
+  file_picker: ^9.2.1
 
   #==================== MEDIA ====================#
   image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0
   cached_network_image: ^3.3.1
   change_app_package_name: ^1.5.0
   flutter_svg: ^2.0.10+1
   flutter_launcher_icons: ^0.14.4
   table_calendar: ^3.1.2
-  # easy_localization: ^3.0.7
+  flutter_inappwebview: ^6.1.5
 
   #==================== DOWNLOAD ====================#
   dio: ^5.4.0
   saver_gallery: ^3.0.0
   permission_handler: ^11.3.0
   location: 8.0.0
+  path: ^1.9.0
+
+  #==================== MAP CACHE ====================#
+  dio_cache_interceptor: ^3.5.1
+  dio_cache_interceptor_hive_store: ^4.0.0
+  flutter_map_cache: ^1.5.2
+  path_provider: ^2.0.13
 
 dev_dependencies:
   flutter_test:
@@ -79,24 +87,44 @@ flutter:
     - assets/images/
 
   fonts:
-    - family: Inter
+    - family: Gilroy
       fonts:
-        - asset: assets/fonts/Inter-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Inter-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Inter-Medium.ttf
+        - asset: assets/fonts/Gilroy-Regular.ttf
+        - asset: assets/fonts/Gilroy-Medium.ttf
           weight: 500
-        - asset: assets/fonts/Inter-Regular.ttf
-          weight: 400
-    - family: Helvetica
-      fonts:
-        - asset: assets/fonts/Helvetica-Bold.ttf
+        - asset: assets/fonts/Gilroy-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Gilroy-Bold.ttf
           weight: 700
-        - asset: assets/fonts/Helvetica.ttf
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand-Regular.ttf
+        - asset: assets/fonts/Quicksand-Bold.ttf
+          weight: 700
+    - family: Ubuntu
+      fonts:
+        - asset: assets/fonts/Ubuntu-Regular.ttf
+        - asset: assets/fonts/Ubuntu-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Ubuntu-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Ubuntu-Bold.ttf
+          weight: 700
+    - family: Gotham
+      fonts:
+        - asset: assets/fonts/gotham_book.otf
+        - asset: assets/fonts/gotham_thin.otf
+          weight: 100
+        - asset: assets/fonts/gotham_light.otf
+          weight: 200
+        - asset: assets/fonts/gotham_medium.otf
+          weight: 300
+        - asset: assets/fonts/gotham_book.otf
           weight: 400
+        - asset: assets/fonts/gotham_bold.otf
+          weight: 800
+
 flutter_launcher_icons:
   android: true
-  ios: false
-  image_path: "assets/images/logo.jpg"
-  adaptive_icon_background: "#ffffff"
+  ios: true
+  image_path: "assets/images/new_year/app_logo.png"

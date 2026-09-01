@@ -1,7 +1,12 @@
 // ignore_for_file: empty_catches
 
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
+import 'package:gyzyleller/modules/all/controllers/all_controller.dart';
+import 'package:gyzyleller/modules/bottomnavbar/controllers/job_notification_controller.dart';
+import 'package:gyzyleller/shared/extensions/packages.dart';
+import 'package:location/location.dart' as loc;
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:gyzyleller/core/models/job_model.dart';
 import 'package:gyzyleller/core/models/my_tasks_order_by.dart';
@@ -37,14 +42,31 @@ class TaskController extends GetxController {
   final Rx<MyTasksOrderBy> orderBy = MyTasksOrderBy.sene.obs;
   final RxnInt status = RxnInt(null);
 
-  // Filter state
-  final RxList<int> catIds = <int>[].obs;
-  final RxList<int> welayatIds = <int>[].obs;
-  final RxList<int> etrapIds = <int>[].obs;
-  final RxnDouble minPrice = RxnDouble(null);
-  final RxnDouble maxPrice = RxnDouble(null);
-  final RxList<DateTime> selectedDates = <DateTime>[].obs;
-  final RxString search = "".obs;
+  // Location for nearest sort
+  final _locationPlugin = loc.Location();
+  double? _currentLat;
+  double? _currentLng;
+
+  // Track active tab index
+  final RxInt activeTabIndex = 0.obs;
+
+  // Filter state for tab 1 (requested / Tekliplerim)
+  final RxList<int> reqCatIds = <int>[].obs;
+  final RxList<int> reqWelayatIds = <int>[].obs;
+  final RxList<int> reqEtrapIds = <int>[].obs;
+  final RxnDouble reqMinPrice = RxnDouble(null);
+  final RxnDouble reqMaxPrice = RxnDouble(null);
+  final RxList<DateTime> reqSelectedDates = <DateTime>[].obs;
+  final RxString reqSearch = "".obs;
+
+  // Filter state for tab 2 (processing / Işlerim)
+  final RxList<int> procCatIds = <int>[].obs;
+  final RxList<int> procWelayatIds = <int>[].obs;
+  final RxList<int> procEtrapIds = <int>[].obs;
+  final RxnDouble procMinPrice = RxnDouble(null);
+  final RxnDouble procMaxPrice = RxnDouble(null);
+  final RxList<DateTime> procSelectedDates = <DateTime>[].obs;
+  final RxString procSearch = "".obs;
 
   // Metadata
   final RxList<CategoryModel> allCategories = <CategoryModel>[].obs;
@@ -58,7 +80,21 @@ class TaskController extends GetxController {
     fetchMetadata();
     isLoggedIn.value = AuthStorage().isLoggedIn;
     fetchBalance();
-    
+
+    // Register sync callback so fetchNotificationCounters always has fresh data.
+    // Uses Get.find at call-time (not capture-time) so a re-created controller
+    // instance is always used instead of a stale disposed one.
+    if (Get.isRegistered<JobNotificationController>()) {
+      Get.find<JobNotificationController>().registerOtherSelectedSync(() {
+        if (!Get.isRegistered<TaskController>()) return;
+        final tc = Get.find<TaskController>();
+        // requestedJobs boşsa (API henüz dönmedi veya controller yeni oluşturuldu)
+        // senkronizasyonu atla — eski doğru veriyi silmemek için.
+        if (tc.requestedJobs.isEmpty) return;
+        tc.syncOtherSelectedJobIds();
+      });
+    }
+
     // Auto load the first tab initially. Let the View call the second tab if needed.
     fetchRequestedJobs(isRefresh: true);
     fetchProcessingJobs(isRefresh: true);
@@ -84,28 +120,41 @@ class TaskController extends GetxController {
 
     if (isRefresh) {
       _requestedPage = 0;
-      isRequestedFirstLoad.value = true;
+      requestedRefreshController.resetNoData(); // 🔄 Reset pagination state
+      // Don't set isRequestedFirstLoad to true on refresh to avoid showing loading spinner
       fetchBalance();
+
+      // Fire early so tag/badge are ready when inner Obx instances build.
+      if (Get.isRegistered<JobNotificationController>()) {
+        Get.find<JobNotificationController>().fetchNotificationCounters();
+      }
     }
 
     isRequestedLoading.value = true;
 
     try {
+      debugPrint(
+          '[TaskController][Requested] API start page=$_requestedPage isRefresh=$isRefresh selected=false status=${status.value} sort=${orderBy.value.apiValue}');
       final response = await _jobsService.getMyJobs(
         page: _requestedPage,
         limit: _limit,
         status: status.value,
         sort: orderBy.value.apiValue,
+        lat: orderBy.value == MyTasksOrderBy.nearest ? _currentLat : null,
+        lng: orderBy.value == MyTasksOrderBy.nearest ? _currentLng : null,
         requestedInput: true,
+        selected: false,
         requiresToken: true,
-        catIds: catIds,
-        welayatIds: welayatIds,
-        etrapIds: etrapIds,
-        dates: selectedDates,
-        minPrice: minPrice.value,
-        maxPrice: maxPrice.value,
-        search: search.value,
+        catIds: reqCatIds,
+        welayatIds: reqWelayatIds,
+        etrapIds: reqEtrapIds,
+        dates: reqSelectedDates,
+        minPrice: reqMinPrice.value,
+        maxPrice: reqMaxPrice.value,
+        search: reqSearch.value,
       );
+      debugPrint(
+          '[TaskController][Requested] API success count=${response.data.count} jobs=${response.data.jobs.length} nextPage=${_requestedPage + 1}');
 
       if (isRefresh) {
         requestedJobs.clear();
@@ -115,6 +164,9 @@ class TaskController extends GetxController {
       requestedTotalCount.value = response.data.count;
       hasRequestedMore.value = requestedJobs.length < requestedTotalCount.value;
       _requestedPage++;
+
+      // Notify notification controller which jobs have another user selected
+      syncOtherSelectedJobIds();
 
       isRequestedFirstLoad.value = false;
       isRequestedLoading.value = false;
@@ -128,7 +180,17 @@ class TaskController extends GetxController {
       if (!hasRequestedMore.value) {
         requestedRefreshController.loadNoData();
       }
+
+      // 🔁 Sync AllView when user refreshes TaskView (requested tab)
+      if (isRefresh) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.isRegistered<AllController>()) {
+            Get.find<AllController>().fetchJobs(isRefresh: true);
+          }
+        });
+      }
     } catch (e) {
+      debugPrint('[TaskController][Requested] API error: $e');
       isRequestedLoading.value = false;
       isRequestedFirstLoad.value = false;
       if (isRefresh) {
@@ -144,28 +206,43 @@ class TaskController extends GetxController {
 
     if (isRefresh) {
       _processingPage = 0;
-      isProcessingFirstLoad.value = true;
+      processingRefreshController.resetNoData(); // 🔄 Reset pagination state
+      // Don't set isProcessingFirstLoad to true on refresh to avoid showing loading spinner
       fetchBalance();
+
+      // Fire notification fetch BEFORE the jobs API call — mirrors AllController.fetchJobs.
+      // By the time jobs are loaded and inner Obx instances are created, counterResponse
+      // is already fresh so "Baha goýulan" tag renders correctly on first build.
+      if (Get.isRegistered<JobNotificationController>()) {
+        Get.find<JobNotificationController>().fetchNotificationCounters();
+      }
     }
 
     isProcessingLoading.value = true;
 
     try {
+      debugPrint(
+          '[TaskController][Processing] API start page=$_processingPage isRefresh=$isRefresh selected=true status=${status.value} sort=${orderBy.value.apiValue}');
       final response = await _jobsService.getMyJobs(
         page: _processingPage,
         limit: _limit,
         status: status.value,
         sort: orderBy.value.apiValue,
+        lat: orderBy.value == MyTasksOrderBy.nearest ? _currentLat : null,
+        lng: orderBy.value == MyTasksOrderBy.nearest ? _currentLng : null,
         processingInput: true,
+        selected: true,
         requiresToken: true,
-        catIds: catIds,
-        welayatIds: welayatIds,
-        etrapIds: etrapIds,
-        dates: selectedDates,
-        minPrice: minPrice.value,
-        maxPrice: maxPrice.value,
-        search: search.value,
+        catIds: procCatIds,
+        welayatIds: procWelayatIds,
+        etrapIds: procEtrapIds,
+        dates: procSelectedDates,
+        minPrice: procMinPrice.value,
+        maxPrice: procMaxPrice.value,
+        search: procSearch.value,
       );
+      debugPrint(
+          '[TaskController][Processing] API success count=${response.data.count} jobs=${response.data.jobs.length} nextPage=${_processingPage + 1}');
 
       if (isRefresh) {
         processingJobs.clear();
@@ -173,7 +250,8 @@ class TaskController extends GetxController {
 
       processingJobs.addAll(response.data.jobs);
       processingTotalCount.value = response.data.count;
-      hasProcessingMore.value = processingJobs.length < processingTotalCount.value;
+      hasProcessingMore.value =
+          processingJobs.length < processingTotalCount.value;
       _processingPage++;
 
       isProcessingFirstLoad.value = false;
@@ -188,7 +266,17 @@ class TaskController extends GetxController {
       if (!hasProcessingMore.value) {
         processingRefreshController.loadNoData();
       }
+
+      // 🔁 Sync AllView when user refreshes TaskView (processing tab)
+      if (isRefresh) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.isRegistered<AllController>()) {
+            Get.find<AllController>().fetchJobs(isRefresh: true);
+          }
+        });
+      }
     } catch (e) {
+      debugPrint('[TaskController][Processing] API error: $e');
       isProcessingLoading.value = false;
       isProcessingFirstLoad.value = false;
       if (isRefresh) {
@@ -201,6 +289,33 @@ class TaskController extends GetxController {
 
   void changeOrderBy(MyTasksOrderBy value) {
     orderBy.value = value;
+    status.value = value.statusFilter;
+    if (value == MyTasksOrderBy.nearest) {
+      _fetchLocationThenRefresh();
+    } else {
+      fetchRequestedJobs(isRefresh: true);
+      fetchProcessingJobs(isRefresh: true);
+    }
+  }
+
+  Future<void> _fetchLocationThenRefresh() async {
+    try {
+      bool serviceEnabled = await _locationPlugin.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await _locationPlugin.requestService();
+        if (!serviceEnabled) return;
+      }
+      loc.PermissionStatus permission = await _locationPlugin.hasPermission();
+      if (permission == loc.PermissionStatus.denied) {
+        permission = await _locationPlugin.requestPermission();
+        if (permission != loc.PermissionStatus.granted) return;
+      }
+      final locationData = await _locationPlugin.getLocation();
+      _currentLat = locationData.latitude;
+      _currentLng = locationData.longitude;
+    } catch (e) {
+      debugPrint('[TaskController] Location error: $e');
+    }
     fetchRequestedJobs(isRefresh: true);
     fetchProcessingJobs(isRefresh: true);
   }
@@ -212,6 +327,7 @@ class TaskController extends GetxController {
   }
 
   void applyFilters({
+    required int tabIndex,
     List<int>? newCatIds,
     List<int>? newWelayatIds,
     List<int>? newEtrapIds,
@@ -220,48 +336,124 @@ class TaskController extends GetxController {
     List<DateTime>? newDates,
     String? newSearch,
   }) {
-    if (newCatIds != null) {
-      catIds.assignAll(newCatIds);
+    if (tabIndex == 0) {
+      // Requested tab
+      if (newCatIds != null) {
+        reqCatIds.assignAll(newCatIds);
+      } else {
+        reqCatIds.clear();
+      }
+      if (newWelayatIds != null) {
+        reqWelayatIds.assignAll(newWelayatIds);
+      } else {
+        reqWelayatIds.clear();
+      }
+      if (newEtrapIds != null) {
+        reqEtrapIds.assignAll(newEtrapIds);
+      } else {
+        reqEtrapIds.clear();
+      }
+      reqMinPrice.value = newMinPrice;
+      reqMaxPrice.value = newMaxPrice;
+      if (newDates != null) {
+        reqSelectedDates.assignAll(newDates);
+      } else {
+        reqSelectedDates.clear();
+      }
+      if (newSearch != null) {
+        reqSearch.value = newSearch;
+      } else {
+        reqSearch.value = "";
+      }
+      fetchRequestedJobs(isRefresh: true);
     } else {
-      catIds.clear();
+      // Processing tab
+      if (newCatIds != null) {
+        procCatIds.assignAll(newCatIds);
+      } else {
+        procCatIds.clear();
+      }
+      if (newWelayatIds != null) {
+        procWelayatIds.assignAll(newWelayatIds);
+      } else {
+        procWelayatIds.clear();
+      }
+      if (newEtrapIds != null) {
+        procEtrapIds.assignAll(newEtrapIds);
+      } else {
+        procEtrapIds.clear();
+      }
+      procMinPrice.value = newMinPrice;
+      procMaxPrice.value = newMaxPrice;
+      if (newDates != null) {
+        procSelectedDates.assignAll(newDates);
+      } else {
+        procSelectedDates.clear();
+      }
+      if (newSearch != null) {
+        procSearch.value = newSearch;
+      } else {
+        procSearch.value = "";
+      }
+      fetchProcessingJobs(isRefresh: true);
     }
-    if (newWelayatIds != null) {
-      welayatIds.assignAll(newWelayatIds);
-    } else {
-      welayatIds.clear();
-    }
-    if (newEtrapIds != null) {
-      etrapIds.assignAll(newEtrapIds);
-    } else {
-      etrapIds.clear();
-    }
-    minPrice.value = newMinPrice;
-    maxPrice.value = newMaxPrice;
-    if (newDates != null) {
-      selectedDates.assignAll(newDates);
-    } else {
-      selectedDates.clear();
-    }
-    if (newSearch != null) {
-      search.value = newSearch;
-    } else {
-      search.value = "";
-    }
-
-    fetchRequestedJobs(isRefresh: true);
-    fetchProcessingJobs(isRefresh: true);
   }
 
   void clearFilters() {
-    catIds.clear();
-    welayatIds.clear();
-    etrapIds.clear();
-    minPrice.value = null;
-    maxPrice.value = null;
-    selectedDates.clear();
-    search.value = "";
+    if (activeTabIndex.value == 0) {
+      reqCatIds.clear();
+      reqWelayatIds.clear();
+      reqEtrapIds.clear();
+      reqMinPrice.value = null;
+      reqMaxPrice.value = null;
+      reqSelectedDates.clear();
+      reqSearch.value = "";
+      fetchRequestedJobs(isRefresh: true);
+    } else {
+      procCatIds.clear();
+      procWelayatIds.clear();
+      procEtrapIds.clear();
+      procMinPrice.value = null;
+      procMaxPrice.value = null;
+      procSelectedDates.clear();
+      procSearch.value = "";
+      fetchProcessingJobs(isRefresh: true);
+    }
+  }
 
-    fetchRequestedJobs(isRefresh: true);
-    fetchProcessingJobs(isRefresh: true);
+  void syncOtherSelectedJobIds() {
+    if (!Get.isRegistered<JobNotificationController>()) return;
+    final user = AuthStorage().getUser();
+    final myId = int.tryParse((user?['id'] ?? '').toString());
+    if (myId == null) return;
+    final ids = requestedJobs
+        .where((j) =>
+            j.status == 3 &&
+            j.selectedUserId != null &&
+            j.selectedUserId != myId &&
+            !j.finished)
+        .map((j) => j.id.toString())
+        .toSet();
+    Get.find<JobNotificationController>().updateOtherSelectedJobIds(ids);
+  }
+
+  bool get isAnyFilterActive {
+    if (activeTabIndex.value == 0) {
+      return reqCatIds.isNotEmpty ||
+          reqWelayatIds.isNotEmpty ||
+          reqEtrapIds.isNotEmpty;
+    } else {
+      return procCatIds.isNotEmpty ||
+          procWelayatIds.isNotEmpty ||
+          procEtrapIds.isNotEmpty;
+    }
+  }
+
+  /// Refresh tasks from BottomNavigation.
+  Future<void> refreshAllTabsWithIndicator() async {
+    await Future.wait([
+      fetchRequestedJobs(isRefresh: true),
+      fetchProcessingJobs(isRefresh: true),
+    ]);
   }
 }

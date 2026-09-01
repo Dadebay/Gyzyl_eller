@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 
 import 'dart:async';
 import 'dart:convert';
@@ -14,10 +14,11 @@ import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/services/auth_storage.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/chats/controllers/chat_detail_controller.dart';
-import 'package:gyzyleller/modules/special_profile/views/special_profile.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:gyzyleller/shared/widgets/services_map_screen.dart';
+import 'package:gyzyleller/core/models/location_model.dart' as lm;
 
 class ChatDetailView extends StatefulWidget {
   const ChatDetailView({
@@ -34,8 +35,11 @@ class ChatDetailView extends StatefulWidget {
     required this.lastSeen,
     required this.blocked,
     required this.notification,
+    this.isAdmin = false,
     this.postLat,
     this.postLng,
+    this.finished = false,
+    this.finishedAt,
   });
 
   final String chatId;
@@ -50,8 +54,11 @@ class ChatDetailView extends StatefulWidget {
   final String lastSeen;
   final bool blocked;
   final bool notification;
+  final bool isAdmin;
   final String? postLat;
   final String? postLng;
+  final bool finished;
+  final String? finishedAt;
 
   @override
   State<ChatDetailView> createState() => _ChatDetailViewState();
@@ -149,6 +156,40 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     }
   }
 
+  Widget _buildWarningCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ColorConstants.kPrimaryColor2.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.info_outline,
+            color: ColorConstants.kPrimaryColor2,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'warning_no_contacts'.tr,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: ColorConstants.kPrimaryColor2,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,17 +223,23 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       ),
       title: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildBackButton(context),
-                const SizedBox(width: 10),
-                _buildUserInfo(context),
+                Row(
+                  children: [
+                    _buildBackButton(context),
+                    const SizedBox(width: 10),
+                    _buildUserInfo(context),
+                  ],
+                ),
+                if (!widget.notification) _buildPopupMenu(context),
               ],
             ),
-            if (!widget.notification) _buildPopupMenu(context),
+            _buildWarningCard(),
           ],
         ),
       ),
@@ -220,47 +267,35 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   }
 
   Widget _buildUserInfo(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Get.to(
-          () => SpecialProfile(),
-          arguments: {
-            'id': widget.userId,
-            'username': widget.userName,
-            'image': widget.userPicture,
-          },
-        );
-      },
-      child: Row(
-        children: [
-          _buildUserAvatar(),
-          const SizedBox(width: 10),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.userName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                  letterSpacing: 0.1,
-                ),
+    return Row(
+      children: [
+        _buildUserAvatar(),
+        const SizedBox(width: 10),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.userName,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+                letterSpacing: 0.1,
               ),
-              const SizedBox(height: 2),
-              Text(
-                _formatLastSeen(),
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey,
-                ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _formatLastSeen(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -341,15 +376,21 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           }
         },
         itemBuilder: (_) => [
-          PopupMenuItem(
-            value: 'block',
-            child: Text(
-              widget.blocked ? 'unblock_user'.tr : 'block_user'.tr,
+          if (!widget.isAdmin)
+            PopupMenuItem(
+              value: 'block',
+              child: Text(
+                widget.blocked ? 'unblock_user'.tr : 'block_user'.tr,
+              ),
             ),
-          ),
+          if (!widget.isAdmin)
+            PopupMenuItem(
+              value: 'report',
+              child: Text('report'.tr),
+            ),
           PopupMenuItem(
-            value: 'report',
-            child: Text('report'.tr),
+            value: 'location',
+            child: Text('location_share'.tr),
           ),
         ],
       );
@@ -927,58 +968,131 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   }
 
   Widget _buildInputBar(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: ColorConstants.background,
-      ),
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16, top: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: ColorConstants.whiteColor,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Center(
-                  child: TextField(
-                    controller: _messageController,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
-                      hintText: 'message_hint'.tr,
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w300,
-                        color: Colors.grey,
+    // Chat tamamlanmış mı ve finished_at var mı?
+    final finished = widget.finished;
+    final finishedAtStr = widget.finishedAt;
+
+    print('=== CHAT INPUT BAR DEBUG ===');
+    print('finished (from widget): $finished');
+    print('finishedAtStr (from widget): $finishedAtStr');
+
+    DateTime? finishedAt;
+    if (finishedAtStr != null && finishedAtStr.isNotEmpty) {
+      try {
+        finishedAt = DateTime.parse(finishedAtStr).toLocal();
+        print('finishedAt (local): $finishedAt');
+      } catch (e) {
+        print('finishedAt parse error: $e');
+      }
+    }
+
+    final now = DateTime.now();
+    print('now (device time): $now');
+
+    Duration? diff;
+    if (finishedAt != null) {
+      diff = now.difference(finishedAt);
+      print(
+          'diff: ${diff.inDays} days, ${diff.inHours} hours, ${diff.inMinutes} minutes');
+    }
+
+    final isSendDisabled = finished && diff != null && diff.inDays >= 3;
+    print(
+        'isSendDisabled: $isSendDisabled (finished: $finished, diff >= 3 days: ${diff != null && diff.inDays >= 3})');
+    print('=== END DEBUG ===');
+
+    String? kalanSureText;
+    if (finished && diff != null && diff.inDays < 3) {
+      final kalan = const Duration(days: 3) - diff;
+      kalan.inHours.remainder(24);
+      kalan.inMinutes.remainder(60);
+      // We can just format it nicely
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // if (kalanSureText != null)
+        //   Padding(
+        //     padding:
+        //         const EdgeInsets.only(bottom: 8.0, left: 20.0, right: 20.0),
+        //     child: Row(
+        //       mainAxisAlignment: MainAxisAlignment.center,
+        //       children: [
+        //         const Icon(Icons.timer_outlined, color: Colors.red, size: 16),
+        //         const SizedBox(width: 4),
+        //         Text(
+        //           kalanSureText,
+        //           style: const TextStyle(
+        //             color: Colors.red,
+        //             fontWeight: FontWeight.bold,
+        //             fontSize: 13,
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        Container(
+          decoration: const BoxDecoration(
+            color: ColorConstants.background,
+          ),
+          padding:
+              const EdgeInsets.only(left: 20, right: 20, bottom: 16, top: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: ColorConstants.whiteColor,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Center(
+                      child: TextField(
+                        controller: _messageController,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          hintText: 'message_hint'.tr,
+                          hintStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.grey,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
                       ),
-                      border: InputBorder.none,
-                      isDense: true,
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              width: 60,
-              height: 50,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: ColorConstants.kPrimaryColor2,
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: isSendDisabled ? null : _sendMessage,
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isSendDisabled
+                        ? Colors.grey
+                        : (kalanSureText != null
+                            ? Colors.red
+                            : ColorConstants
+                                .kPrimaryColor2), // Default should be primary color, not grey
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: SvgPicture.asset('assets/icons/send.svg',
+                      color: isSendDisabled ? Colors.white54 : Colors.white),
+                ),
               ),
-              child: SvgPicture.asset('assets/icons/send.svg'),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -996,13 +1110,14 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
     return GestureDetector(
       onTap: coords != null
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => _LocationMapScreen(
-                    coords: coords!,
-                    title: isMe ? 'me'.tr : widget.userName,
+          ? () => Get.to(
+                () => ServicesMapScreen(
+                  location: lm.Location(
+                    latitude: coords!.latitude,
+                    longitude: coords.longitude,
                   ),
+                  placeName: isMe ? 'me'.tr : widget.userName,
+                  catName: widget.productTitle,
                 ),
               )
           : null,
@@ -1180,48 +1295,6 @@ class _FullScreenImage extends StatelessWidget {
             fit: BoxFit.contain,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _LocationMapScreen extends StatelessWidget {
-  const _LocationMapScreen({required this.coords, required this.title});
-  final ll.LatLng coords;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(title,
-            style: const TextStyle(color: Colors.black, fontSize: 16)),
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: coords,
-          initialZoom: 15,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: Api().mapApi,
-          ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: coords,
-                width: 40,
-                height: 40,
-                child:
-                    const Icon(Icons.location_on, color: Colors.red, size: 40),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

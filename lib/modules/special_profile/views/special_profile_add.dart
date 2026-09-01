@@ -1,14 +1,19 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:gyzyleller/core/services/api.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/bio_text_field.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/file_upload_area.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/info_card.dart';
 import 'package:gyzyleller/modules/special_profile/widgets/profile_avatar.dart';
-import 'package:gyzyleller/modules/special_profile/widgets/selected_images.dart';
 import 'package:gyzyleller/shared/widgets/custom_app_bar.dart';
 import 'package:gyzyleller/shared/widgets/custom_elevated_button.dart';
+import 'package:gyzyleller/shared/widgets/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SpecialProfileAdd extends StatefulWidget {
   const SpecialProfileAdd({super.key});
@@ -24,16 +29,79 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController shortBioController = TextEditingController();
   final TextEditingController longBioController = TextEditingController();
-  final TextEditingController legalizationTypeController = TextEditingController();
   final TextEditingController workTejribeController = TextEditingController();
+
+  String? _selectedLegalizationType;
+  List<Map<String, dynamic>> _fileMetadata = [];
+
+  bool _submitted = false;
+
+  String _nameError = '';
+  String _workTejribeError = '';
+  String _legalizationError = '';
+  String _longBioError = '';
+  String _profileImageError = '';
+
+  bool _validateFields() {
+    final nameErr =
+        nameController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final workErr =
+        workTejribeController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final legalErr =
+        _selectedLegalizationType == null ? 'field_required'.tr : '';
+    final longBioErr =
+        longBioController.text.trim().isEmpty ? 'field_required'.tr : '';
+    final hasExistingImage = controller.profile.value.imageUrl != null &&
+        controller.profile.value.imageUrl!.isNotEmpty;
+    final profileImageErr =
+        controller.selectedProfileImage.value == null && !hasExistingImage
+            ? 'field_required'.tr
+            : '';
+    setState(() {
+      _submitted = true;
+      _nameError = nameErr;
+      _workTejribeError = workErr;
+      _legalizationError = legalErr;
+      _longBioError = longBioErr;
+      _profileImageError = profileImageErr;
+    });
+    return nameErr.isEmpty &&
+        workErr.isEmpty &&
+        legalErr.isEmpty &&
+        longBioErr.isEmpty &&
+        profileImageErr.isEmpty;
+  }
+
+  static const List<String> _legalizationValues = [
+    'individual',
+    'entrepreneur',
+    'private',
+    'business_entity',
+    'other',
+  ];
+
+  String get _langWeb => GetStorage().read('langCode') ?? 'tk';
+
+  void _launchURL(String url) {
+    launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView);
+  }
 
   @override
   void initState() {
     super.initState();
+    controller.isChecked.value = false;
     nameController.text = controller.profile.value.name ?? '';
     shortBioController.text = controller.profile.value.shortBio ?? '';
     longBioController.text = controller.profile.value.longBio ?? '';
-    legalizationTypeController.text = controller.profile.value.legalizationType ?? '';
+    _selectedLegalizationType = controller.profile.value.legalizationType;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          CustomWidgets.showWarningProfileDialog();
+        }
+      });
+    });
   }
 
   @override
@@ -41,7 +109,6 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
     nameController.dispose();
     shortBioController.dispose();
     longBioController.dispose();
-    legalizationTypeController.dispose();
     workTejribeController.dispose();
     super.dispose();
   }
@@ -51,6 +118,14 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'specialist_profile_title'.tr,
+        leading: IconButton(
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            color: ColorConstants.kPrimaryColor2,
+            size: 26.0,
+          ),
+          onPressed: () => Get.back(),
+        ),
       ),
       backgroundColor: ColorConstants.background,
       body: SingleChildScrollView(
@@ -58,38 +133,124 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProfileAvatar(controller: controller, nameController: nameController),
-            const SizedBox(height: 15),
+            ProfileAvatar(controller: controller),
+            const SizedBox(height: 30),
             BioTextField(
-              controller: shortBioController,
-              hintText: 'short_bio_hint'.tr,
+              controller: nameController,
+              hintText: 'Ulanyjy ady'.tr,
+              maxLength: 60,
               onChanged: (value) {},
+              errorText: _submitted ? _nameError : null,
             ),
             const SizedBox(height: 15),
             BioTextField(
-              controller: legalizationTypeController,
-              hintText: 'legalization_type_hint'.tr,
-              onChanged: (value) {},
+              controller: workTejribeController,
+              hintText: 'work_tejribe'.tr,
+              maxLength: 160,
+              onChanged: (String value) {},
+              errorText: _submitted ? _workTejribeError : null,
+            ),
+            const SizedBox(height: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLegalizationDropdown(),
+                if (_submitted && _legalizationError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 4),
+                    child: Text(
+                      _legalizationError,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 15),
             BioTextField(
               controller: longBioController,
               hintText: 'long_bio_hint'.tr,
               maxLines: 5,
+              maxLength: 1200,
               onChanged: (value) {},
+              errorText: _submitted ? _longBioError : null,
             ),
             const SizedBox(height: 15),
-            BioTextField(
-              controller: workTejribeController,
-              hintText: 'work_tejribe'.tr,
-              onChanged: (String value) {},
-            ),
-            const SizedBox(height: 15),
+
             InfoCard(
               icon: Icons.access_time,
               text: 'read_the_rules'.tr,
               color: ColorConstants.whiteColor,
               textColor: ColorConstants.fonts,
+            ),
+            const SizedBox(height: 10),
+            // ── Terms agreement ─────────────────────────────────────────
+            Obx(
+              () => Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        controller.isChecked.value =
+                            !controller.isChecked.value;
+                      },
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: controller.isChecked.value
+                              ? ColorConstants.kPrimaryColor2
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: controller.isChecked.value
+                            ? const Icon(Icons.check,
+                                size: 16, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'with_all_terms'.tr,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'agreement_text'.tr,
+                              style: const TextStyle(
+                                color: ColorConstants.kPrimaryColor2,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w400,
+                                decoration: TextDecoration.underline,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  _launchURL(
+                                      '${Api().urlSimple}privacy-police/$_langWeb');
+                                  controller.isChecked.value =
+                                      !controller.isChecked.value;
+                                },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 15),
             Text(
@@ -101,17 +262,43 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
               ),
             ),
             const SizedBox(height: 10),
-            const FileUploadSection(),
+            FileUploadSection(
+              onMetadataChanged: (metadata) {
+                setState(() {
+                  _fileMetadata = metadata;
+                });
+              },
+            ),
             const SizedBox(height: 10),
-            SelectedImages(controller: controller),
-            const SizedBox(height: 25),
             CustomElevatedButton(
-              onPressed: () {
-                controller.saveMasterProfile(
+              onPressed: () async {
+                final valid = _validateFields();
+                if (!valid) {
+                  if (_profileImageError.isNotEmpty) {
+                    CustomWidgets.showSnackBar(
+                      'profile_image_required_title',
+                      'profile_image_required',
+                      ColorConstants.redColor,
+                    );
+                  }
+                  return;
+                }
+                if (!controller.isChecked.value) {
+                  CustomWidgets.showSnackBar(
+                    'error_title',
+                    'please_agree_privacy',
+                    ColorConstants.redColor,
+                  );
+                  return;
+                }
+                await controller.saveMasterProfile(
                   name: nameController.text,
                   shortBio: shortBioController.text,
                   longBio: longBioController.text,
-                  legalizationType: legalizationTypeController.text,
+                  experience: workTejribeController.text,
+                  legalizationType: _selectedLegalizationType ?? '',
+                  fileMetadata: _fileMetadata,
+                  imageFile: controller.selectedProfileImage.value,
                 );
               },
               text: 'create_account_button'.tr,
@@ -120,6 +307,56 @@ class _SpecialProfileAddState extends State<SpecialProfileAdd> {
               fontSize: 16,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegalizationDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: (_submitted && _legalizationError.isNotEmpty)
+            ? Border.all(color: Colors.red, width: 1)
+            : null,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: _selectedLegalizationType,
+            hint: Text(
+              'legalization_type_hint'.tr,
+              style: const TextStyle(
+                  color: ColorConstants.secondary, fontSize: 14),
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down,
+              color: ColorConstants.kPrimaryColor2,
+            ),
+            dropdownColor: Colors.white,
+            items: _legalizationValues.map((value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value.tr,
+                  style: const TextStyle(color: Colors.black),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedLegalizationType = value;
+              });
+            },
+          ),
         ),
       ),
     );

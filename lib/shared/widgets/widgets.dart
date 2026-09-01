@@ -155,8 +155,208 @@ class CustomWidgets {
       snackPosition: SnackPosition.TOP,
       backgroundColor: color,
       borderRadius: 20.0,
-      duration: const Duration(milliseconds: 1000),
       margin: const EdgeInsets.all(8),
+      duration: const Duration(milliseconds: 2500),
+    );
+  }
+
+  static void showErrorDialog(String messageKey) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        backgroundColor: Colors.white,
+        contentPadding: const EdgeInsets.all(20),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'error_title'.tr,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              messageKey.tr,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: ColorConstants.kPrimaryColor2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => Get.back(),
+                child: Text(
+                  'ok'.tr,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+
+  static void showErrorMessageDialog(String message) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        backgroundColor: Colors.white,
+        contentPadding: const EdgeInsets.all(20),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'error_title'.tr,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: ColorConstants.secondary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => Get.back(),
+                child: Text(
+                  'OK'.tr,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+
+  static void showWarningProfileDialog() {
+    bool isButtonEnabled = false;
+    int secondsRemaining = 5;
+
+    Get.dialog(
+      StatefulBuilder(builder: (context, setDialogState) {
+        // Start timer only once
+        if (!isButtonEnabled && secondsRemaining == 5) {
+          Future.doWhile(() async {
+            await Future.delayed(const Duration(seconds: 1));
+            if (secondsRemaining > 0) {
+              setDialogState(() {
+                secondsRemaining--;
+                if (secondsRemaining == 0) {
+                  isButtonEnabled = true;
+                }
+              });
+              return secondsRemaining > 0;
+            }
+            return false;
+          });
+        }
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          contentPadding: const EdgeInsets.all(20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'create_profile_warning_title'.tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: ColorConstants.kPrimaryColor2,
+                ),
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'create_profile_warning_description'.tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: isButtonEnabled
+                        ? ColorConstants.kPrimaryColor2
+                        : Colors.grey[200],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: isButtonEnabled ? () => Get.back() : null,
+                  child: Text(
+                    isButtonEnabled
+                        ? 'understood'.tr
+                        : '${'understood'.tr} ($secondsRemaining)',
+                    style: TextStyle(
+                      color: isButtonEnabled ? Colors.white : Colors.grey[500],
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+      barrierDismissible: false,
     );
   }
 }

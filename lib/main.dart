@@ -1,13 +1,14 @@
-import 'dart:io';
+// ignore_for_file: avoid_print
 
 import 'package:gyzyleller/core/init/app_initialize.dart';
 import 'package:gyzyleller/core/init/translation_service.dart';
 import 'package:gyzyleller/core/services/analytics_service.dart';
 import 'package:gyzyleller/core/services/fcm_token_provider.dart';
 import 'package:gyzyleller/core/services/fcm_token_synchronizer.dart';
+import 'package:gyzyleller/core/theme/custom_light_theme.dart';
 import 'package:gyzyleller/modules/splash/splash_screen.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
-import 'package:gyzyleller/shared/no_internet_screen.dart';
+
 import 'package:gyzyleller/utils/global_safe_area_wrapper.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 
@@ -15,16 +16,43 @@ FirebaseAnalytics get analytics => FirebaseAnalytics.instance;
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  print('🔔 [FCM BACKGROUND] Message receivedddddddd:');
+  print('   Dataaaaaaaa: ${message.data}');
+  print('   Notification Titleeee: ${message.notification?.title}');
+  print('   Notification Bodyrrrrrrrr: ${message.notification?.body}');
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (_) {}
+
+  try {
+    final localNotifications = LocalNotificationsService.instance();
+    await localNotifications.init(isBackground: true);
+
+    final title = message.data['title'] as String?;
+    final body = message.data['body'] as String?;
+
+    // Firebase Messaging on Android natively displays background notifications
+    // if `message.notification` is not null. We only manually show a local
+    // notification if the server sent a pure data payload (notification is null).
+    if (message.notification == null && (title != null || body != null)) {
+      await localNotifications.showNotification(
+          title, body, jsonEncode(message.data));
+    }
+  } catch (e) {
+    print('❌ [FCM BACKGROUND] Error showing notification: $e');
+  }
 }
 
 Future<void> main() async {
   print('🎬 APP STARTING...');
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🚀 Initialize basic services and GetStorage first
+  await ApplicationInitialize.initialize();
 
   bool firebaseReady = false;
 
@@ -34,7 +62,8 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     firebaseReady = true;
-    print('✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
+    print(
+        '✅ Firebase initialized. projectId=${DefaultFirebaseOptions.currentPlatform.projectId} appId=${DefaultFirebaseOptions.currentPlatform.appId}');
   } catch (e, stack) {
     print('❌ Firebase initializeApp ERROR: ${e.runtimeType}: $e');
     print('📋 Stack trace:\n$stack');
@@ -51,28 +80,27 @@ Future<void> main() async {
       );
 
       final fcmTokenProvider = FcmTokenProvider();
-      await fcmTokenProvider.init();
+      // FCM token alma internet gerektirdiği üçin fire-and-forget
+      unawaited(fcmTokenProvider.init());
       Get.put(fcmTokenProvider, permanent: true);
 
-      final fcmTokenSynchronizer =
-          FcmTokenSynchronizer(fcmTokenProvider);
+      final fcmTokenSynchronizer = FcmTokenSynchronizer(fcmTokenProvider);
       fcmTokenSynchronizer.init();
       Get.put(fcmTokenSynchronizer, permanent: true);
 
-      await FirebaseMessaging.instance.subscribeToTopic('EVENT');
+      // Topic subscription-lar internet gerektirýär, fire-and-forget
+      unawaited(FirebaseMessaging.instance.subscribeToTopic('EVENT'));
 
       await FirebaseMessaging.instance
           .setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
+        alert: false,
+        badge: false,
+        sound: false,
       );
 
-      final firebaseMessagingService =
-          FirebaseMessagingService.instance();
+      final firebaseMessagingService = FirebaseMessagingService.instance();
       await firebaseMessagingService.init(
-        localNotificationsService:
-            LocalNotificationsService.instance(),
+        localNotificationsService: LocalNotificationsService.instance(),
       );
     } catch (e) {
       print('❌ Firebase services error: $e');
@@ -80,8 +108,6 @@ Future<void> main() async {
   } else {
     print('⚠️ Firebase NOT initialized → services skipped');
   }
-
-  await ApplicationInitialize.initialize();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
@@ -98,36 +124,9 @@ Future<void> main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   MyApp({super.key});
   final storage = GetStorage();
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  bool _hasInternet = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkInternet();
-  }
-
-  Future<void> _checkInternet() async {
-    try {
-      final result = await InternetAddress.lookup('example.com');
-      setState(() {
-        _hasInternet =
-            result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-      });
-    } catch (_) {
-      setState(() {
-        _hasInternet = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,15 +135,16 @@ class _MyAppState extends State<MyApp> {
         FocusManager.instance.primaryFocus?.unfocus();
       },
       child: GetMaterialApp(
+        theme: CustomLightTheme().themeData,
+        // darkTheme: CustomDarkTheme().themeData,
         translations: TranslationService(),
         defaultTransition: Transition.fade,
         fallbackLocale: const Locale('tk'),
         debugShowCheckedModeBanner: false,
-        locale: widget.storage.read('langCode') != null
-            ? Locale(widget.storage.read('langCode'))
+        locale: storage.read('langCode') != null
+            ? Locale(storage.read('langCode'))
             : const Locale('tk'),
-        home:
-            _hasInternet ? const SplashScreen() : const NoInternetScreen(),
+        home: const SplashScreen(),
         builder: (context, child) {
           return GlobalSafeAreaWrapper(
             child: child ?? const SizedBox.shrink(),

@@ -5,9 +5,11 @@ import 'package:gyzyleller/core/models/message_model.dart';
 import 'package:gyzyleller/core/services/chat_socket_service.dart';
 import 'package:gyzyleller/modules/chats/controllers/chat_controller.dart';
 import 'package:gyzyleller/shared/extensions/packages.dart';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 // ignore: library_prefixes
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:location/location.dart' as loc;
 
 import 'package:gyzyleller/core/services/my_jobs_service.dart';
 import '../../../core/services/api.dart';
@@ -35,6 +37,10 @@ class ChatDetailController extends GetxController {
   final RxBool isSendingLocation = false.obs;
   final RxList<String> insideList = <String>[].obs;
 
+  // Chat/job tamamlanma ýagdaýy
+  final RxBool chatFinished = false.obs;
+  final RxnString chatFinishedAt = RxnString();
+
   int _page = 0;
   Timer? _pollingTimer;
   bool _isPollingActive = false;
@@ -52,6 +58,17 @@ class ChatDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    // Sohbetler sanawyndan (ChatController) maglumatlary almak (finished we finishedAt)
+    if (Get.isRegistered<ChatController>()) {
+      final chatCtrl = Get.find<ChatController>();
+      final chat = chatCtrl.chats.firstWhereOrNull((c) => c.chatId == chatId);
+      if (chat != null) {
+        chatFinished.value = chat.finished;
+        chatFinishedAt.value = chat.finishedAt;
+      }
+    }
+
     if (notification == false) {
       _setupSocketListeners();
     }
@@ -147,6 +164,8 @@ class ChatDetailController extends GetxController {
         {'chat_id': chatId, 'page': 0, 'limit': 20, 'type': 'gyzyl'},
         ack: (data) {
           if (data is Map && data['status'] != 500) {
+            debugPrint('🔥 [ChatDetail] Socket FULL Response:');
+            log(jsonEncode(data));
             final list = data['messages'];
             if (list is List && list.isNotEmpty) {
               messages.value = list
@@ -192,7 +211,18 @@ class ChatDetailController extends GetxController {
       {required int page, required bool isInitial}) async {
     if (isInitial) isLoading.value = true;
     try {
-      final uri = Uri.parse('${_api.urlLink}/api/user/messages/$chatId').replace(
+      // Prevent request if no token is available
+      if (token.isEmpty) {
+        print('⚠️ [ChatDetailController] GET request blocked: No token available for /api/user/messages/$chatId');
+        if (isInitial) {
+          hasError.value = true;
+          isLoading.value = false;
+        }
+        return;
+      }
+
+      final uri =
+          Uri.parse('${_api.urlLink}/api/user/messages/$chatId').replace(
         queryParameters: {
           'page': page.toString(),
           'limit': '20',
@@ -210,6 +240,22 @@ class ChatDetailController extends GetxController {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
+        debugPrint('🔥 [ChatDetail] HTTP FULL Response:');
+        log(jsonEncode(data));
+
+        // finished we finished_at API-den gelýän ýagdaýy
+        final productData = data['product'] ?? data['job'] ?? {};
+        final dynamic rawFinished = data['finished'] ?? productData['finished'];
+        final dynamic rawFinishedAt = data['finished_at'] ?? productData['finished_at'];
+        
+        chatFinished.value = rawFinished == true ||
+            rawFinished == 1 ||
+            rawFinished?.toString().toLowerCase() == 'true';
+        chatFinishedAt.value = rawFinishedAt?.toString();
+
+        print('🏁 [ChatDetail] finished    = ${chatFinished.value}');
+        print('🏁 [ChatDetail] finished_at = ${chatFinishedAt.value}');
+
         final List<dynamic> list = data['messages'] ?? data ?? [];
         final newMessages = list
             .map((e) =>
@@ -330,18 +376,44 @@ class ChatDetailController extends GetxController {
   // ─── Send location ───
   Future<void> sendLocation(String? postLat, String? postLng) async {
     if (isSendingLocation.value) return;
-    if (postLat == null ||
-        postLat == 'null' ||
-        postLat.isEmpty ||
-        postLng == null ||
-        postLng == 'null' ||
-        postLng.isEmpty) {
-      debugPrint('[ChatDetail] sendLocation: koord ýok');
-      return;
-    }
     isSendingLocation.value = true;
     try {
-      await sendMessage('Location: $postLat,$postLng');
+      // 1. Try post location
+      if (postLat != null &&
+          postLat != 'null' &&
+          postLat.isNotEmpty &&
+          postLng != null &&
+          postLng != 'null' &&
+          postLng.isNotEmpty) {
+        await sendMessage('Location: $postLat,$postLng');
+        return;
+      }
+
+      // 2. Try current location
+      final loc.Location location = loc.Location();
+      bool serviceEnabled;
+      loc.PermissionStatus permissionGranted;
+      loc.LocationData locationData;
+
+      serviceEnabled = await location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) return;
+      }
+
+      permissionGranted = await location.hasPermission();
+      if (permissionGranted == loc.PermissionStatus.denied) {
+        permissionGranted = await location.requestPermission();
+        if (permissionGranted != loc.PermissionStatus.granted) return;
+      }
+
+      locationData = await location.getLocation();
+      if (locationData.latitude != null && locationData.longitude != null) {
+        await sendMessage(
+            'Location: ${locationData.latitude},${locationData.longitude}');
+      }
+    } catch (e) {
+      debugPrint('[ChatDetailController] sendLocation error: $e');
     } finally {
       isSendingLocation.value = false;
     }

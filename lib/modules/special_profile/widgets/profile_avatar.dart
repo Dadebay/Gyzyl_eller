@@ -1,54 +1,125 @@
+// ignore_for_file: deprecated_member_use
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/special_profile/controller/special_profile_controller.dart';
+import 'package:gyzyleller/modules/settings_profile/controllers/settings_controller.dart';
+import 'package:gyzyleller/modules/special_profile/widgets/full_screen_image_page.dart';
+import 'package:gyzyleller/core/services/api_constants.dart';
 
 class ProfileAvatar extends StatelessWidget {
   final SpecialProfileController controller;
-  final TextEditingController? nameController;
-  const ProfileAvatar(
-      {super.key, required this.controller, this.nameController});
+  const ProfileAvatar({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
+    final SettingsController settingsController =
+        Get.isRegistered<SettingsController>()
+            ? Get.find<SettingsController>()
+            : Get.put(SettingsController());
     return Center(
       child: Column(
         children: [
           SizedBox(
-            width: 100,
-            height: 100,
+            width: 110,
+            height: 110,
             child: Stack(
               children: [
                 Obx(
-                  () => CircleAvatar(
-                    radius: 50,
-                    backgroundImage: controller.selectedProfileImage.value !=
-                            null
-                        ? FileImage(controller.selectedProfileImage.value!)
-                        : (controller.profile.value.imageUrl != null
-                            ? NetworkImage(controller.profile.value.imageUrl!)
-                            : null),
-                    child: controller.selectedProfileImage.value == null &&
-                            controller.profile.value.imageUrl == null
-                        ? const Icon(Icons.person, size: 50)
-                        : null,
-                  ),
+                  () {
+                    final imageUrl = controller.profile.value.imageUrl;
+                    final hasNetworkImage =
+                        imageUrl != null && imageUrl.isNotEmpty;
+                    final userRawImage =
+                        settingsController.user.value?['image']?.toString();
+                    final userImageUrl =
+                        (userRawImage != null && userRawImage.isNotEmpty)
+                            ? ApiConstants.imageURL + userRawImage
+                            : null;
+                    final effectiveImageUrl =
+                        hasNetworkImage ? imageUrl : userImageUrl;
+                    final hasEffectiveImage = effectiveImageUrl != null &&
+                        effectiveImageUrl.isNotEmpty;
+                    return GestureDetector(
+                      onTap: hasEffectiveImage
+                          ? () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => FullScreenImagePage(
+                                      imageUrl: effectiveImageUrl!),
+                                ),
+                              );
+                            }
+                          : null,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: (controller.selectedProfileImage.value ==
+                                      null &&
+                                  !hasEffectiveImage)
+                              ? ColorConstants.noUserBackground[(int.tryParse(
+                                          controller.profile.value.id ?? '0') ??
+                                      0) %
+                                  4]
+                              : Colors.grey[200],
+                        ),
+                        child: ClipOval(
+                          child: controller.isUploadingProfileImage.value
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 26,
+                                    height: 26,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2.4),
+                                  ),
+                                )
+                              : (controller.selectedProfileImage.value != null
+                                  ? Image.file(
+                                      controller.selectedProfileImage.value!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : (hasEffectiveImage
+                                      ? CachedNetworkImage(
+                                          imageUrl: effectiveImageUrl!,
+                                          fit: BoxFit.cover,
+                                          errorWidget: (context, url, error) =>
+                                              _buildInitial(
+                                                  settingsController, 45),
+                                        )
+                                      : _buildInitial(settingsController, 45))),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 Positioned(
-                  bottom: 0,
-                  right: 0,
+                  bottom: 2,
+                  right: 2,
                   child: GestureDetector(
-                    onTap: controller.showEditOptions,
+                    onTap: () {
+                      controller.showEditOptions();
+                    },
                     child: Container(
-                      height: 30,
-                      width: 30,
+                      height: 34,
+                      width: 34,
                       decoration: BoxDecoration(
-                        color: ColorConstants.redColor,
+                        color: ColorConstants.kPrimaryColor2,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: Colors.white, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: ColorConstants.whiteColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                       child: const Icon(
-                        Icons.edit,
+                        Icons.edit_rounded,
                         color: Colors.white,
                         size: 18,
                       ),
@@ -58,43 +129,43 @@ class ProfileAvatar extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
           Obx(
-            () => GestureDetector(
-              onTap: () {
-                controller.toggleEditName(nameController?.text);
-              },
-              child: controller.isEditingName.value && nameController != null
-                  ? SizedBox(
-                      width: 150,
-                      child: TextField(
-                        controller: nameController,
-                        autofocus: true,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
-                        ),
-                        onSubmitted: (newValue) {
-                          controller.toggleEditName(newValue);
-                        },
-                      ),
-                    )
-                  : Text(
-                      controller.profile.value.name ?? '',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+            () => Text(
+              settingsController.user.value?['username'] ?? '',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: ColorConstants.fonts,
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInitial(SettingsController settingsController, double fontSize) {
+    return Center(
+      child: Text(
+        () {
+          final n = (settingsController.user.value?['username'] ?? '')
+              .toString()
+              .trim();
+          if (n.isEmpty) return '?';
+          for (int i = 0; i < n.length; i++) {
+            final char = n[i];
+            if (RegExp(r'[a-zA-Z0-9\u0400-\u04FF]').hasMatch(char)) {
+              return char.toUpperCase();
+            }
+          }
+          return n[0].toUpperCase();
+        }(),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

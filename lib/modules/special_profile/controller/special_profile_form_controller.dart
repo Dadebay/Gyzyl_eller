@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:gyzyleller/shared/utils/image_compress_util.dart';
 
 class SpecialProfileFormController extends GetxController {
   final TextEditingController shortBioController = TextEditingController();
@@ -43,7 +44,8 @@ class SpecialProfileFormController extends GetxController {
     }
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      selectedImages.add(File(image.path));
+      final compressed = await compressToWebP(File(image.path));
+      selectedImages.add(compressed);
     }
   }
 

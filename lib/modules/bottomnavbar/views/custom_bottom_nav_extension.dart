@@ -1,13 +1,13 @@
-// ignore_for_file: deprecated_member_use
+﻿// ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
-  final List<String> unselectedIcons;
-  final List<String> selectedIcons;
+  final List<IconData> icons;
+  final List<IconData> selectedIcons;
   final Function(int) onTap;
   final List<String> labels;
   final List<int>? badges;
@@ -15,7 +15,7 @@ class CustomBottomNavBar extends StatelessWidget {
   const CustomBottomNavBar({
     required this.currentIndex,
     required this.onTap,
-    required this.unselectedIcons,
+    required this.icons,
     required this.selectedIcons,
     required this.labels,
     this.badges,
@@ -24,7 +24,8 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color selectedIconColor = ColorConstants.kPrimaryColor2;
+    const Color selectedColor = ColorConstants.kPrimaryColor2;
+    const Color unselectedColor = Colors.black87;
 
     return Container(
       height: 64,
@@ -50,7 +51,7 @@ class CustomBottomNavBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(selectedIcons.length, (index) {
+        children: List.generate(icons.length, (index) {
           final isSelected = index == currentIndex;
           return TweenAnimationBuilder<double>(
             tween: Tween(
@@ -58,6 +59,7 @@ class CustomBottomNavBar extends StatelessWidget {
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             builder: (context, value, child) {
+              final color = Color.lerp(unselectedColor, selectedColor, value)!;
               return GestureDetector(
                 onTap: () => onTap(index),
                 child: Container(
@@ -70,20 +72,18 @@ class CustomBottomNavBar extends StatelessWidget {
                       Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          SvgPicture.asset(
-                            isSelected
-                                ? (index < unselectedIcons.length
-                                    ? unselectedIcons[index]
-                                    : '')
-                                : (index < selectedIcons.length
-                                    ? selectedIcons[index]
-                                    : ''),
+                          HugeIcon(
+                            icon: isSelected
+                                ? selectedIcons[index]
+                                : icons[index],
+                            color: color,
+                            size: 25,
                           ),
                           if (badges != null &&
                               index < badges!.length &&
                               badges![index] > 0)
                             Positioned(
-                              top: -12,
+                              top: -8,
                               right: -10,
                               child: Container(
                                 padding: const EdgeInsets.all(4),
@@ -112,13 +112,9 @@ class CustomBottomNavBar extends StatelessWidget {
                       Text(
                         index < labels.length ? labels[index] : '',
                         style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Color.lerp(
-                            ColorConstants.kPrimaryColor,
-                            selectedIconColor,
-                            value,
-                          ),
-                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: color,
+                          fontSize: 11,
                         ),
                       ),
                     ],

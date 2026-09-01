@@ -3,17 +3,20 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:gyzyleller/core/theme/custom_color_scheme.dart';
 import 'package:gyzyleller/modules/settings_profile/controllers/language_controller.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class LanguageSelectionTile extends StatelessWidget {
   final String title;
   final String iconPath;
   final String code;
+  final bool goBack;
 
   const LanguageSelectionTile({
     super.key,
     required this.title,
     required this.iconPath,
     required this.code,
+    this.goBack = false,
   });
 
   @override
@@ -25,6 +28,7 @@ class LanguageSelectionTile extends StatelessWidget {
       return InkWell(
         onTap: () {
           languageController.changeLanguage(code);
+          if (goBack) Get.back();
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -44,8 +48,11 @@ class LanguageSelectionTile extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                const Icon(Icons.check,
-                    color: ColorConstants.kPrimaryColor2, size: 24),
+                const HugeIcon(
+                  icon: HugeIcons.strokeRoundedTick02,
+                  color: ColorConstants.kPrimaryColor2,
+                  size: 24,
+                ),
             ],
           ),
         ),
